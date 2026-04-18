@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
-import Navbar from "@/components/layout/Navbar.vue";
-import Footer from "@/components/layout/Footer.vue";
-import { MOCK_ORDERS } from "@/mocks/orders";
+import { Navbar, Footer } from "@/components/layout";
+import { MOCK_ORDERS } from "@/__mocks__/orders";
 import { RouterLink } from "vue-router";
 import { useAuthStore } from "@/stores/auth.store";
 import { Package } from "lucide-vue-next";

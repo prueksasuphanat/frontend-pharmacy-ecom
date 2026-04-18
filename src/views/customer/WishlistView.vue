@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import Navbar from "@/components/layout/Navbar.vue";
-import Footer from "@/components/layout/Footer.vue";
-import { MOCK_PRODUCTS, MOCK_PRICES } from "@/mocks/products";
+import { Navbar, Footer } from "@/components/layout";
+import { MOCK_PRODUCTS, MOCK_PRICES } from "@/__mocks__/products";
 import { useAuthStore } from "@/stores/auth.store";
 import { useCartStore } from "@/stores/cart.store";
 import { RouterLink } from "vue-router";

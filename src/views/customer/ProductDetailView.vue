@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import { computed, onMounted } from "vue";
 import { useRoute, RouterLink } from "vue-router";
-import { MOCK_PRODUCTS, MOCK_PRICES } from "@/mocks/products";
+import { MOCK_PRODUCTS, MOCK_PRICES } from "@/__mocks__/products";
 import { useAuthStore } from "@/stores/auth.store";
 import { useCartStore } from "@/stores/cart.store";
-import DrugTypeBadge from "@/components/ui/DrugTypeBadge.vue";
-import Navbar from "@/components/layout/Navbar.vue";
-import Footer from "@/components/layout/Footer.vue";
+import { DrugTypeBadge } from "@/components/ui";
+import { Navbar, Footer } from "@/components/layout";
 import {
   ShoppingCart,
   Heart,

@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { ref, computed, watch } from "vue";
 import { useRouter } from "vue-router";
-import { MOCK_PRODUCTS } from "@/mocks/products";
-import DrugTypeBadge from "@/components/ui/DrugTypeBadge.vue";
-import ProductDetailModal from "@/components/product/ProductDetailModal.vue";
+import { MOCK_PRODUCTS } from "@/__mocks__/products";
+import { DrugTypeBadge } from "@/components/ui";
+import { ProductDetailModal } from "@/components/product";
 import { useAuthStore } from "@/stores/auth.store";
 import {
   Search,
@@ -14,8 +14,7 @@ import {
   ChevronsLeft,
   ChevronsRight,
 } from "lucide-vue-next";
-import Navbar from "@/components/layout/Navbar.vue";
-import Footer from "@/components/layout/Footer.vue";
+import { Navbar, Footer } from "@/components/layout";
 
 const auth = useAuthStore();
 const router = useRouter();

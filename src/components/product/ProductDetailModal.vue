@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed, ref, watch, onMounted, onUnmounted } from "vue";
-import { MOCK_PRODUCTS, MOCK_PRICES } from "@/mocks/products";
+import { MOCK_PRODUCTS, MOCK_PRICES } from "@/__mocks__/products";
 import { useAuthStore } from "@/stores/auth.store";
 import { useCartStore } from "@/stores/cart.store";
-import DrugTypeBadge from "@/components/ui/DrugTypeBadge.vue";
+import { DrugTypeBadge } from "@/components/ui";
 import {
   ShoppingCart,
   Heart,
