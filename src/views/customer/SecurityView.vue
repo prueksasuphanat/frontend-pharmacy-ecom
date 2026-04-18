@@ -1,12 +1,16 @@
 <script setup lang="ts">
-import Navbar from '@/components/layout/Navbar.vue'
-import { Lock } from 'lucide-vue-next'
-import { ref } from 'vue'
-const current = ref(''); const newPw = ref(''); const confirm = ref('')
-const success = ref(false)
+import Navbar from "@/components/layout/Navbar.vue";
+import { Lock } from "lucide-vue-next";
+import { ref } from "vue";
+import { BaseInput } from "@/components/ui";
+const current = ref("");
+const newPw = ref("");
+const confirm = ref("");
+const success = ref(false);
 async function onSubmit() {
   // TODO: PATCH /profile/password { current, new_password }
-  await new Promise(r => setTimeout(r, 600)); success.value = true
+  await new Promise((r) => setTimeout(r, 600));
+  success.value = true;
 }
 </script>
 <template>
@@ -20,20 +24,34 @@ async function onSubmit() {
           <p class="font-semibold text-secondary-900">เปลี่ยนรหัสผ่านสำเร็จ</p>
         </div>
         <form v-else @submit.prevent="onSubmit" class="space-y-4">
-          <div>
-            <label class="label">รหัสผ่านปัจจุบัน</label>
-            <input v-model="current" type="password" class="input" required />
-          </div>
-          <div>
-            <label class="label">รหัสผ่านใหม่</label>
-            <input v-model="newPw" type="password" class="input" required minlength="8" />
-          </div>
-          <div>
-            <label class="label">ยืนยันรหัสผ่านใหม่</label>
-            <input v-model="confirm" type="password" class="input" required :class="{ 'input-error': confirm && newPw !== confirm }" />
-            <p v-if="confirm && newPw !== confirm" class="error-msg">รหัสผ่านไม่ตรงกัน</p>
-          </div>
-          <button type="submit" :disabled="newPw !== confirm" class="btn-primary w-full gap-2">
+          <BaseInput
+            v-model="current"
+            type="password"
+            label="รหัสผ่านปัจจุบัน"
+            required
+          />
+
+          <BaseInput
+            v-model="newPw"
+            type="password"
+            label="รหัสผ่านใหม่"
+            required
+            minlength="8"
+          />
+
+          <BaseInput
+            v-model="confirm"
+            type="password"
+            label="ยืนยันรหัสผ่านใหม่"
+            :error="confirm && newPw !== confirm ? 'รหัสผ่านไม่ตรงกัน' : ''"
+            required
+          />
+
+          <button
+            type="submit"
+            :disabled="newPw !== confirm"
+            class="btn-primary w-full gap-2"
+          >
             <Lock class="w-4 h-4" /> บันทึกรหัสผ่านใหม่
           </button>
         </form>

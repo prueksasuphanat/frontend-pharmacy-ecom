@@ -3,6 +3,7 @@ import { ref, computed } from "vue";
 import { RouterLink } from "vue-router";
 import { MOCK_ORDERS } from "@/__mocks__/orders";
 import { Search, Download } from "lucide-vue-next";
+import { BaseInput, BaseSelect } from "@/components/ui";
 
 // TODO: GET /admin/orders?status=&page=&search=
 
@@ -85,21 +86,17 @@ function fmtDate(d: string) {
 
     <!-- Filters -->
     <div class="card mb-4 flex flex-wrap gap-3 items-center">
-      <div class="relative flex-1 min-w-48">
-        <Search
-          class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-secondary-400"
-        />
-        <input
-          v-model="search"
-          placeholder="ค้นหา order ID, อีเมล..."
-          class="input pl-9 text-sm"
-        />
-      </div>
-      <select v-model="statusFilter" class="input py-2 w-auto text-sm">
-        <option v-for="s in statusOpts" :key="s.v" :value="s.v">
-          {{ s.l }}
-        </option>
-      </select>
+      <BaseInput
+        v-model="search"
+        placeholder="ค้นหา order ID, อีเมล..."
+        :icon="Search"
+        class="flex-1 min-w-48"
+      />
+      <BaseSelect
+        v-model="statusFilter"
+        :options="statusOpts.map((s) => ({ value: s.v, label: s.l }))"
+        class="w-auto"
+      />
     </div>
 
     <div class="card p-0 overflow-hidden">

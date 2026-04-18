@@ -2,6 +2,7 @@
 import { ref, computed } from "vue";
 import { MOCK_AUDIT_LOGS } from "@/__mocks__/users";
 import { Search } from "lucide-vue-next";
+import { BaseInput } from "@/components/ui";
 
 // TODO: GET /admin/logs?action=&page=
 
@@ -55,16 +56,12 @@ const actionColors: Record<string, string> = {
     </div>
 
     <div class="card mb-4 flex gap-3">
-      <div class="relative flex-1">
-        <Search
-          class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-secondary-400"
-        />
-        <input
-          v-model="search"
-          placeholder="ค้นหา action, admin, ID..."
-          class="input pl-9 text-sm"
-        />
-      </div>
+      <BaseInput
+        v-model="search"
+        placeholder="ค้นหา action, admin, ID..."
+        :icon="Search"
+        class="flex-1"
+      />
     </div>
 
     <div class="card p-0 overflow-hidden">

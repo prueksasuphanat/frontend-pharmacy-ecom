@@ -5,6 +5,7 @@ import { MOCK_ORDERS } from "@/__mocks__/orders";
 import { RouterLink } from "vue-router";
 import { useAuthStore } from "@/stores/auth.store";
 import { Package } from "lucide-vue-next";
+import { BaseSelect } from "@/components/ui";
 
 const auth = useAuthStore();
 // TODO: replace with GET /orders?status=&page=
@@ -56,11 +57,11 @@ function fmtDate(d: string) {
     <div class="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div class="page-header">
         <h1 class="page-title">คำสั่งซื้อของฉัน</h1>
-        <select v-model="statusFilter" class="input py-1.5 w-auto text-sm">
-          <option v-for="s in statusOpts" :key="s.value" :value="s.value">
-            {{ s.label }}
-          </option>
-        </select>
+        <BaseSelect
+          v-model="statusFilter"
+          :options="statusOpts"
+          class="w-auto"
+        />
       </div>
 
       <div v-if="filtered.length === 0" class="text-center py-20">

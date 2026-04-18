@@ -12,6 +12,7 @@ import {
   Truck,
   Package,
 } from "lucide-vue-next";
+import { BaseTextarea } from "@/components/ui";
 
 const route = useRoute();
 const orderId = route.params.id as string;
@@ -314,11 +315,11 @@ function cancelOrder() {
           ยืนยันการยกเลิก
         </h3>
         <p class="text-sm text-secondary-500 mb-4">โปรดระบุเหตุผลในการยกเลิก</p>
-        <textarea
+        <BaseTextarea
           v-model="cancelReason"
-          class="input h-24 resize-none"
           placeholder="เหตุผล..."
-        ></textarea>
+          :rows="3"
+        />
         <div class="flex gap-3 mt-4">
           <button @click="showCancelModal = false" class="btn-secondary flex-1">
             ยกเลิก

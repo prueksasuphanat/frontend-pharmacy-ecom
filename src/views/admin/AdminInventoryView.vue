@@ -3,6 +3,7 @@ import { ref, computed } from "vue";
 import { MOCK_PRODUCTS } from "@/__mocks__/products";
 import { MOCK_LOTS } from "@/__mocks__/inventory";
 import { Search, Plus, AlertTriangle, Edit, Eye } from "lucide-vue-next";
+import { BaseInput, BaseSelect } from "@/components/ui";
 
 // TODO: GET /admin/products, GET /admin/inventory/lots
 
@@ -73,22 +74,20 @@ const drugLabel: Record<string, string> = {
 
     <!-- Filters -->
     <div class="card mb-4 flex flex-wrap gap-3">
-      <div class="relative flex-1 min-w-48">
-        <Search
-          class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-secondary-400"
-        />
-        <input
-          v-model="search"
-          placeholder="ค้นหา..."
-          class="input pl-9 text-sm"
-        />
-      </div>
-      <select v-model="filterType" class="input py-2 w-auto text-sm">
-        <option value="">ทุกประเภท</option>
-        <option v-for="t in drugTypes" :key="t" :value="t">
-          {{ drugLabel[t] }}
-        </option>
-      </select>
+      <BaseInput
+        v-model="search"
+        placeholder="ค้นหา..."
+        :icon="Search"
+        class="flex-1 min-w-48"
+      />
+      <BaseSelect
+        v-model="filterType"
+        :options="[
+          { value: '', label: 'ทุกประเภท' },
+          ...drugTypes.map((t) => ({ value: t, label: drugLabel[t] })),
+        ]"
+        class="w-auto"
+      />
     </div>
 
     <!-- Lot alerts -->

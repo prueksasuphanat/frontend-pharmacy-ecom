@@ -15,6 +15,7 @@ import {
   ChevronsRight,
 } from "lucide-vue-next";
 import { Navbar, Footer } from "@/components/layout";
+import { BaseInput, BaseSelect, BaseCheckbox } from "@/components/ui";
 
 const auth = useAuthStore();
 const router = useRouter();
@@ -158,14 +159,12 @@ function openProductModal(id: string) {
         </p>
         <!-- Search bar in hero -->
         <div class="relative max-w-xl">
-          <Search
-            class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-secondary-400"
-          />
-          <input
+          <BaseInput
             v-model="search"
             type="text"
             placeholder="ค้นหาชื่อยา, generic name, ผู้ผลิต, SKU..."
-            class="w-full pl-10 pr-4 py-3 rounded-xl bg-white text-secondary-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary-300"
+            :icon="Search"
+            class="w-full"
           />
         </div>
       </div>
@@ -176,25 +175,18 @@ function openProductModal(id: string) {
           <SlidersHorizontal class="w-4 h-4 text-secondary-400" />
           <span class="text-sm text-secondary-500">กรอง:</span>
         </div>
-        <select v-model="filterType" class="input py-1.5 w-auto text-sm">
-          <option v-for="dt in drugTypes" :key="dt.value" :value="dt.value">
-            {{ dt.label }}
-          </option>
-        </select>
-        <label class="flex items-center gap-2 cursor-pointer">
-          <input
-            v-model="filterStock"
-            type="checkbox"
-            class="w-4 h-4 rounded border-secondary-300 text-primary-600"
-          />
-          <span class="text-sm text-secondary-600">มีสินค้า</span>
-        </label>
+        <BaseSelect v-model="filterType" :options="drugTypes" class="w-auto" />
+        <BaseCheckbox v-model="filterStock" label="มีสินค้า" />
         <div class="ml-auto flex items-center gap-2">
           <span class="text-sm text-secondary-500">เรียงโดย:</span>
-          <select v-model="sortBy" class="input py-1.5 w-auto text-sm">
-            <option value="newest">ใหม่ล่าสุด</option>
-            <option value="az">ชื่อ A-Z</option>
-          </select>
+          <BaseSelect
+            v-model="sortBy"
+            :options="[
+              { value: 'newest', label: 'ใหม่ล่าสุด' },
+              { value: 'az', label: 'ชื่อ A-Z' },
+            ]"
+            class="w-auto"
+          />
         </div>
       </div>
 
