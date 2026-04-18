@@ -3,27 +3,60 @@ import { ref } from "vue";
 import { RouterLink, useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/auth.store";
 import { Mail, Eye, EyeOff } from "lucide-vue-next";
-import { BaseInput, BaseCheckbox } from "@/components/ui";
+import { VInput, VCheckbox } from "@/components/ui";
+import { useForm } from "vee-validate";
+import { useToast } from "@/composables";
+import "@/utils/validation"; // import validation rules
 
 const auth = useAuthStore();
 const router = useRouter();
+const toast = useToast();
 
-const email = ref("");
-const password = ref("");
-const confirmPw = ref("");
 const showPw = ref(false);
-const agreed = ref(false);
 const isLoading = ref(false);
 const registered = ref(false);
 
-async function onSubmit() {
-  if (password.value !== confirmPw.value) return;
+// กำหนด validation schema
+const { handleSubmit, values } = useForm({
+  validationSchema: {
+    email: "required|email",
+    password: "required|password",
+    password_confirmation: "required|confirmed:@password",
+    agreed: (value: boolean) => {
+      if (!value) {
+        return "กรุณายอมรับข้อกำหนดและเงื่อนไข";
+      }
+      return true;
+    },
+  },
+});
+
+// Handle form submission
+const onSubmit = handleSubmit(async (values) => {
   isLoading.value = true;
-  // TODO: replace with POST /auth/register
-  await auth.register(email.value, password.value);
-  isLoading.value = false;
-  registered.value = true;
-}
+
+  try {
+    // TODO: replace with POST /auth/register
+    await auth.register(values.email, values.password);
+
+    // แสดง toast success
+    toast.success("สมัครสมาชิกสำเร็จ!");
+
+    registered.value = true;
+
+    // Redirect หลัง 2 วินาที
+    setTimeout(() => {
+      router.push("/products");
+    }, 2000);
+  } catch (error: any) {
+    // แสดง toast error
+    toast.error(
+      error.message || "ไม่สามารถสมัครสมาชิกได้ กรุณาลองใหม่อีกครั้ง",
+    );
+  } finally {
+    isLoading.value = false;
+  }
+});
 </script>
 
 <template>
@@ -55,7 +88,7 @@ async function onSubmit() {
         </h2>
         <p class="text-secondary-500 text-sm mb-6">
           เราได้ส่งลิงก์ยืนยันตัวตนไปที่
-          <strong>{{ email }}</strong> กรุณายืนยันก่อนเข้าใช้งาน
+          <strong>{{ values.email }}</strong> กรุณายืนยันก่อนเข้าใช้งาน
         </p>
         <!-- TODO: actually send email verify token -->
         <RouterLink to="/products" class="btn-primary w-full"
@@ -64,39 +97,32 @@ async function onSubmit() {
       </div>
 
       <div v-else class="card">
-        <form @submit.prevent="onSubmit" class="space-y-4">
-          <BaseInput
-            v-model="email"
+        <form @submit="onSubmit" class="space-y-4">
+          <VInput
+            name="email"
             type="email"
             label="อีเมล"
             placeholder="your@email.com"
             :icon="Mail"
-            required
           />
 
-          <BaseInput
-            v-model="password"
+          <VInput
+            name="password"
             :type="showPw ? 'text' : 'password'"
             label="รหัสผ่าน"
-            placeholder="อย่างน้อย 8 ตัวอักษร"
+            placeholder="อย่างน้อย 8 ตัวอักษร และมีตัวเลข"
             :icon-right="showPw ? EyeOff : Eye"
             @icon-right-click="showPw = !showPw"
-            required
-            minlength="8"
           />
 
-          <BaseInput
-            v-model="confirmPw"
+          <VInput
+            name="password_confirmation"
             :type="showPw ? 'text' : 'password'"
             label="ยืนยันรหัสผ่าน"
             placeholder="กรอกรหัสผ่านอีกครั้ง"
-            :error="
-              confirmPw && password !== confirmPw ? 'รหัสผ่านไม่ตรงกัน' : ''
-            "
-            required
           />
 
-          <BaseCheckbox v-model="agreed" required>
+          <VCheckbox name="agreed">
             <span class="text-xs text-secondary-600"
               >ฉันยอมรับ<a href="#" class="text-primary-600">
                 ข้อกำหนดการใช้งาน</a
@@ -104,11 +130,11 @@ async function onSubmit() {
                 >นโยบายความเป็นส่วนตัว</a
               ></span
             >
-          </BaseCheckbox>
+          </VCheckbox>
 
           <button
             type="submit"
-            :disabled="isLoading || password !== confirmPw"
+            :disabled="isLoading"
             class="btn-primary w-full"
           >
             <span
