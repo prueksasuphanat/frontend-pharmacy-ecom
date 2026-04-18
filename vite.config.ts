@@ -16,8 +16,13 @@ export default defineConfig({
     sourcemap: false,
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ["vue", "vue-router"],
+        // Vite 8 uses Rolldown - manualChunks must be a function
+        manualChunks: (id) => {
+          if (id.includes("node_modules")) {
+            if (id.includes("vue") || id.includes("vue-router")) {
+              return "vendor";
+            }
+          }
         },
       },
     },
