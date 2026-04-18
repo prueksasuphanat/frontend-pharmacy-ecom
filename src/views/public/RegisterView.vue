@@ -140,7 +140,7 @@ const onSubmit = handleSubmit(async (values) => {
             required
           />
 
-          <VInput name="username" type="text" label="username" required />
+          <VInput name="username" type="text" label="ชื่อผู้ใช้" required />
 
           <VInput
             name="password"

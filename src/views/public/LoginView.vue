@@ -66,7 +66,7 @@ const onSubmit = handleSubmit(async (values) => {
             name="username"
             type="text"
             label="ชื่อผู้ใช้"
-            placeholder="testuser"
+            placeholder="username"
             :icon="Mail"
             required
           />
