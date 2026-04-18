@@ -72,7 +72,7 @@ const onSubmit = handleSubmit(async (values) => {
         </div>
         <h1 class="text-2xl font-bold text-secondary-900">สมัครสมาชิก</h1>
         <p class="text-secondary-500 text-sm mt-1">
-          เริ่มต้นใช้งานฟาร์มาช็อปฟรี
+          เริ่มต้นใช้งานPhanadrugฟรี
         </p>
       </div>
 
@@ -97,13 +97,14 @@ const onSubmit = handleSubmit(async (values) => {
       </div>
 
       <div v-else class="card">
-        <form @submit="onSubmit" class="space-y-4">
+        <form @submit="onSubmit" novalidate class="space-y-4">
           <VInput
             name="email"
             type="email"
             label="อีเมล"
             placeholder="your@email.com"
             :icon="Mail"
+            required
           />
 
           <VInput
@@ -113,6 +114,7 @@ const onSubmit = handleSubmit(async (values) => {
             placeholder="อย่างน้อย 8 ตัวอักษร และมีตัวเลข"
             :icon-right="showPw ? EyeOff : Eye"
             @icon-right-click="showPw = !showPw"
+            required
           />
 
           <VInput
@@ -120,6 +122,7 @@ const onSubmit = handleSubmit(async (values) => {
             :type="showPw ? 'text' : 'password'"
             label="ยืนยันรหัสผ่าน"
             placeholder="กรอกรหัสผ่านอีกครั้ง"
+            required
           />
 
           <VCheckbox name="agreed">

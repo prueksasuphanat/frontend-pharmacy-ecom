@@ -68,9 +68,7 @@ const demoAccounts = [
           <span class="text-white font-bold text-xl">Rx</span>
         </div>
         <h1 class="text-2xl font-bold text-secondary-900">เข้าสู่ระบบ</h1>
-        <p class="text-secondary-500 text-sm mt-1">
-          ฟาร์มาช็อป — ระบบขายยาออนไลน์
-        </p>
+        <p class="text-secondary-500 text-sm mt-1">Phanadrug</p>
       </div>
 
       <!-- Demo login panel -->

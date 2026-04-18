@@ -30,7 +30,7 @@ const currentYear = new Date().getFullYear();
             >
               <span class="text-white font-bold text-xl">P</span>
             </div>
-            <span class="text-white font-bold text-xl">PharmaCare</span>
+            <span class="text-white font-bold text-xl">Phanadrug</span>
           </div>
           <p class="text-sm leading-relaxed mb-5 text-secondary-400">
             ร้านขายยาออนไลน์ที่คุณไว้วางใจ
@@ -298,10 +298,10 @@ const currentYear = new Date().getFullYear();
               <div>
                 <p class="text-white font-medium mb-1">อีเมล</p>
                 <a
-                  href="mailto:info@pharmacare.com"
+                  href="mailto:info@Phanadrug.com"
                   class="hover:text-primary-400 transition-colors"
                 >
-                  info@pharmacare.com
+                  info@Phanadrug.com
                 </a>
               </div>
             </li>
@@ -317,7 +317,7 @@ const currentYear = new Date().getFullYear();
           class="flex flex-col md:flex-row items-center justify-between gap-4 text-sm"
         >
           <p class="text-secondary-500">
-            © {{ currentYear }} PharmaCare. สงวนลิขสิทธิ์.
+            © {{ currentYear }} Phanadrug. สงวนลิขสิทธิ์.
           </p>
 
           <div class="flex items-center gap-4 text-secondary-500">
