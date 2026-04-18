@@ -28,7 +28,8 @@ jobs:
           server: ${{ secrets.FTP_SERVER }} # ใส่เป็น IP Address ของ Hostinger
           username: ${{ secrets.FTP_USERNAME }} # ชื่อผู้ใช้ SSH
           password: ${{ secrets.FTP_PASSWORD }} # รหัสผ่าน SSH
-          port: 21 # พอร์ต SSH/SFTP
+          port: 65002
           local_path: "./dist/*" # ไฟล์จากโฟลเดอร์ dist
-          remote_path: "/home/customer/domains/phanadrug.com/public_html/" # **ดูหมายเหตุด้านล่าง
+          remote_path: "/home/u559164242/domains/phanadrug.com/public_html/"
           sftp_only: true
+          password_auth: true
