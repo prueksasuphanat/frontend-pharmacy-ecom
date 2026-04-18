@@ -32,4 +32,3 @@ jobs:
           local_path: "./dist/*" # ไฟล์จากโฟลเดอร์ dist
           remote_path: "/home/u559164242/domains/phanadrug.com/public_html/"
           sftp_only: true
-          password_auth: true
