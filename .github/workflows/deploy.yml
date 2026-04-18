@@ -24,11 +24,13 @@ jobs:
       - name: Build Project
         run: npm run build # ขั้นตอนนี้จะสร้างโฟลเดอร์ dist
 
-      - name: Deploy via FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+      - name: Deploy via SFTP
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./dist/ # ส่งเฉพาะไฟล์ที่ build เสร็จแล้ว
-          server-dir: ./public_html/ # ปลายทางที่ Hostinger
+          server: ${{ secrets.SFTP_HOST }}
+          username: ${{ secrets.SFTP_USERNAME }}
+          password: ${{ secrets.SFTP_PASSWORD }}
+          port: ${{ secrets.SFTP_PORT }} # โดยปกติคือ 22
+          local_path: "./dist/*" # ส่งเฉพาะไฟล์ที่ build เสร็จแล้ว
+          remote_path: "/public_html" # ปลายทางที่ Hostinger
+          sftp_only: true
