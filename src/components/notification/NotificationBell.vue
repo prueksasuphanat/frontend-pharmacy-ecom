@@ -56,10 +56,10 @@ const iconMap: Record<string, string> = {
     <Transition name="slide-up">
       <div
         v-if="notif.isOpen"
-        class="absolute right-0 mt-2 w-[calc(100vw-2rem)] sm:w-80 max-w-md bg-white rounded-2xl shadow-xl border border-secondary-100 z-40 overflow-hidden"
+        class="fixed sm:absolute right-2 sm:right-0 left-2 sm:left-auto mt-2 sm:w-80 max-w-md bg-white rounded-2xl shadow-xl border border-secondary-100 z-40 overflow-hidden max-h-[80vh] sm:max-h-none flex flex-col"
       >
         <div
-          class="flex items-center justify-between px-4 py-3 border-b border-secondary-50"
+          class="flex items-center justify-between px-4 py-3 border-b border-secondary-50 shrink-0"
         >
           <h3 class="font-semibold text-sm">การแจ้งเตือน</h3>
           <button
@@ -71,7 +71,10 @@ const iconMap: Record<string, string> = {
           </button>
         </div>
 
-        <div class="max-h-72 overflow-y-auto divide-y divide-secondary-50">
+        <div
+          class="flex-1 overflow-y-auto divide-y divide-secondary-50"
+          style="max-height: min(18rem, 60vh)"
+        >
           <div
             v-if="notif.notifications.length === 0"
             class="py-8 text-center text-secondary-400 text-sm"
@@ -117,7 +120,7 @@ const iconMap: Record<string, string> = {
           </RouterLink>
         </div>
 
-        <div class="border-t border-secondary-50 px-4 py-2.5">
+        <div class="border-t border-secondary-50 px-4 py-2.5 shrink-0">
           <RouterLink
             to="/notifications"
             @click="notif.close()"
