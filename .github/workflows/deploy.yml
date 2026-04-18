@@ -1,0 +1,34 @@
+name: Build and Deploy Vue to Hostinger
+
+on:
+  push:
+    branches:
+      - main # หรือระบุ branch ที่คุณใช้งาน
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "20" # ใช้ Node version ที่ตรงกับเครื่องคุณ
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Build Project
+        run: npm run build # ขั้นตอนนี้จะสร้างโฟลเดอร์ dist
+
+      - name: Deploy via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./dist/ # ส่งเฉพาะไฟล์ที่ build เสร็จแล้ว
+          server-dir: ./public_html/ # ปลายทางที่ Hostinger
