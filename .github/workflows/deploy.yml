@@ -1,36 +1,34 @@
-name: Build and Deploy Vue to Hostinger
+name: Deploy Vue to Hostinger (SFTP)
 
 on:
   push:
     branches:
-      - main # หรือระบุ branch ที่คุณใช้งาน
+      - main
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: "20" # ใช้ Node version ที่ตรงกับเครื่องคุณ
+          node-version: "20"
 
-      - name: Install Dependencies
-        run: npm install
-
-      - name: Build Project
-        run: npm run build # ขั้นตอนนี้จะสร้างโฟลเดอร์ dist
+      - name: Install & Build
+        run: |
+          npm install
+          npm run build
 
       - name: Deploy via SFTP
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         with:
-          server: ${{ secrets.SFTP_HOST }}
-          username: ${{ secrets.SFTP_USERNAME }}
-          password: ${{ secrets.SFTP_PASSWORD }}
-          port: ${{ secrets.SFTP_PORT }} # โดยปกติคือ 22
-          local_path: "./dist/*" # ส่งเฉพาะไฟล์ที่ build เสร็จแล้ว
-          remote_path: "/public_html" # ปลายทางที่ Hostinger
+          server: ${{ secrets.FTP_SERVER }} # ใส่เป็น IP Address ของ Hostinger
+          username: ${{ secrets.FTP_USERNAME }} # ชื่อผู้ใช้ SSH
+          password: ${{ secrets.FTP_PASSWORD }} # รหัสผ่าน SSH
+          port: 21 # พอร์ต SSH/SFTP
+          local_path: "./dist/*" # ไฟล์จากโฟลเดอร์ dist
+          remote_path: "/home/customer/domains/phanadrug.com/public_html/" # **ดูหมายเหตุด้านล่าง
           sftp_only: true
