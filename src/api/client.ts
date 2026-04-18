@@ -8,12 +8,13 @@
  */
 
 import axios from "axios";
+import { env } from "@/utils/env";
 
 /**
  * Base API client instance
  */
 export const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL,
+  baseURL: env.apiBaseUrl,
   timeout: 10000,
   headers: {
     "Content-Type": "application/json",
@@ -86,7 +87,7 @@ apiClient.interceptors.response.use(
 
       try {
         const { data } = await axios.post(
-          `${import.meta.env.VITE_API_BASE_URL}/api/v1/auth/refresh`,
+          `${env.apiBaseUrl}/api/v1/auth/refresh`,
           { refreshToken },
         );
 

@@ -27,6 +27,9 @@ jobs:
           VITE_APP_VERSION: ${{ secrets.VITE_APP_VERSION }}
           VITE_S3_BUCKET_URL: ${{ secrets.VITE_S3_BUCKET_URL }}
 
+      - name: Verify Build
+        run: npm run check-build
+
       - name: Deploy via SFTP
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         with:

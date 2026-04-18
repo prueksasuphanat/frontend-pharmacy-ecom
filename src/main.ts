@@ -5,6 +5,10 @@ import router from "./router";
 import Toast from "vue-toastification";
 import "vue-toastification/dist/index.css";
 import "./style.css";
+import { logEnvConfig } from "./utils/env";
+
+// Log environment configuration (only in development)
+logEnvConfig();
 
 const app = createApp(App);
 app.use(createPinia());

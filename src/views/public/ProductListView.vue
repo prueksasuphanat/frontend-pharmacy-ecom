@@ -170,9 +170,11 @@ function openProductModal(id: string) {
       </div>
 
       <!-- Filters bar -->
-      <div class="flex items-center gap-3 mb-6 flex-wrap">
+      <div
+        class="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-6"
+      >
         <!-- Left: filter controls -->
-        <div class="flex items-center gap-3 flex-1 flex-wrap">
+        <div class="flex items-center gap-3 flex-1 flex-wrap w-full sm:w-auto">
           <div class="flex items-center gap-1.5 shrink-0">
             <SlidersHorizontal class="h-4 w-4 text-secondary-400" />
             <span class="text-sm text-secondary-500">กรอง:</span>
@@ -180,12 +182,12 @@ function openProductModal(id: string) {
           <BaseSelect
             v-model="filterType"
             :options="drugTypes"
-            class="w-48 shrink-0"
+            class="w-full sm:w-48 shrink-0"
           />
         </div>
 
         <!-- Right: sort control -->
-        <div class="flex items-center gap-2 shrink-0">
+        <div class="flex items-center gap-2 shrink-0 w-full sm:w-auto">
           <span class="text-sm text-secondary-500 whitespace-nowrap"
             >เรียงโดย:</span
           >
@@ -195,7 +197,7 @@ function openProductModal(id: string) {
               { value: 'newest', label: 'ใหม่ล่าสุด' },
               { value: 'az', label: 'ชื่อ A-Z' },
             ]"
-            class="w-[150px]"
+            class="w-full sm:w-[150px]"
           />
         </div>
       </div>
