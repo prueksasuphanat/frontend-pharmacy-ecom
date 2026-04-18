@@ -1,110 +1,141 @@
 import { defineStore } from "pinia";
-import { ref, computed } from "vue";
-import { MOCK_USERS, type User } from "@/__mocks__/users";
+import type { User } from "@/types";
+import { apiClient } from "@/api/client";
 
-// TODO: Replace mock auth with real API calls to /auth/login, /auth/register, etc.
-
-export type MockRole = "admin" | "wholesale" | "clinic" | "retail";
-
-const DEMO_ACCOUNTS: Record<string, { password: string; userId: string }> = {
-  "admin@pharma.com": { password: "admin1234", userId: "user-admin-001" },
-  "somchai@example.com": { password: "retail1234", userId: "user-retail-001" },
-  "wholesale@medshop.com": {
-    password: "wholesale1234",
-    userId: "user-wholesale-001",
-  },
-  "clinic@bkkhospital.com": {
-    password: "clinic1234",
-    userId: "user-clinic-001",
-  },
-};
-
-export const useAuthStore = defineStore("auth", () => {
-  const currentUser = ref<User | null>(
-    JSON.parse(localStorage.getItem("mock_user") || "null"),
-  );
-  const isLoading = ref(false);
-  const loginError = ref("");
-
-  const isLoggedIn = computed(() => !!currentUser.value);
-  const isAdmin = computed(() => currentUser.value?.role_name === "admin");
-  const isEmailVerified = computed(
-    () => currentUser.value?.is_email_verified ?? false,
-  );
-  const roleName = computed(() => currentUser.value?.role_name ?? "retail");
-
-  // TODO: replace with: await axios.post('/auth/login', { email, password })
-  async function login(email: string, password: string): Promise<boolean> {
-    isLoading.value = true;
-    loginError.value = "";
-    await new Promise((r) => setTimeout(r, 600)); // simulate network
-
-    const account = DEMO_ACCOUNTS[email];
-    if (!account || account.password !== password) {
-      loginError.value = "อีเมลหรือรหัสผ่านไม่ถูกต้อง";
-      isLoading.value = false;
-      return false;
-    }
-
-    const user = MOCK_USERS.find((u) => u.id === account.userId) ?? null;
-    currentUser.value = user;
-    localStorage.setItem("mock_user", JSON.stringify(user));
-    isLoading.value = false;
-    return true;
-  }
-
-  // TODO: replace with: await axios.post('/auth/register', data)
-  async function register(email: string, _password: string): Promise<boolean> {
-    isLoading.value = true;
-    await new Promise((r) => setTimeout(r, 800));
-    // Mock: auto-create retail user
-    const newUser: User = {
-      id: `user-${Date.now()}`,
-      email,
-      full_name: "",
-      role_id: "role-retail",
-      role_name: "retail",
-      role_label: "ลูกค้าทั่วไป",
-      is_email_verified: false,
-      is_active: true,
-      created_at: new Date().toISOString(),
-    };
-    currentUser.value = newUser;
-    localStorage.setItem("mock_user", JSON.stringify(newUser));
-    isLoading.value = false;
-    return true;
-  }
-
-  // TODO: replace with: await axios.post('/auth/logout')
-  function logout() {
-    currentUser.value = null;
-    localStorage.removeItem("mock_user");
-  }
-
-  // Demo: switch role quickly for testing
-  function switchDemoRole(role: MockRole) {
-    const roleMap: Record<MockRole, string> = {
-      admin: "user-admin-001",
-      wholesale: "user-wholesale-001",
-      clinic: "user-clinic-001",
-      retail: "user-retail-001",
-    };
-    const user = MOCK_USERS.find((u) => u.id === roleMap[role]) ?? null;
-    currentUser.value = user;
-    localStorage.setItem("mock_user", JSON.stringify(user));
-  }
-
-  return {
-    currentUser,
-    isLoading,
-    loginError,
-    isLoggedIn,
-    isAdmin,
-    isEmailVerified,
-    roleName,
-    login,
-    register,
-    logout,
-    switchDemoRole,
+interface LoginResponse {
+  success: boolean;
+  message: string;
+  data: {
+    user: User;
+    accessToken: string;
+    refreshToken: string;
   };
+}
+
+interface ProfileResponse {
+  success: boolean;
+  data: User;
+}
+
+interface RefreshTokenResponse {
+  success: boolean;
+  data: {
+    accessToken: string;
+    refreshToken: string;
+  };
+}
+
+export const useAuthStore = defineStore("auth", {
+  state: () => ({
+    currentUser: null as User | null,
+    accessToken: localStorage.getItem("access_token") as string | null,
+    refreshToken: localStorage.getItem("refresh_token") as string | null,
+    isLoading: false,
+    error: null as string | null,
+  }),
+
+  getters: {
+    isLoggedIn: (state) => !!state.accessToken && !!state.currentUser,
+    isAdmin: (state) => state.currentUser?.role === "ADMIN",
+    isVerified: (state) => state.currentUser?.is_verified ?? false,
+    userRole: (state) => state.currentUser?.role ?? "CUSTOMER",
+    fullName: (state) => {
+      if (!state.currentUser) return "";
+      return `${state.currentUser.first_name} ${state.currentUser.last_name}`.trim();
+    },
+  },
+
+  actions: {
+    async login(username: string, password: string): Promise<boolean> {
+      this.isLoading = true;
+      this.error = null;
+
+      try {
+        const response = await apiClient.post<LoginResponse>("/auth/login", {
+          username,
+          password,
+        });
+
+        this.accessToken = response.data.data.accessToken;
+        this.refreshToken = response.data.data.refreshToken;
+        this.currentUser = response.data.data.user;
+
+        // Save tokens to localStorage
+        localStorage.setItem("access_token", response.data.data.accessToken);
+        localStorage.setItem("refresh_token", response.data.data.refreshToken);
+
+        return true;
+      } catch (err: any) {
+        this.error = err.response?.data?.message || "เข้าสู่ระบบไม่สำเร็จ";
+        return false;
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
+    async fetchProfile(): Promise<boolean> {
+      if (!this.accessToken) {
+        return false;
+      }
+
+      this.isLoading = true;
+      this.error = null;
+
+      try {
+        const response = await apiClient.get<ProfileResponse>("/auth/me");
+        this.currentUser = response.data.data;
+        return true;
+      } catch (err: any) {
+        this.error = err.response?.data?.message || "ดึงข้อมูลผู้ใช้ไม่สำเร็จ";
+        // If token is invalid, clear it
+        if (err.response?.status === 401) {
+          this.accessToken = null;
+          this.refreshToken = null;
+          this.currentUser = null;
+          localStorage.removeItem("access_token");
+          localStorage.removeItem("refresh_token");
+        }
+        return false;
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
+    async refreshAccessToken(): Promise<boolean> {
+      if (!this.refreshToken) {
+        return false;
+      }
+
+      try {
+        const response = await apiClient.post<RefreshTokenResponse>(
+          "/auth/refresh",
+          {
+            refreshToken: this.refreshToken,
+          },
+        );
+
+        this.accessToken = response.data.data.accessToken;
+        this.refreshToken = response.data.data.refreshToken;
+
+        // Update tokens in localStorage
+        localStorage.setItem("access_token", response.data.data.accessToken);
+        localStorage.setItem("refresh_token", response.data.data.refreshToken);
+
+        return true;
+      } catch (err: any) {
+        this.error = err.response?.data?.message || "รีเฟรช token ไม่สำเร็จ";
+        // If refresh fails, clear everything
+        this.logout();
+        return false;
+      }
+    },
+
+    logout() {
+      this.currentUser = null;
+      this.accessToken = null;
+      this.refreshToken = null;
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("refresh_token");
+    },
+  },
 });

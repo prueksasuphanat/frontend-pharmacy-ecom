@@ -170,24 +170,38 @@ function openProductModal(id: string) {
       </div>
 
       <!-- Filters bar -->
-      <div class="flex flex-wrap gap-3 mb-6 items-center">
-        <div class="flex items-center gap-2">
-          <SlidersHorizontal class="w-4 h-4 text-secondary-400" />
-          <span class="text-sm text-secondary-500">กรอง:</span>
+      <div class="flex items-center gap-3 mb-6 flex-wrap">
+        <!-- Left: filter controls -->
+        <div class="flex items-center gap-3 flex-1 flex-wrap">
+          <div class="flex items-center gap-1.5 shrink-0">
+            <SlidersHorizontal class="h-4 w-4 text-secondary-400" />
+            <span class="text-sm text-secondary-500">กรอง:</span>
+          </div>
+          <BaseSelect
+            v-model="filterType"
+            :options="drugTypes"
+            class="w-48 shrink-0"
+          />
         </div>
-        <BaseSelect v-model="filterType" :options="drugTypes" class="w-auto" />
-        <BaseCheckbox v-model="filterStock" label="มีสินค้า" />
-        <div class="ml-auto flex items-center gap-2">
-          <span class="text-sm text-secondary-500">เรียงโดย:</span>
+
+        <!-- Right: sort control -->
+        <div class="flex items-center gap-2 shrink-0">
+          <span class="text-sm text-secondary-500 whitespace-nowrap"
+            >เรียงโดย:</span
+          >
           <BaseSelect
             v-model="sortBy"
             :options="[
               { value: 'newest', label: 'ใหม่ล่าสุด' },
               { value: 'az', label: 'ชื่อ A-Z' },
             ]"
-            class="w-auto"
+            class="w-[150px]"
           />
         </div>
+      </div>
+
+      <div class="w-fit">
+        <BaseCheckbox v-model="filterStock" label="มีสินค้า" class="mb-4" />
       </div>
 
       <!-- Count -->

@@ -1,28 +1,39 @@
 // ============================================================
 // TYPE DEFINITIONS — User, Authentication
-// Extracted from mocks/users.ts and stores/auth.store.ts
 // ============================================================
 
 /**
  * User entity representing a registered user in the system
  */
 export interface User {
-  id: string;
+  id: number;
+  pmc_customer_id: string | null;
+  code: string;
+  pmc_name: string | null;
+  title: string | null;
+  first_name: string;
+  last_name: string;
+  address: string | null;
+  phone: string;
   email: string;
-  full_name?: string;
-  role_id: string;
-  role_name: string;
-  role_label: string;
-  is_email_verified: boolean;
+  birthdate: string | null;
+  sex: string | null;
+  username: string;
+  role: string;
+  is_verified: boolean;
   is_active: boolean;
+  is_delete: boolean;
   created_at: string;
+  updated_at: string;
+  created_by: number | null;
+  updated_by: number | null;
 }
 
 /**
  * Login credentials for authentication
  */
 export interface LoginCredentials {
-  email: string;
+  username: string;
   password: string;
 }
 
@@ -32,10 +43,8 @@ export interface LoginCredentials {
 export interface RegisterData {
   email: string;
   password: string;
-  full_name?: string;
+  username: string;
+  first_name?: string;
+  last_name?: string;
+  phone?: string;
 }
-
-/**
- * User role types
- */
-export type MockRole = "admin" | "wholesale" | "clinic" | "retail";

@@ -68,7 +68,7 @@ const currentYear = new Date().getFullYear();
               <div class="flex-1 min-w-0">
                 <p class="text-xs text-secondary-500">เภสัชกรผู้รับผิดชอบ</p>
                 <p class="text-xs font-semibold text-secondary-300">
-                  ภญ. สมหญิง ใจดี
+                  ภก. ฌาน เย็นกาย
                 </p>
               </div>
             </div>

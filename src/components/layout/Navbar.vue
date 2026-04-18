@@ -135,9 +135,6 @@ async function logout() {
                   <p class="text-sm font-semibold text-secondary-800 truncate">
                     {{ auth.currentUser?.email }}
                   </p>
-                  <span class="badge badge-teal mt-1">{{
-                    auth.currentUser?.role_label
-                  }}</span>
                 </div>
                 <RouterLink
                   to="/profile"

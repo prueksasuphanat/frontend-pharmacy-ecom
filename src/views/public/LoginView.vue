@@ -1,58 +1,46 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { useRouter, useRoute, RouterLink } from "vue-router";
-import { useAuthStore, type MockRole } from "@/stores/auth.store";
-import { Eye, EyeOff, Lock, Mail, Zap } from "lucide-vue-next";
-import { BaseInput } from "@/components/ui";
+import { useForm } from "vee-validate";
+import { useToast } from "@/composables";
+import { useAuthStore } from "@/stores/auth.store";
+import { Eye, EyeOff, Lock, Mail } from "lucide-vue-next";
+import { VInput } from "@/components/ui";
+import "@/utils/validation";
 
 const router = useRouter();
 const route = useRoute();
 const auth = useAuthStore();
+const toast = useToast();
 
-const email = ref("");
-const password = ref("");
 const showPw = ref(false);
 
-async function onSubmit() {
-  const ok = await auth.login(email.value, password.value);
-  if (ok) {
-    const redirect = (route.query.redirect as string) || "/products";
-    router.push(redirect);
-  }
-}
+const { handleSubmit } = useForm({
+  validationSchema: {
+    username: (value: string) => {
+      if (!value) return "กรุณากรอกชื่อผู้ใช้";
+      return true;
+    },
+    password: (value: string) => {
+      if (!value) return "กรุณากรอกรหัสผ่าน";
+      return true;
+    },
+  },
+});
 
-// Quick demo login
-async function demoLogin(role: MockRole) {
-  auth.switchDemoRole(role);
-  const redirect =
-    role === "admin"
+const onSubmit = handleSubmit(async (values) => {
+  const success = await auth.login(values.username, values.password);
+
+  if (success) {
+    toast.success("เข้าสู่ระบบสำเร็จ");
+    const redirect = auth.isAdmin
       ? "/admin/dashboard"
       : (route.query.redirect as string) || "/products";
-  router.push(redirect);
-}
-
-const demoAccounts = [
-  {
-    role: "admin" as MockRole,
-    label: "ผู้ดูแลระบบ",
-    color: "bg-primary-600 hover:bg-primary-700",
-  },
-  {
-    role: "wholesale" as MockRole,
-    label: "ร้านขายส่ง",
-    color: "bg-indigo-600 hover:bg-indigo-700",
-  },
-  {
-    role: "clinic" as MockRole,
-    label: "คลินิก",
-    color: "bg-violet-600 hover:bg-violet-700",
-  },
-  {
-    role: "retail" as MockRole,
-    label: "ลูกค้าทั่วไป",
-    color: "bg-emerald-600 hover:bg-emerald-700",
-  },
-];
+    router.push(redirect);
+  } else {
+    toast.error(auth.error || "เข้าสู่ระบบไม่สำเร็จ");
+  }
+});
 </script>
 
 <template>
@@ -71,37 +59,14 @@ const demoAccounts = [
         <p class="text-secondary-500 text-sm mt-1">Phanadrug</p>
       </div>
 
-      <!-- Demo login panel -->
-      <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-6">
-        <div class="flex items-center gap-2 mb-3">
-          <Zap class="w-4 h-4 text-amber-600" />
-          <span class="text-sm font-semibold text-amber-800"
-            >เข้าสู่ระบบด้วย Demo Account</span
-          >
-        </div>
-        <div class="grid grid-cols-2 gap-2">
-          <button
-            v-for="d in demoAccounts"
-            :key="d.role"
-            @click="demoLogin(d.role)"
-            :class="[
-              'text-white text-xs font-medium py-2 px-3 rounded-xl transition-colors',
-              d.color,
-            ]"
-          >
-            {{ d.label }}
-          </button>
-        </div>
-      </div>
-
       <!-- Login form -->
       <div class="card">
-        <form @submit.prevent="onSubmit" class="space-y-4">
-          <BaseInput
-            v-model="email"
-            type="email"
-            label="อีเมล"
-            placeholder="your@email.com"
+        <form @submit.prevent="onSubmit" novalidate class="space-y-4">
+          <VInput
+            name="username"
+            type="text"
+            label="ชื่อผู้ใช้"
+            placeholder="testuser"
             :icon="Mail"
             required
           />
@@ -115,8 +80,8 @@ const demoAccounts = [
                 >ลืมรหัสผ่าน?</RouterLink
               >
             </div>
-            <BaseInput
-              v-model="password"
+            <VInput
+              name="password"
               :type="showPw ? 'text' : 'password'"
               placeholder="••••••••"
               :icon="Lock"
@@ -126,8 +91,8 @@ const demoAccounts = [
             />
           </div>
 
-          <p v-if="auth.loginError" class="error-msg text-center">
-            {{ auth.loginError }}
+          <p v-if="auth.error" class="error-msg text-center">
+            {{ auth.error }}
           </p>
 
           <button
@@ -148,8 +113,8 @@ const demoAccounts = [
           <RouterLink
             to="/register"
             class="text-primary-600 font-medium hover:text-primary-800"
-            >สมัครสมาชิก</RouterLink
-          >
+            >สมัครสมาชิก
+          </RouterLink>
         </p>
       </div>
     </div>

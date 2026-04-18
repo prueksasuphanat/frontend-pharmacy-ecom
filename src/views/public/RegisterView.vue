@@ -3,7 +3,14 @@ import { ref } from "vue";
 import { RouterLink, useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/auth.store";
 import { Mail, Eye, EyeOff } from "lucide-vue-next";
-import { VInput, VCheckbox } from "@/components/ui";
+import {
+  VInput,
+  VCheckbox,
+  VFileUpload,
+  VSelect,
+  VDatePicker,
+  BaseTextarea,
+} from "@/components/ui";
 import { useForm } from "vee-validate";
 import { useToast } from "@/composables";
 import "@/utils/validation"; // import validation rules
@@ -16,15 +23,41 @@ const showPw = ref(false);
 const isLoading = ref(false);
 const registered = ref(false);
 
+// ตัวเลือกคำนำหน้า
+const prefixOptions = [
+  { value: "mr", label: "นาย" },
+  { value: "mrs", label: "นาง" },
+  { value: "ms", label: "นางสาว" },
+];
+
 // กำหนด validation schema
 const { handleSubmit, values } = useForm({
   validationSchema: {
+    username: "required",
+    prefix: "required",
+    firstName: "required",
+    lastName: "required",
+    birthDate: "required",
+    address: "required",
     email: "required|email",
     password: "required|password",
     password_confirmation: "required|confirmed:@password",
+    verificationDocument: (value: File[] | null) => {
+      if (!value || value.length === 0) {
+        return "กรุณาอัปโหลดเอกสารยืนยันตัวตน";
+      }
+      // Check each file size (5MB)
+      const maxSize = 5 * 1024 * 1024;
+      for (const file of value) {
+        if (file.size > maxSize) {
+          return `ไฟล์ ${file.name} มีขนาดเกิน 5 MB ต่อไฟล์`;
+        }
+      }
+      return true;
+    },
     agreed: (value: boolean) => {
       if (!value) {
-        return "กรุณายอมรับข้อกำหนดและเงื่อนไข";
+        return "กรุณายอมรับข้อกำหนดการใช้งานและนโยบายความเป็นส่วนตัว";
       }
       return true;
     },
@@ -37,7 +70,7 @@ const onSubmit = handleSubmit(async (values) => {
 
   try {
     // TODO: replace with POST /auth/register
-    await auth.register(values.email, values.password);
+    // await auth.register(values.email, values.password);
 
     // แสดง toast success
     toast.success("สมัครสมาชิกสำเร็จ!");
@@ -107,6 +140,8 @@ const onSubmit = handleSubmit(async (values) => {
             required
           />
 
+          <VInput name="username" type="text" label="username" required />
+
           <VInput
             name="password"
             :type="showPw ? 'text' : 'password'"
@@ -122,6 +157,55 @@ const onSubmit = handleSubmit(async (values) => {
             :type="showPw ? 'text' : 'password'"
             label="ยืนยันรหัสผ่าน"
             placeholder="กรอกรหัสผ่านอีกครั้ง"
+            required
+          />
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <VSelect
+              name="prefix"
+              label="คำนำหน้า"
+              :options="prefixOptions"
+              placeholder="เลือกคำนำหน้า"
+              required
+            />
+            <VInput
+              name="firstName"
+              type="text"
+              label="ชื่อจริง"
+              placeholder="กรอกชื่อจริง"
+              required
+            />
+            <VInput
+              name="lastName"
+              type="text"
+              label="นามสกุล"
+              placeholder="กรอกนามสกุล"
+              required
+            />
+          </div>
+
+          <VDatePicker
+            name="birthDate"
+            label="วันเกิด"
+            placeholder="เลือกวันเกิด"
+            :max="new Date().toISOString().split('T')[0]"
+            required
+          />
+
+          <BaseTextarea
+            name="address"
+            label="ที่อยู่"
+            placeholder="กรอกที่อยู่ของคุณ"
+            :rows="3"
+          />
+
+          <VFileUpload
+            name="verificationDocument"
+            label="เอกสารยืนยัน"
+            accept="image/*,.pdf"
+            :max-size="5"
+            :multiple="true"
+            :max-files="3"
             required
           />
 
