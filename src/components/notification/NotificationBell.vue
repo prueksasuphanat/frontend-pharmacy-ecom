@@ -1,7 +1,19 @@
 <script setup lang="ts">
-import { Bell, Check } from "lucide-vue-next";
+import {
+  Bell,
+  Check,
+  CheckCircle,
+  Truck,
+  PartyPopper,
+  X,
+  ClipboardCheck,
+  AlertTriangle,
+  Calendar,
+  ShoppingCart,
+} from "lucide-vue-next";
 import { RouterLink } from "vue-router";
 import { useNotificationStore } from "@/stores/notification.store";
+import type { Component } from "vue";
 
 const notif = useNotificationStore();
 
@@ -14,17 +26,17 @@ function formatTime(iso: string) {
   return `${Math.floor(hrs / 24)} วันที่แล้ว`;
 }
 
-const iconMap: Record<string, string> = {
-  order_confirmed: "✅",
-  order_shipped: "🚚",
-  order_completed: "🎉",
-  order_cancelled: "❌",
-  prescription_approved: "📋",
-  prescription_rejected: "❌",
-  low_stock: "⚠️",
-  expiry_alert: "📅",
-  prescription_pending: "🔔",
-  new_order: "🛒",
+const iconMap: Record<string, Component> = {
+  order_confirmed: CheckCircle,
+  order_shipped: Truck,
+  order_completed: PartyPopper,
+  order_cancelled: X,
+  prescription_approved: ClipboardCheck,
+  prescription_rejected: X,
+  low_stock: AlertTriangle,
+  expiry_alert: Calendar,
+  prescription_pending: Bell,
+  new_order: ShoppingCart,
 };
 </script>
 
@@ -94,7 +106,10 @@ const iconMap: Record<string, string> = {
               !n.is_read && 'bg-primary-50/50',
             ]"
           >
-            <span class="text-lg shrink-0">{{ iconMap[n.type] || "🔔" }}</span>
+            <component
+              :is="iconMap[n.type] || Bell"
+              class="w-5 h-5 text-primary-600 shrink-0 mt-0.5"
+            />
             <div class="flex-1 min-w-0">
               <p
                 :class="[

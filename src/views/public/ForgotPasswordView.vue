@@ -3,12 +3,38 @@ import { ref } from "vue";
 import { RouterLink } from "vue-router";
 import { Mail } from "lucide-vue-next";
 import { BaseInput } from "@/components/ui";
+import { authApi } from "@/api/auth";
+import { useToast } from "@/composables";
+
+const toast = useToast();
 const email = ref("");
 const sent = ref(false);
+const isLoading = ref(false);
+const errorMessage = ref("");
+
 async function onSubmit() {
-  // TODO: POST /auth/forgot-password
-  await new Promise((r) => setTimeout(r, 600));
-  sent.value = true;
+  if (!email.value) {
+    errorMessage.value = "กรุณากรอกอีเมล";
+    return;
+  }
+
+  isLoading.value = true;
+  errorMessage.value = "";
+
+  try {
+    const response = await authApi.forgotPassword(email.value);
+
+    if (response.data.success) {
+      sent.value = true;
+      toast.success("ส่งลิงก์รีเซ็ตรหัสผ่านแล้ว");
+    }
+  } catch (error: any) {
+    errorMessage.value =
+      error.response?.data?.message || "เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง";
+    toast.error(errorMessage.value);
+  } finally {
+    isLoading.value = false;
+  }
 }
 </script>
 <template>
@@ -29,7 +55,11 @@ async function onSubmit() {
       </div>
       <div class="card">
         <div v-if="sent" class="text-center py-4">
-          <div class="text-4xl mb-3">📧</div>
+          <div
+            class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3"
+          >
+            <Mail class="w-8 h-8 text-green-600" />
+          </div>
           <p class="font-semibold text-secondary-900 mb-1">ส่งลิงก์แล้ว!</p>
           <p class="text-sm text-secondary-500">
             ตรวจสอบอีเมล <strong>{{ email }}</strong>
@@ -44,10 +74,19 @@ async function onSubmit() {
             type="email"
             label="อีเมล"
             placeholder="your@email.com"
+            :error="errorMessage"
             required
           />
-          <button type="submit" class="btn-primary w-full">
-            ส่งลิงก์รีเซ็ตรหัสผ่าน
+          <button
+            type="submit"
+            :disabled="isLoading"
+            class="btn-primary w-full"
+          >
+            <span
+              v-if="isLoading"
+              class="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"
+            />
+            {{ isLoading ? "กำลังส่ง..." : "ส่งลิงก์รีเซ็ตรหัสผ่าน" }}
           </button>
           <RouterLink
             to="/login"

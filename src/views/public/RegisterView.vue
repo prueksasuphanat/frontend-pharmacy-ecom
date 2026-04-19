@@ -114,7 +114,7 @@ const onSubmit = handleSubmit(async (values) => {
         <div
           class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4"
         >
-          <span class="text-3xl">📧</span>
+          <Mail class="w-8 h-8 text-green-600" />
         </div>
         <h2 class="font-bold text-lg text-secondary-900 mb-2">
           ตรวจสอบอีเมลของคุณ

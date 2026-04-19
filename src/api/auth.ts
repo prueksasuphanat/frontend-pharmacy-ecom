@@ -61,7 +61,7 @@ export const authApi = {
     apiClient.post(API_ENDPOINTS.AUTH.VERIFY_EMAIL, { token }),
 
   /**
-   * Request password reset
+   * Request password reset - ส่งอีเมลพร้อม reset link
    * @param email - User email address
    * @returns Promise with reset request confirmation
    */
@@ -69,11 +69,21 @@ export const authApi = {
     apiClient.post(API_ENDPOINTS.AUTH.FORGOT_PASSWORD, { email }),
 
   /**
-   * Reset password with token
+   * Verify reset token - ตรวจสอบว่า token ยังใช้ได้หรือไม่
+   * @param token - Password reset token
+   * @returns Promise with token validation result
+   */
+  verifyResetToken: (token: string) =>
+    apiClient.get(`${API_ENDPOINTS.AUTH.VERIFY_RESET_TOKEN}/${token}`),
+
+  /**
+   * Reset password with token - ตั้งรหัสผ่านใหม่
    * @param token - Password reset token
    * @param newPassword - New password
    * @returns Promise with reset confirmation
    */
   resetPassword: (token: string, newPassword: string) =>
-    apiClient.post(API_ENDPOINTS.AUTH.RESET_PASSWORD, { token, newPassword }),
+    apiClient.post(`${API_ENDPOINTS.AUTH.RESET_PASSWORD}/${token}`, {
+      new_password: newPassword,
+    }),
 };
