@@ -1,36 +1,50 @@
 <script setup lang="ts">
-import { ref, computed } from "vue";
-import { MOCK_ROLES, MOCK_USERS } from "@/__mocks__/users";
-import type { User as MockUser } from "@/__mocks__/users";
-import { BaseTable, BaseInput, BaseSelect } from "@/components/ui";
-import type { Column, PaginationConfig } from "@/components/ui/BaseTable.vue";
+import { ref, computed, onMounted, watch } from "vue";
+import type { User } from "@/types";
+import {
+  BaseTable,
+  BaseInput,
+  BaseSelect,
+  LoadingOverlay,
+} from "@/components/ui";
+import type { Column } from "@/components/ui/BaseTable.vue";
 import { Users, Edit, Search, ChevronLeft } from "lucide-vue-next";
 import { useRouter } from "vue-router";
+import { useUsersStore } from "@/stores";
+import type { GetUsersParams } from "@/api/users";
 
-// TODO: GET /admin/users, GET /admin/roles
+const ROLE_OPTIONS = [
+  { value: "", label: "ทุก Role" },
+  { value: "ADMIN", label: "ผู้ดูแลระบบ" },
+  { value: "CUSTOMER", label: "ลูกค้า" },
+];
 
-type User = MockUser;
+const ROLE_OPTIONS_FOR_EDIT = ROLE_OPTIONS.filter((r) => r.value !== "");
+
+const STATUS_OPTIONS = [
+  { value: "", label: "ทุกสถานะ" },
+  { value: "true", label: "ใช้งาน" },
+  { value: "false", label: "ระงับ" },
+];
 
 const router = useRouter();
+const userStore = useUsersStore();
+
 const searchQuery = ref("");
 const selectedRole = ref("");
 const selectedStatus = ref("");
 const loading = ref(false);
 
-// Pagination
-const pagination = ref<PaginationConfig>({
-  currentPage: 1,
-  pageSize: 10,
-  total: MOCK_USERS.length,
-});
+let searchTimer: ReturnType<typeof setTimeout> | null = null;
 
-// Table columns
+const pagination = computed(() => userStore.pagination);
+
 const columns: Column<User>[] = [
   { key: "email", label: "อีเมล", width: "25%" },
   { key: "full_name", label: "ชื่อ-นามสกุล", width: "20%" },
-  { key: "role_name", label: "Role", width: "15%" },
+  { key: "role", label: "Role", width: "15%" },
   {
-    key: "is_email_verified",
+    key: "is_verified",
     label: "อีเมลยืนยัน",
     align: "center",
     width: "15%",
@@ -39,55 +53,44 @@ const columns: Column<User>[] = [
   { key: "actions", label: "จัดการ", align: "center", width: "15%" },
 ];
 
-// Filtered and paginated data
-const filteredUsers = computed(() => {
-  let result = [...MOCK_USERS];
+const users = computed(() => userStore.users);
 
-  // Filter by search query
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase();
-    result = result.filter(
-      (u) =>
-        u.email.toLowerCase().includes(query) ||
-        u.full_name?.toLowerCase().includes(query),
-    );
+const stats = computed(() => ({
+  total: pagination.value.total,
+  active: users.value.filter((u) => u.is_active).length,
+  inactive: users.value.filter((u) => !u.is_active).length,
+  verified: users.value.filter((u) => u.is_verified).length,
+}));
+
+const fetchUsers = async (page = 1) => {
+  try {
+    loading.value = true;
+    const params: GetUsersParams = {
+      page,
+      limit: pagination.value.limit,
+    };
+    if (searchQuery.value) params.search = searchQuery.value;
+    if (selectedRole.value)
+      params.role = selectedRole.value as GetUsersParams["role"];
+    if (selectedStatus.value !== "")
+      params.is_active = selectedStatus.value === "true";
+
+    await userStore.getUsers(params);
+  } finally {
+    loading.value = false;
   }
-
-  // Filter by role
-  if (selectedRole.value) {
-    result = result.filter((u) => u.role_name === selectedRole.value);
-  }
-
-  // Filter by status
-  if (selectedStatus.value === "active") {
-    result = result.filter((u) => u.is_active);
-  } else if (selectedStatus.value === "inactive") {
-    result = result.filter((u) => !u.is_active);
-  }
-
-  // Update total count
-  pagination.value.total = result.length;
-
-  return result;
-});
-
-const paginatedUsers = computed(() => {
-  const start = (pagination.value.currentPage - 1) * pagination.value.pageSize;
-  const end = start + pagination.value.pageSize;
-  return filteredUsers.value.slice(start, end);
-});
+};
 
 function handlePageChange(page: number) {
-  pagination.value.currentPage = page;
-  // TODO: Fetch data from API
+  fetchUsers(page);
 }
 
-function updateUserRole(userId: string, newRole: string) {
+function updateUserRole(userId: number, newRole: string) {
   // TODO: PATCH /admin/users/:id/role { role_id: newRole }
   alert(`TODO: เปลี่ยน role user ${userId} → ${newRole}`);
 }
 
-function toggleUserStatus(userId: string, currentStatus: boolean) {
+function toggleUserStatus(userId: number, currentStatus: boolean) {
   // TODO: PATCH /admin/users/:id/status { is_active: !currentStatus }
   alert(`TODO: ${currentStatus ? "ระงับ" : "เปิดใช้งาน"} user ${userId}`);
 }
@@ -96,10 +99,24 @@ function editUser(user: User) {
   // TODO: Open edit modal
   alert(`TODO: แก้ไขผู้ใช้ ${user.email}`);
 }
+
+// Watch filters — reset to page 1 on change
+watch([selectedRole, selectedStatus], () => {
+  fetchUsers(1);
+});
+
+watch(searchQuery, () => {
+  if (searchTimer) clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => fetchUsers(1), 400);
+});
+
+onMounted(() => fetchUsers());
 </script>
 
 <template>
   <div>
+    <LoadingOverlay :loading="loading && users.length > 0" />
+
     <!-- Back Button (Mobile) -->
     <button
       @click="router.push('/admin/settings')"
@@ -118,29 +135,30 @@ function editUser(user: User) {
       </div>
     </div>
 
+    <!-- Summary Cards -->
     <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 my-6">
       <div class="card">
         <p class="text-xs text-secondary-400 mb-1">ผู้ใช้งานทั้งหมด</p>
         <p class="text-2xl font-bold text-secondary-900">
-          {{ MOCK_USERS.length }}
+          {{ pagination.total }}
         </p>
       </div>
       <div class="card">
         <p class="text-xs text-secondary-400 mb-1">ใช้งานอยู่</p>
         <p class="text-2xl font-bold text-green-600">
-          {{ MOCK_USERS.filter((u) => u.is_active).length }}
+          {{ stats.active }}
         </p>
       </div>
       <div class="card">
         <p class="text-xs text-secondary-400 mb-1">ระงับ</p>
         <p class="text-2xl font-bold text-red-600">
-          {{ MOCK_USERS.filter((u) => !u.is_active).length }}
+          {{ stats.inactive }}
         </p>
       </div>
       <div class="card">
         <p class="text-xs text-secondary-400 mb-1">ยืนยันอีเมลแล้ว</p>
         <p class="text-2xl font-bold text-primary-600">
-          {{ MOCK_USERS.filter((u) => u.is_email_verified).length }}
+          {{ stats.verified }}
         </p>
       </div>
     </div>
@@ -157,34 +175,30 @@ function editUser(user: User) {
 
         <BaseSelect
           v-model="selectedRole"
-          placeholder="ทุก Role"
-          :options="[
-            { value: '', label: 'ทุก Role' },
-            ...MOCK_ROLES.map((r) => ({ value: r.name, label: r.label })),
-          ]"
+          :options="ROLE_OPTIONS"
           class="w-48"
         />
 
         <BaseSelect
           v-model="selectedStatus"
-          placeholder="ทุกสถานะ"
-          :options="[
-            { value: '', label: 'ทุกสถานะ' },
-            { value: 'active', label: 'ใช้งาน' },
-            { value: 'inactive', label: 'ระงับ' },
-          ]"
+          :options="STATUS_OPTIONS"
           class="w-40"
         />
       </div>
     </div>
 
     <!-- Users Table -->
-    <div class="mb-[100px]">
+    <div class="mb-[100px] relative">
       <BaseTable
         :columns="columns"
-        :data="paginatedUsers"
-        :loading="loading"
-        :pagination="pagination"
+        :data="users"
+        :loading="loading && users.length === 0"
+        :pagination="{
+          page: pagination.page,
+          total: pagination.total,
+          totalPages: pagination.totalPages,
+          limit: pagination.limit,
+        }"
         empty-text="ไม่พบข้อมูลผู้ใช้"
         @page-change="handlePageChange"
       >
@@ -203,26 +217,26 @@ function editUser(user: User) {
         <!-- Full Name Column -->
         <template #cell-full_name="{ row }">
           <span class="text-sm text-secondary-600">
-            {{ row.full_name || "-" }}
+            {{
+              [row.first_name, row.last_name].filter(Boolean).join(" ") || "-"
+            }}
           </span>
         </template>
 
-        <!-- Role Column with Select -->
-        <template #cell-role_name="{ row }">
+        <!-- Role Column -->
+        <template #cell-role="{ row }">
           <BaseSelect
-            :model-value="row.role_name"
-            :options="
-              MOCK_ROLES.map((r) => ({ value: r.name, label: r.label }))
-            "
+            :model-value="row.role"
+            :options="ROLE_OPTIONS_FOR_EDIT"
             @update:model-value="updateUserRole(row.id, $event as string)"
-            class="py-1.5 text-xs w-auto min-w-[120px]"
+            class="py-1.5 text-xs w-auto min-w-[130px]"
           />
         </template>
 
         <!-- Email Verified Column -->
-        <template #cell-is_email_verified="{ row }">
+        <template #cell-is_verified="{ row }">
           <span
-            v-if="row.is_email_verified"
+            v-if="row.is_verified"
             class="badge badge-green text-xs inline-block"
           >
             ✓ ยืนยันแล้ว

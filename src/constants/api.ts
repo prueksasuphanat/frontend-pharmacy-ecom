@@ -1,14 +1,4 @@
-/**
- * API endpoint constants
- *
- * Centralizes all API endpoint paths used in the application.
- * Use these constants instead of hardcoded strings for consistency and maintainability.
- */
-
 export const API_ENDPOINTS = {
-  /**
-   * Authentication endpoints
-   */
   AUTH: {
     LOGIN: "/auth/login",
     REGISTER: "/auth/register",
@@ -20,18 +10,12 @@ export const API_ENDPOINTS = {
     RESET_PASSWORD: "/auth/reset-password",
   },
 
-  /**
-   * Product endpoints
-   */
   PRODUCTS: {
     BASE: "/products",
     BY_ID: (id: string) => `/products/${id}`,
     SYNC: "/sync/products",
   },
 
-  /**
-   * Cart endpoints
-   */
   CART: {
     BASE: "/cart",
     ITEMS: "/cart/items",
@@ -39,18 +23,12 @@ export const API_ENDPOINTS = {
     CLEAR: "/cart/clear",
   },
 
-  /**
-   * Order endpoints
-   */
   ORDERS: {
     BASE: "/orders",
     BY_ID: (id: string) => `/orders/${id}`,
     CANCEL: (id: string) => `/orders/${id}/cancel`,
   },
 
-  /**
-   * Notification endpoints
-   */
   NOTIFICATIONS: {
     BASE: "/notifications",
     BY_ID: (id: string) => `/notifications/${id}`,
@@ -58,9 +36,6 @@ export const API_ENDPOINTS = {
     MARK_ALL_READ: "/notifications/read-all",
   },
 
-  /**
-   * User profile endpoints
-   */
   PROFILE: {
     BASE: "/profile",
     UPDATE: "/profile",
@@ -69,15 +44,11 @@ export const API_ENDPOINTS = {
     ADDRESS_BY_ID: (id: string) => `/profile/addresses/${id}`,
   },
 
-  /**
-   * Admin endpoints
-   */
   ADMIN: {
-    DASHBOARD: "/admin/dashboard",
-    USERS: "/admin/users",
-    USER_BY_ID: (id: string) => `/admin/users/${id}`,
-    INVENTORY: "/admin/inventory",
-    LOGS: "/admin/logs",
-    SETTINGS: "/admin/settings",
+    SETTINGS: {
+      USERS: {
+        BASE: "/admin/users",
+      },
+    },
   },
 } as const;

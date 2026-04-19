@@ -2,7 +2,7 @@
  * Barrel export for API service layer
  *
  * Re-exports all API modules for convenient importing.
- * Usage: import { apiClient, authApi, productsApi } from '@/api'
+ * Usage: import { apiClient, authApi, productsApi, usersApi } from '@/api'
  *
  * **Validates: Requirements 2.7**
  */
@@ -12,3 +12,4 @@ export * from "./auth";
 export * from "./products";
 export * from "./cart";
 export * from "./notifications";
+export * from "./users";

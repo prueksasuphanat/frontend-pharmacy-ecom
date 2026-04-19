@@ -11,9 +11,10 @@ export interface Column<T> {
 }
 
 export interface PaginationConfig {
-  currentPage: number;
-  pageSize: number;
+  page: number;
+  totalPages: number;
   total: number;
+  limit?: number; // Items per page (optional, will be calculated if not provided)
 }
 
 interface Props {
@@ -41,25 +42,34 @@ const emit = defineEmits<{
 // Pagination calculations
 const totalPages = computed(() => {
   if (!props.pagination) return 0;
-  return Math.ceil(props.pagination.total / props.pagination.pageSize);
+  return props.pagination.totalPages;
+});
+
+const itemsPerPage = computed(() => {
+  if (!props.pagination) return 10;
+  return (
+    props.pagination.limit ||
+    Math.ceil(props.pagination.total / props.pagination.totalPages) ||
+    10
+  );
 });
 
 const startItem = computed(() => {
   if (!props.pagination || props.data.length === 0) return 0;
-  return (props.pagination.currentPage - 1) * props.pagination.pageSize + 1;
+  return (props.pagination.page - 1) * itemsPerPage.value + 1;
 });
 
 const endItem = computed(() => {
   if (!props.pagination) return props.data.length;
   return Math.min(
-    props.pagination.currentPage * props.pagination.pageSize,
+    props.pagination.page * itemsPerPage.value,
     props.pagination.total,
   );
 });
 
 const visiblePages = computed(() => {
   if (!props.pagination) return [];
-  const current = props.pagination.currentPage;
+  const current = props.pagination.page;
   const total = totalPages.value;
   const pages: (number | string)[] = [];
 
@@ -98,7 +108,7 @@ const visiblePages = computed(() => {
 function goToPage(page: number) {
   if (!props.pagination) return;
   if (page < 1 || page > totalPages.value) return;
-  if (page === props.pagination.currentPage) return;
+  if (page === props.pagination.page) return;
   emit("pageChange", page);
 }
 
@@ -201,11 +211,11 @@ function getColumnAlign(align?: "left" | "center" | "right") {
       <div class="flex items-center gap-1">
         <!-- Previous Button -->
         <button
-          @click="goToPage(pagination.currentPage - 1)"
-          :disabled="pagination.currentPage === 1"
+          @click="goToPage(pagination.page - 1)"
+          :disabled="pagination.page === 1"
           class="pagination-btn"
           :class="{
-            'opacity-50 cursor-not-allowed': pagination.currentPage === 1,
+            'opacity-50 cursor-not-allowed': pagination.page === 1,
           }"
         >
           <ChevronLeft class="w-4 h-4" />
@@ -220,7 +230,7 @@ function getColumnAlign(align?: "left" | "center" | "right") {
           :class="[
             'pagination-btn',
             {
-              'pagination-btn-active': page === pagination.currentPage,
+              'pagination-btn-active': page === pagination.page,
               'cursor-default': page === '...',
             },
           ]"
@@ -230,12 +240,11 @@ function getColumnAlign(align?: "left" | "center" | "right") {
 
         <!-- Next Button -->
         <button
-          @click="goToPage(pagination.currentPage + 1)"
-          :disabled="pagination.currentPage === totalPages"
+          @click="goToPage(pagination.page + 1)"
+          :disabled="pagination.page === totalPages"
           class="pagination-btn"
           :class="{
-            'opacity-50 cursor-not-allowed':
-              pagination.currentPage === totalPages,
+            'opacity-50 cursor-not-allowed': pagination.page === totalPages,
           }"
         >
           <ChevronRight class="w-4 h-4" />
