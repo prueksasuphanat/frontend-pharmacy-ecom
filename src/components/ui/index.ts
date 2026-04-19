@@ -1,4 +1,5 @@
 export { default as BaseModal } from "./BaseModal.vue";
+export { default as BaseTable } from "./BaseTable.vue";
 export { default as DrugTypeBadge } from "./DrugTypeBadge.vue";
 export { default as BaseInput } from "./BaseInput.vue";
 export { default as BaseSelect } from "./BaseSelect.vue";
