@@ -125,7 +125,7 @@ function getColumnAlign(align?: "left" | "center" | "right") {
     <div class="overflow-x-auto">
       <table
         :class="[
-          'table',
+          'table min-w-full',
           { 'table-hover': hoverable, 'table-striped': striped },
         ]"
       >
@@ -135,7 +135,11 @@ function getColumnAlign(align?: "left" | "center" | "right") {
               v-for="column in columns"
               :key="String(column.key)"
               :class="getColumnAlign(column.align)"
-              :style="column.width ? { width: column.width } : undefined"
+              :style="
+                column.width
+                  ? { width: column.width, minWidth: column.width }
+                  : undefined
+              "
             >
               <slot :name="`header-${String(column.key)}`" :column="column">
                 {{ column.label }}
@@ -173,7 +177,6 @@ function getColumnAlign(align?: "left" | "center" | "right") {
               v-for="column in columns"
               :key="String(column.key)"
               :class="getColumnAlign(column.align)"
-              class="whitespace-nowrap"
             >
               <slot
                 :name="`cell-${String(column.key)}`"
@@ -192,10 +195,12 @@ function getColumnAlign(align?: "left" | "center" | "right") {
     <!-- Pagination -->
     <div
       v-if="pagination"
-      class="flex items-center justify-between px-6 py-4 border-t border-secondary-100"
+      class="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 sm:px-6 py-4 border-t border-secondary-100"
     >
       <!-- Info -->
-      <div class="text-sm text-secondary-500">
+      <div
+        class="text-xs sm:text-sm text-secondary-500 text-center sm:text-left"
+      >
         แสดง
         <span class="font-medium text-secondary-900">{{ startItem }}</span>
         ถึง

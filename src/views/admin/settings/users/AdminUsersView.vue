@@ -40,14 +40,14 @@ let searchTimer: ReturnType<typeof setTimeout> | null = null;
 const pagination = computed(() => userStore.pagination);
 
 const columns: Column<User>[] = [
-  { key: "email", label: "อีเมล", width: "25%" },
-  { key: "full_name", label: "ชื่อ-นามสกุล", width: "20%" },
-  { key: "role", label: "Role", width: "15%" },
+  { key: "email", label: "อีเมล", width: "20%", align: "left" },
+  { key: "full_name", label: "ชื่อ-นามสกุล", width: "18%", align: "left" },
+  { key: "role", label: "Role", width: "15%", align: "left" },
   {
     key: "is_verified",
     label: "อีเมลยืนยัน",
     align: "center",
-    width: "15%",
+    width: "12%",
   },
   { key: "is_active", label: "สถานะ", align: "center", width: "10%" },
   { key: "actions", label: "จัดการ", align: "center", width: "15%" },
@@ -165,24 +165,26 @@ onMounted(() => fetchUsers());
 
     <!-- Search & Filter -->
     <div class="card mb-6">
-      <div class="flex items-center gap-4">
+      <div
+        class="flex flex-col sm:flex-row items-stretch sm:items-center gap-4"
+      >
         <BaseInput
           v-model="searchQuery"
           placeholder="ค้นหาด้วยอีเมล หรือชื่อ..."
           :icon="Search"
-          class="flex-1"
+          class="flex-1 min-w-0"
         />
 
         <BaseSelect
           v-model="selectedRole"
           :options="ROLE_OPTIONS"
-          class="w-48"
+          class="w-full sm:w-48 shrink-0"
         />
 
         <BaseSelect
           v-model="selectedStatus"
           :options="STATUS_OPTIONS"
-          class="w-40"
+          class="w-full sm:w-40 shrink-0"
         />
       </div>
     </div>
@@ -204,19 +206,19 @@ onMounted(() => fetchUsers());
       >
         <!-- Email Column with Avatar -->
         <template #cell-email="{ row }">
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2 min-w-0">
             <div
               class="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center shrink-0"
             >
               <Users class="w-4 h-4 text-primary-600" />
             </div>
-            <span class="text-sm font-medium">{{ row.email }}</span>
+            <span class="text-sm font-medium truncate">{{ row.email }}</span>
           </div>
         </template>
 
         <!-- Full Name Column -->
         <template #cell-full_name="{ row }">
-          <span class="text-sm text-secondary-600">
+          <span class="text-sm text-secondary-600 block truncate">
             {{
               [row.first_name, row.last_name].filter(Boolean).join(" ") || "-"
             }}
@@ -229,7 +231,7 @@ onMounted(() => fetchUsers());
             :model-value="row.role"
             :options="ROLE_OPTIONS_FOR_EDIT"
             @update:model-value="updateUserRole(row.id, $event as string)"
-            class="py-1.5 text-xs w-auto min-w-[130px]"
+            class="py-1.5 text-xs w-full max-w-[140px]"
           />
         </template>
 
@@ -260,19 +262,19 @@ onMounted(() => fetchUsers());
 
         <!-- Actions Column -->
         <template #cell-actions="{ row }">
-          <div class="flex items-center justify-center gap-2">
+          <div class="flex items-center justify-center gap-1.5 flex-wrap">
             <button
               @click="toggleUserStatus(row.id, row.is_active)"
               :class="[
-                'btn-ghost text-xs gap-1',
+                'btn-ghost text-xs gap-1 px-2 py-1',
                 row.is_active ? 'text-red-600' : 'text-green-600',
               ]"
             >
-              {{ row.is_active ? "ระงับ" : "เปิดใช้งาน" }}
+              {{ row.is_active ? "ระงับ" : "เปิด" }}
             </button>
             <button
               @click="editUser(row)"
-              class="btn-ghost text-xs gap-1 text-primary-600"
+              class="btn-ghost text-xs gap-1 px-2 py-1 text-primary-600"
             >
               <Edit class="w-3 h-3" />
             </button>
