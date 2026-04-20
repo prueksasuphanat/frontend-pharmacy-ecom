@@ -10,6 +10,7 @@ import {
   ChevronDown,
   Users,
   DollarSign,
+  CirclePile,
 } from "lucide-vue-next";
 
 const route = useRoute();
@@ -19,7 +20,7 @@ const settingsExpanded = ref(false);
 const links = [
   { to: "/admin/dashboard", label: "แดชบอร์ด", icon: LayoutDashboard },
   { to: "/admin/orders", label: "คำสั่งซื้อ", icon: ShoppingBag },
-  { to: "/admin/inventory", label: "คลังสินค้า", icon: Package },
+  { to: "/admin/inventory", label: "สินค้า", icon: Package },
   { to: "/admin/logs", label: "บันทึกกิจกรรม", icon: BarChart2 },
 ];
 
@@ -27,12 +28,18 @@ const settingsMenu = {
   label: "ตั้งค่าระบบ",
   icon: Settings,
   children: [
-    { to: "/admin/settings/users", label: "ผู้ใช้งาน", icon: Users },
+    {
+      to: "/admin/settings/category",
+      label: "ประเภทสินค้า",
+      icon: CirclePile,
+    },
+
     {
       to: "/admin/settings/product-price",
       label: "ราคาสินค้า",
       icon: DollarSign,
     },
+    { to: "/admin/settings/users", label: "ผู้ใช้งาน", icon: Users },
   ],
 };
 

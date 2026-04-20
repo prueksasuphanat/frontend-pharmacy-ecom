@@ -39,6 +39,11 @@ export const adminRoutes: RouteRecordRaw = {
         import("@/views/admin/settings/users/AdminUsersView.vue"),
     },
     {
+      path: "settings/category",
+      component: () =>
+        import("@/views/admin/settings/categories/AdminCategoryView.vue"),
+    },
+    {
       path: "settings/product-price",
       component: () =>
         import("@/views/admin/settings/product-price/AdminProductPriceView.vue"),

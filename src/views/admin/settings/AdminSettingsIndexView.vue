@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { RouterLink } from "vue-router";
-import { Users, DollarSign, ChevronRight } from "lucide-vue-next";
+import { Users, DollarSign, ChevronRight, CirclePile } from "lucide-vue-next";
 
 const settingsMenuItems = [
   {
-    to: "/admin/settings/users",
-    label: "ผู้ใช้งาน",
-    description: "จัดการข้อมูลผู้ใช้งานและสิทธิ์การเข้าถึง",
-    icon: Users,
-    color: "bg-blue-100 text-blue-600",
+    to: "/admin/settings/category",
+    label: "ประเภทสินค้า",
+    description: "",
+    icon: CirclePile,
+    color: "bg-green-100 text-green-600",
   },
   {
     to: "/admin/settings/product-price",
@@ -16,6 +16,13 @@ const settingsMenuItems = [
     description: "กำหนดราคาสินค้าตาม Role และส่วนลด",
     icon: DollarSign,
     color: "bg-green-100 text-green-600",
+  },
+  {
+    to: "/admin/settings/users",
+    label: "ผู้ใช้งาน",
+    description: "จัดการข้อมูลผู้ใช้งานและสิทธิ์การเข้าถึง",
+    icon: Users,
+    color: "bg-blue-100 text-blue-600",
   },
 ];
 </script>

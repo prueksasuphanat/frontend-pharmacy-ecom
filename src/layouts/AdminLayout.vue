@@ -24,7 +24,7 @@ const route = useRoute();
 const mobileLinks = [
   { to: "/admin/dashboard", label: "แดชบอร์ด", icon: LayoutDashboard },
   { to: "/admin/orders", label: "คำสั่งซื้อ", icon: ShoppingBag },
-  { to: "/admin/inventory", label: "คลังสินค้า", icon: Package },
+  { to: "/admin/inventory", label: "สินค้า", icon: Package },
   { to: "/admin/logs", label: "บันทึก", icon: BarChart2 },
   { to: "/admin/settings", label: "ตั้งค่า", icon: Settings },
 ];

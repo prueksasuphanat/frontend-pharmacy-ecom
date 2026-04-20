@@ -406,7 +406,7 @@ onMounted(() => fetchUsers());
               @click="editUser(row)"
               class="btn-ghost text-xs gap-1 px-2 py-1 text-primary-600"
             >
-              <Edit class="w-3 h-3" />
+              <Edit class="w-4 h-4" />
             </button>
           </div>
         </template>
