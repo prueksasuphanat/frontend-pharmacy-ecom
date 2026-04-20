@@ -48,10 +48,12 @@ export const API_ENDPOINTS = {
     SETTINGS: {
       USERS: {
         BASE: "/admin/users",
+        FULLNAME: "admin/users/user-fullname",
         BY_ID: (id: string) => `/admin/users/${id}`,
         UPDATE: (id: string) => `/admin/users/${id}`,
         TOGGLEACTVIVE: (id: string) => `/admin/users/toggle-active/${id}`,
         CHANGEROLE: (id: string) => `/admin/users/change-role/${id}`,
+        VERIFIRED: (id: string) => `/admin/users/verifired/${id}`,
       },
     },
   },

@@ -27,6 +27,7 @@ export interface User {
   updated_at: string;
   created_by: number | null;
   updated_by: number | null;
+  expired_date: string | null;
 }
 
 /**

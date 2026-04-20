@@ -6,6 +6,7 @@ import {
   Search,
   ChevronLeft,
   CircleCheckBig,
+  File,
 } from "lucide-vue-next";
 import { useRouter } from "vue-router";
 import { useUsersStore } from "@/stores";
@@ -22,6 +23,7 @@ import {
   BaseToggle,
   LoadingOverlay,
   BaseModal,
+  BaseDatePicker,
 } from "@/components/ui";
 
 const ROLE_OPTIONS = [
@@ -30,12 +32,28 @@ const ROLE_OPTIONS = [
   { value: "CUSTOMER", label: "ลูกค้า" },
 ];
 
-const ROLE_OPTIONS_FOR_EDIT = ROLE_OPTIONS.filter((r) => r.value !== "");
+const TITLE_OPTIONS = [
+  { value: "", label: "ไม่ระบุ" },
+  { value: "นาย", label: "นาย" },
+  { value: "นาง", label: "นาง" },
+  { value: "นางสาว", label: "นางสาว" },
+];
 
 const STATUS_OPTIONS = [
   { value: "", label: "ทุกสถานะ" },
   { value: "true", label: "ใช้งาน" },
   { value: "false", label: "ระงับ" },
+];
+
+const MOCKFILES = [
+  {
+    url: "https://pdfobject.com/pdf/sample.pdf",
+    name: "ใบไรซักอย่าง.pdf",
+  },
+  {
+    url: "https://pdfobject.com/pdf/sample.pdf",
+    name: "ใบไรซักอย่าง2.pdf",
+  },
 ];
 
 const router = useRouter();
@@ -45,6 +63,8 @@ const searchQuery = ref("");
 const selectedRole = ref("");
 const selectedStatus = ref("");
 const loading = ref(false);
+
+const ROLE_OPTIONS_FOR_EDIT = ROLE_OPTIONS.filter((r) => r.value !== "");
 
 let searchTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -96,7 +116,6 @@ function handlePageChange(page: number) {
   fetchUsers(page);
 }
 
-// Role change confirmation
 const roleChangeModal = ref(false);
 const pendingRoleChange = ref<{
   userId: number;
@@ -143,7 +162,6 @@ const selectedUser = ref<User | null>(null);
 const isEditMode = ref(false);
 const modalLoading = ref(false);
 
-// Form data for editing
 const editForm = ref({
   code: "",
   email: "",
@@ -151,14 +169,8 @@ const editForm = ref({
   first_name: "",
   last_name: "",
   phone: "",
+  expired_date: "",
 });
-
-const TITLE_OPTIONS = [
-  { value: "", label: "ไม่ระบุ" },
-  { value: "นาย", label: "นาย" },
-  { value: "นาง", label: "นาง" },
-  { value: "นางสาว", label: "นางสาว" },
-];
 
 function editUser(user: User) {
   console.log("Selected user:", user);
@@ -167,7 +179,6 @@ function editUser(user: User) {
   editModalOpen.value = true;
   modalLoading.value = true;
 
-  // Fetch fresh data from API
   userStore
     .adminGetUserById(user.id)
     .then((fresh) => {
@@ -180,6 +191,7 @@ function editUser(user: User) {
         first_name: fresh.first_name || "",
         last_name: fresh.last_name || "",
         phone: fresh.phone || "",
+        expired_date: fresh.expired_date ? fresh.expired_date.slice(0, 10) : "",
       };
     })
     .finally(() => {
@@ -208,6 +220,7 @@ async function saveUserChanges() {
     first_name: editForm.value.first_name || undefined,
     last_name: editForm.value.last_name || undefined,
     phone: editForm.value.phone || undefined,
+    expired_date: editForm.value.expired_date || null,
   });
 
   if (ok) {
@@ -222,11 +235,14 @@ async function saveUserChanges() {
 
 function verifyUser() {
   if (!selectedUser.value) return;
-  // TODO: PATCH /admin/users/:id/verify
-  console.log("Verify user:", selectedUser.value.id);
+
+  userStore.verifiredUser(selectedUser.value.id).then((ok) => {
+    if (ok && selectedUser.value) {
+      selectedUser.value = { ...selectedUser.value, is_verified: true };
+    }
+  });
 }
 
-// Watch filters — reset to page 1 on change
 watch([selectedRole, selectedStatus], () => {
   fetchUsers(1);
 });
@@ -463,6 +479,16 @@ onMounted(() => fetchUsers());
             {{ selectedUser.phone || "-" }}
           </dd>
 
+          <dt class="text-secondary-400">วันเกิด</dt>
+          <dd class="text-secondary-900 font-medium">
+            {{ selectedUser.birthdate || "-" }}
+          </dd>
+
+          <dt class="text-secondary-400">ที่อยู่</dt>
+          <dd class="text-secondary-900 font-medium">
+            {{ selectedUser.address || "-" }}
+          </dd>
+
           <dt class="text-secondary-400">Role</dt>
           <dd class="text-secondary-900 font-medium">
             {{ selectedUser.role }}
@@ -494,21 +520,20 @@ onMounted(() => fetchUsers());
             </span>
           </dd>
 
-          <dt class="text-secondary-400">วันเกิด</dt>
+          <dt class="text-secondary-400">วันหมดอายุผู้ใช้งาน</dt>
           <dd class="text-secondary-900 font-medium">
-            {{ selectedUser.birthdate || "-" }}
-          </dd>
-
-          <dt class="text-secondary-400">ที่อยู่</dt>
-          <dd class="text-secondary-900 font-medium">
-            {{ selectedUser.address || "-" }}
+            {{ formatDate(selectedUser.expired_date, "DD MMM BBBB") }}
           </dd>
 
           <dt class="text-secondary-400">สร้างโดย</dt>
-          <dd class="text-secondary-900 font-medium">-</dd>
+          <dd class="text-secondary-900 font-medium">
+            {{ userStore.getFullName(selectedUser.created_by) || "-" }}
+          </dd>
 
           <dt class="text-secondary-400">อัปเดตโดย</dt>
-          <dd class="text-secondary-900 font-medium">-</dd>
+          <dd class="text-secondary-900 font-medium">
+            {{ userStore.getFullName(selectedUser.updated_by) || "-" }}
+          </dd>
 
           <dt class="text-secondary-400">สร้างเมื่อ</dt>
           <dd class="text-secondary-900 font-medium">
@@ -518,6 +543,34 @@ onMounted(() => fetchUsers());
           <dt class="text-secondary-400">อัปเดตล่าสุด</dt>
           <dd class="text-secondary-900 font-medium">
             {{ formatDate(selectedUser.updated_at, "DD MMM BBBB HH:mm") }}
+          </dd>
+
+          <dt
+            class="text-secondary-400 col-span-2 pt-2 border-t border-secondary-100"
+          >
+            เอกสารแนบ
+          </dt>
+          <dd class="col-span-2">
+            <div v-if="MOCKFILES.length" class="flex flex-col gap-2">
+              <a
+                v-for="file in MOCKFILES"
+                :key="file.url"
+                :href="file.url"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="flex items-center gap-2 px-3 py-2 rounded-lg border border-secondary-200 hover:border-primary-400 hover:bg-primary-50 transition-colors group"
+              >
+                <!-- Icon: PDF or Image -->
+
+                <span
+                  class="text-sm text-secondary-700 group-hover:text-primary-600 truncate flex-1"
+                >
+                  {{ file.name }}
+                </span>
+                <File class="w-4 h-4 text-primary-600" />
+              </a>
+            </div>
+            <p v-else class="text-secondary-400 text-sm">-</p>
           </dd>
         </dl>
 
@@ -616,6 +669,12 @@ onMounted(() => fetchUsers());
             type="tel"
             placeholder="กรอกเบอร์โทร"
           />
+
+          <BaseDatePicker
+            v-model="editForm.expired_date"
+            label="วันหมดอายุผู้ใช้งาน"
+            placeholder="เลือกวันหมดอายุผู้ใช้งาน"
+          />
         </div>
       </div>
       <!-- end relative wrapper -->
@@ -624,15 +683,25 @@ onMounted(() => fetchUsers());
         <div class="flex justify-between w-full">
           <button
             class="btn-primary text-sm"
-            v-if="selectedUser.code"
+            v-if="selectedUser.code && !selectedUser.is_verified"
             :class="{ 'opacity-40 cursor-not-allowed': !selectedUser.code }"
             @click="verifyUser"
           >
             ยืนยันผู้ใช้งาน
           </button>
-          <div v-else class="w-5 h-5 text-primary-600">
+          <div
+            v-else-if="selectedUser.is_verified"
+            class="w-5 h-5 text-primary-600"
+          >
             <CircleCheckBig />
           </div>
+          <button
+            class="btn-primary text-sm opacity-40 cursor-not-allowed"
+            v-else
+            disabled
+          >
+            ยืนยันผู้ใช้งาน
+          </button>
 
           <div class="flex gap-2">
             <!-- Edit mode: บันทึก / ยกเลิก | View mode: แก้ไข / ปิด -->

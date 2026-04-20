@@ -77,6 +77,7 @@ export interface AdminUpdateUserPayload {
   first_name?: string;
   last_name?: string;
   phone?: string;
+  expired_date?: string | null;
 }
 
 /**
@@ -90,6 +91,11 @@ export const usersApi = {
     apiClient.get<ApiResponse<User[]>>(
       API_ENDPOINTS.ADMIN.SETTINGS.USERS.BASE,
       { params },
+    ),
+
+  getUserFullName: () =>
+    apiClient.get<ApiResponse<User[]>>(
+      API_ENDPOINTS.ADMIN.SETTINGS.USERS.FULLNAME,
     ),
 
   /**
@@ -129,5 +135,10 @@ export const usersApi = {
     apiClient.put<ApiResponse<User>>(
       API_ENDPOINTS.ADMIN.SETTINGS.USERS.CHANGEROLE(String(id)),
       { role },
+    ),
+
+  verified: (id: number | string) =>
+    apiClient.put<ApiResponse<User>>(
+      API_ENDPOINTS.ADMIN.SETTINGS.USERS.VERIFIRED(String(id)),
     ),
 };

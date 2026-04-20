@@ -11,15 +11,15 @@ import {
 } from "lucide-vue-next";
 import { useRoute } from "vue-router";
 import NotificationBell from "@/components/notification/NotificationBell.vue";
-import { onMounted, onUnmounted } from "vue";
+import { computed, onMounted, onUnmounted } from "vue";
 import { useNotificationStore } from "@/stores/notification.store";
+import { useUsersStore } from "@/stores/users.store";
+import LoadingOverlay from "@/components/ui/LoadingOverlay.vue";
 
 const auth = useAuthStore();
 const notif = useNotificationStore();
+const usersStore = useUsersStore();
 const route = useRoute();
-
-onMounted(() => notif.startPolling());
-onUnmounted(() => notif.stopPolling());
 
 const mobileLinks = [
   { to: "/admin/dashboard", label: "แดชบอร์ด", icon: LayoutDashboard },
@@ -28,6 +28,25 @@ const mobileLinks = [
   { to: "/admin/logs", label: "บันทึก", icon: BarChart2 },
   { to: "/admin/settings", label: "ตั้งค่า", icon: Settings },
 ];
+
+const fullName = computed(() => {
+  return [
+    auth.currentUser.title,
+    auth.currentUser.first_name,
+    auth.currentUser.last_name,
+  ]
+    .filter(Boolean)
+    .join(" ");
+});
+
+onMounted(() => {
+  notif.startPolling();
+  if (usersStore.userFullName.length === 0) {
+    usersStore.getUserFullName();
+  }
+});
+
+onUnmounted(() => notif.stopPolling());
 </script>
 
 <template>
@@ -42,7 +61,7 @@ const mobileLinks = [
         <div>
           <h1 class="text-sm font-semibold text-secondary-900">
             ยินดีต้อนรับ,
-            {{ auth.currentUser?.full_name || auth.currentUser?.email }}
+            {{ fullName || auth.currentUser?.email }}
           </h1>
           <p class="text-xs text-secondary-400">
             {{
@@ -64,7 +83,8 @@ const mobileLinks = [
       </header>
 
       <!-- Main content -->
-      <main class="flex-1 overflow-y-auto p-6">
+      <main class="relative flex-1 overflow-y-auto p-6">
+        <LoadingOverlay :loading="usersStore.isLoading" />
         <RouterView />
       </main>
     </div>
