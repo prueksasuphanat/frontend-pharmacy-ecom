@@ -7,6 +7,7 @@ export interface Column<T> {
   label: string;
   align?: "left" | "center" | "right";
   width?: string;
+  minWidth?: string;
   sortable?: boolean;
 }
 
@@ -136,8 +137,11 @@ function getColumnAlign(align?: "left" | "center" | "right") {
               :key="String(column.key)"
               :class="getColumnAlign(column.align)"
               :style="
-                column.width
-                  ? { width: column.width, minWidth: column.width }
+                column.width || column.minWidth
+                  ? {
+                      ...(column.width ? { width: column.width } : {}),
+                      minWidth: column.minWidth ?? column.width,
+                    }
                   : undefined
               "
             >

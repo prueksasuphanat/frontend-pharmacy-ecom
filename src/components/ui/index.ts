@@ -8,6 +8,7 @@ export { default as BaseTextarea } from "./BaseTextarea.vue";
 export { default as BaseFileUpload } from "./BaseFileUpload.vue";
 export { default as BaseDatePicker } from "./BaseDatePicker.vue";
 export { default as LoadingOverlay } from "./LoadingOverlay.vue";
+export { default as BaseToggle } from "./BaseToggle.vue";
 
 // VeeValidate wrapped components
 export { default as VInput } from "./VInput.vue";

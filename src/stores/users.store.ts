@@ -64,6 +64,11 @@ export const useUsersStore = defineStore("users", {
       }
     },
 
+    toggleUserActiveLocal(userId: number) {
+      const user = this.users.find((u) => u.id === userId);
+      if (user) user.is_active = !user.is_active;
+    },
+
     clearUsers() {
       this.users = [];
       this.error = null;

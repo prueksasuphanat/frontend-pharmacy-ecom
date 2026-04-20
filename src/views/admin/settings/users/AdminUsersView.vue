@@ -5,6 +5,7 @@ import {
   BaseTable,
   BaseInput,
   BaseSelect,
+  BaseToggle,
   LoadingOverlay,
 } from "@/components/ui";
 import type { Column } from "@/components/ui/BaseTable.vue";
@@ -40,17 +41,17 @@ let searchTimer: ReturnType<typeof setTimeout> | null = null;
 const pagination = computed(() => userStore.pagination);
 
 const columns: Column<User>[] = [
-  { key: "email", label: "อีเมล", width: "20%", align: "left" },
+  { key: "email", label: "อีเมล", minWidth: "20%", align: "left" },
   { key: "full_name", label: "ชื่อ-นามสกุล", width: "18%", align: "left" },
-  { key: "role", label: "Role", width: "15%", align: "left" },
+  { key: "role", label: "Role", minWidth: "200px", align: "left" },
   {
     key: "is_verified",
     label: "อีเมลยืนยัน",
-    align: "center",
-    width: "12%",
+    align: "left",
+    width: "120px",
   },
-  { key: "is_active", label: "สถานะ", align: "center", width: "10%" },
-  { key: "actions", label: "จัดการ", align: "center", width: "15%" },
+  { key: "is_active", label: "สถานะ", align: "left", width: "90px" },
+  { key: "actions", label: "", align: "right", width: "10px" },
 ];
 
 const users = computed(() => userStore.users);
@@ -90,9 +91,9 @@ function updateUserRole(userId: number, newRole: string) {
   alert(`TODO: เปลี่ยน role user ${userId} → ${newRole}`);
 }
 
-function toggleUserStatus(userId: number, currentStatus: boolean) {
+function toggleUserStatus(userId: number) {
   // TODO: PATCH /admin/users/:id/status { is_active: !currentStatus }
-  alert(`TODO: ${currentStatus ? "ระงับ" : "เปิดใช้งาน"} user ${userId}`);
+  userStore.toggleUserActiveLocal(userId);
 }
 
 function editUser(user: User) {
@@ -250,28 +251,16 @@ onMounted(() => fetchUsers());
 
         <!-- Status Column -->
         <template #cell-is_active="{ row }">
-          <span
-            :class="[
-              'badge text-xs inline-block',
-              row.is_active ? 'badge-green' : 'badge-red',
-            ]"
-          >
-            {{ row.is_active ? "ใช้งาน" : "ระงับ" }}
-          </span>
+          <BaseToggle
+            :model-value="row.is_active"
+            active-color="primary"
+            @change="toggleUserStatus(row.id)"
+          />
         </template>
 
         <!-- Actions Column -->
         <template #cell-actions="{ row }">
           <div class="flex items-center justify-center gap-1.5 flex-wrap">
-            <button
-              @click="toggleUserStatus(row.id, row.is_active)"
-              :class="[
-                'btn-ghost text-xs gap-1 px-2 py-1',
-                row.is_active ? 'text-red-600' : 'text-green-600',
-              ]"
-            >
-              {{ row.is_active ? "ระงับ" : "เปิด" }}
-            </button>
             <button
               @click="editUser(row)"
               class="btn-ghost text-xs gap-1 px-2 py-1 text-primary-600"
