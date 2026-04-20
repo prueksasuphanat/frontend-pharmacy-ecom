@@ -48,6 +48,8 @@ export const API_ENDPOINTS = {
     SETTINGS: {
       USERS: {
         BASE: "/admin/users",
+        BY_ID: (id: string) => `/admin/users/${id}`,
+        UPDATE: (id: string) => `/admin/users/${id}`,
       },
     },
   },

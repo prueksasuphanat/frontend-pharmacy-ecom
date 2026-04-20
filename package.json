@@ -23,6 +23,7 @@
     "@vueuse/core": "^14.2.1",
     "apexcharts": "^5.10.6",
     "axios": "^1.15.0",
+    "dayjs": "^1.11.20",
     "lucide-vue-next": "^1.0.0",
     "pinia": "^3.0.4",
     "vee-validate": "^4.15.1",

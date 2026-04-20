@@ -1,18 +1,28 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from "vue";
+import {
+  Users,
+  Edit,
+  Search,
+  ChevronLeft,
+  CircleCheckBig,
+} from "lucide-vue-next";
+import { useRouter } from "vue-router";
+import { useUsersStore } from "@/stores";
+import { formatDate } from "@/utils";
+
+import type { GetUsersParams } from "@/api/users";
+import type { Column } from "@/components/ui/BaseTable.vue";
 import type { User } from "@/types";
+
 import {
   BaseTable,
   BaseInput,
   BaseSelect,
   BaseToggle,
   LoadingOverlay,
+  BaseModal,
 } from "@/components/ui";
-import type { Column } from "@/components/ui/BaseTable.vue";
-import { Users, Edit, Search, ChevronLeft } from "lucide-vue-next";
-import { useRouter } from "vue-router";
-import { useUsersStore } from "@/stores";
-import type { GetUsersParams } from "@/api/users";
 
 const ROLE_OPTIONS = [
   { value: "", label: "ทุก Role" },
@@ -86,9 +96,40 @@ function handlePageChange(page: number) {
   fetchUsers(page);
 }
 
+// Role change confirmation
+const roleChangeModal = ref(false);
+const pendingRoleChange = ref<{
+  userId: number;
+  newRole: string;
+  oldRole: string;
+} | null>(null);
+
 function updateUserRole(userId: number, newRole: string) {
+  const user = users.value.find((u) => u.id === userId);
+  if (!user) return;
+
+  // Open confirmation modal
+  pendingRoleChange.value = {
+    userId,
+    newRole,
+    oldRole: user.role,
+  };
+  roleChangeModal.value = true;
+}
+
+function confirmRoleChange() {
+  if (!pendingRoleChange.value) return;
+
   // TODO: PATCH /admin/users/:id/role { role_id: newRole }
-  alert(`TODO: เปลี่ยน role user ${userId} → ${newRole}`);
+  console.log("Confirm role change:", pendingRoleChange.value);
+
+  roleChangeModal.value = false;
+  pendingRoleChange.value = null;
+}
+
+function cancelRoleChange() {
+  roleChangeModal.value = false;
+  pendingRoleChange.value = null;
 }
 
 function toggleUserStatus(userId: number) {
@@ -96,9 +137,92 @@ function toggleUserStatus(userId: number) {
   userStore.toggleUserActiveLocal(userId);
 }
 
+const editModalOpen = ref(false);
+const selectedUser = ref<User | null>(null);
+const isEditMode = ref(false);
+const modalLoading = ref(false);
+
+// Form data for editing
+const editForm = ref({
+  code: "",
+  email: "",
+  title: "",
+  first_name: "",
+  last_name: "",
+  phone: "",
+});
+
+const TITLE_OPTIONS = [
+  { value: "", label: "ไม่ระบุ" },
+  { value: "นาย", label: "นาย" },
+  { value: "นาง", label: "นาง" },
+  { value: "นางสาว", label: "นางสาว" },
+];
+
 function editUser(user: User) {
-  // TODO: Open edit modal
-  alert(`TODO: แก้ไขผู้ใช้ ${user.email}`);
+  console.log("Selected user:", user);
+  selectedUser.value = user;
+  isEditMode.value = false;
+  editModalOpen.value = true;
+  modalLoading.value = true;
+
+  // Fetch fresh data from API
+  userStore
+    .adminGetUserById(user.id)
+    .then((fresh) => {
+      if (!fresh) return;
+      selectedUser.value = fresh;
+      editForm.value = {
+        code: fresh.code || "",
+        email: fresh.email || "",
+        title: fresh.title || "",
+        first_name: fresh.first_name || "",
+        last_name: fresh.last_name || "",
+        phone: fresh.phone || "",
+      };
+    })
+    .finally(() => {
+      modalLoading.value = false;
+    });
+}
+
+function closeEditModal() {
+  editModalOpen.value = false;
+  selectedUser.value = null;
+  isEditMode.value = false;
+}
+
+function toggleEditMode() {
+  isEditMode.value = !isEditMode.value;
+}
+
+async function saveUserChanges() {
+  if (!selectedUser.value) return;
+  modalLoading.value = true;
+
+  const ok = await userStore.adminUpdateUserById(selectedUser.value.id, {
+    code: editForm.value.code || undefined,
+    email: editForm.value.email || undefined,
+    title: editForm.value.title || null,
+    first_name: editForm.value.first_name || undefined,
+    last_name: editForm.value.last_name || undefined,
+    phone: editForm.value.phone || undefined,
+  });
+
+  if (ok) {
+    // Refresh selectedUser with latest data from API
+    const fresh = await userStore.adminGetUserById(selectedUser.value.id);
+    if (fresh) selectedUser.value = fresh;
+    isEditMode.value = false;
+  }
+
+  modalLoading.value = false;
+}
+
+function verifyUser() {
+  if (!selectedUser.value) return;
+  // TODO: PATCH /admin/users/:id/verify
+  console.log("Verify user:", selectedUser.value.id);
 }
 
 // Watch filters — reset to page 1 on change
@@ -157,7 +281,7 @@ onMounted(() => fetchUsers());
         </p>
       </div>
       <div class="card">
-        <p class="text-xs text-secondary-400 mb-1">ยืนยันอีเมลแล้ว</p>
+        <p class="text-xs text-secondary-400 mb-1">ยืนยันอีเมล</p>
         <p class="text-2xl font-bold text-primary-600">
           {{ stats.verified }}
         </p>
@@ -242,7 +366,7 @@ onMounted(() => fetchUsers());
             v-if="row.is_verified"
             class="badge badge-green text-xs inline-block"
           >
-            ✓ ยืนยันแล้ว
+            ✓ ยืนยัน
           </span>
           <span v-else class="badge badge-red text-xs inline-block">
             ยังไม่ยืนยัน
@@ -271,5 +395,272 @@ onMounted(() => fetchUsers());
         </template>
       </BaseTable>
     </div>
+
+    <BaseModal
+      v-if="editModalOpen && selectedUser"
+      title="แก้ไขผู้ใช้งาน"
+      size="md"
+      @close="closeEditModal"
+    >
+      <!-- Loading overlay -->
+      <div class="relative min-h-[120px]">
+        <LoadingOverlay :loading="modalLoading" text="กำลังโหลดข้อมูล..." />
+
+        <!-- View Mode -->
+        <dl v-if="!isEditMode" class="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
+          <dt class="text-secondary-400">ID</dt>
+          <dd class="text-secondary-900 font-medium">{{ selectedUser.id }}</dd>
+
+          <dt class="text-secondary-400">รหัสผู้ใช้</dt>
+          <dd class="text-secondary-900 font-medium">
+            {{ selectedUser.code || "-" }}
+          </dd>
+
+          <dt class="text-secondary-400">อีเมล</dt>
+          <dd class="text-secondary-900 font-medium break-all">
+            {{ selectedUser.email }}
+          </dd>
+
+          <dt class="text-secondary-400">Username</dt>
+          <dd class="text-secondary-900 font-medium">
+            {{ selectedUser.username }}
+          </dd>
+
+          <dt class="text-secondary-400">ชื่อ-นามสกุล</dt>
+          <dd class="text-secondary-900 font-medium">
+            {{
+              [
+                selectedUser.title,
+                selectedUser.first_name,
+                selectedUser.last_name,
+              ]
+                .filter(Boolean)
+                .join(" ") || "-"
+            }}
+          </dd>
+
+          <dt class="text-secondary-400">เบอร์โทร</dt>
+          <dd class="text-secondary-900 font-medium">
+            {{ selectedUser.phone || "-" }}
+          </dd>
+
+          <dt class="text-secondary-400">Role</dt>
+          <dd class="text-secondary-900 font-medium">
+            {{ selectedUser.role }}
+          </dd>
+
+          <dt class="text-secondary-400">สถานะ</dt>
+          <dd>
+            <span
+              :class="
+                selectedUser.is_active ? 'badge badge-green' : 'badge badge-red'
+              "
+              class="text-xs"
+            >
+              {{ selectedUser.is_active ? "ใช้งาน" : "ระงับ" }}
+            </span>
+          </dd>
+
+          <dt class="text-secondary-400">ยืนยันอีเมล</dt>
+          <dd>
+            <span
+              :class="
+                selectedUser.is_verified
+                  ? 'badge badge-green'
+                  : 'badge badge-red'
+              "
+              class="text-xs"
+            >
+              {{ selectedUser.is_verified ? "✓ ยืนยัน" : "ยังไม่ยืนยัน" }}
+            </span>
+          </dd>
+
+          <dt class="text-secondary-400">วันเกิด</dt>
+          <dd class="text-secondary-900 font-medium">
+            {{ selectedUser.birthdate || "-" }}
+          </dd>
+
+          <dt class="text-secondary-400">ที่อยู่</dt>
+          <dd class="text-secondary-900 font-medium">
+            {{ selectedUser.address || "-" }}
+          </dd>
+
+          <dt class="text-secondary-400">สร้างเมื่อ</dt>
+          <dd class="text-secondary-900 font-medium">
+            {{ formatDate(selectedUser.created_at, "DD MMM BBBB HH:mm") }}
+          </dd>
+
+          <dt class="text-secondary-400">อัปเดตล่าสุด</dt>
+          <dd class="text-secondary-900 font-medium">
+            {{ formatDate(selectedUser.updated_at, "DD MMM BBBB HH:mm") }}
+          </dd>
+        </dl>
+
+        <!-- Edit Mode -->
+        <div v-else class="flex flex-col gap-4">
+          <!-- Read-only info -->
+          <div
+            class="bg-secondary-50 rounded-xl px-4 py-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm"
+          >
+            <div>
+              <p class="text-secondary-400 text-xs mb-0.5">ID</p>
+              <p class="text-secondary-900 font-medium">
+                {{ selectedUser.id }}
+              </p>
+            </div>
+            <div>
+              <p class="text-secondary-400 text-xs mb-0.5">Username</p>
+              <p class="text-secondary-900 font-medium">
+                {{ selectedUser.username }}
+              </p>
+            </div>
+            <div>
+              <p class="text-secondary-400 text-xs mb-0.5">Role</p>
+              <p class="text-secondary-900 font-medium">
+                {{ selectedUser.role }}
+              </p>
+            </div>
+            <div>
+              <p class="text-secondary-400 text-xs mb-0.5">สถานะ</p>
+              <span
+                :class="
+                  selectedUser.is_active
+                    ? 'badge badge-green'
+                    : 'badge badge-red'
+                "
+                class="text-xs"
+              >
+                {{ selectedUser.is_active ? "ใช้งาน" : "ระงับ" }}
+              </span>
+            </div>
+            <div>
+              <p class="text-secondary-400 text-xs mb-0.5">ยืนยันอีเมล</p>
+              <span
+                :class="
+                  selectedUser.is_verified
+                    ? 'badge badge-green'
+                    : 'badge badge-red'
+                "
+                class="text-xs"
+              >
+                {{ selectedUser.is_verified ? "✓ ยืนยัน" : "ยังไม่ยืนยัน" }}
+              </span>
+            </div>
+            <div>
+              <p class="text-secondary-400 text-xs mb-0.5">สร้างเมื่อ</p>
+              <p class="text-secondary-900 font-medium">
+                {{ formatDate(selectedUser.created_at, "DD/MM/BBBB HH:mm") }}
+              </p>
+            </div>
+          </div>
+
+          <BaseInput
+            v-model="editForm.code"
+            label="รหัสผู้ใช้"
+            placeholder="กรอกรหัสผู้ใช้"
+          />
+          <BaseInput
+            v-model="editForm.email"
+            label="อีเมล"
+            type="email"
+            placeholder="กรอกอีเมล"
+          />
+          <div>
+            <p class="label mb-1">ชื่อ-นามสกุล</p>
+            <div class="flex gap-2">
+              <BaseSelect
+                v-model="editForm.title"
+                :options="TITLE_OPTIONS"
+                class="w-32 shrink-0"
+              />
+              <BaseInput
+                v-model="editForm.first_name"
+                placeholder="ชื่อ"
+                class="flex-1"
+              />
+              <BaseInput
+                v-model="editForm.last_name"
+                placeholder="นามสกุล"
+                class="flex-1"
+              />
+            </div>
+          </div>
+          <BaseInput
+            v-model="editForm.phone"
+            label="เบอร์โทร"
+            type="tel"
+            placeholder="กรอกเบอร์โทร"
+          />
+        </div>
+      </div>
+      <!-- end relative wrapper -->
+
+      <template #footer>
+        <div class="flex justify-between w-full">
+          <button
+            class="btn-primary text-sm"
+            v-if="selectedUser.code"
+            :class="{ 'opacity-40 cursor-not-allowed': !selectedUser.code }"
+            @click="verifyUser"
+          >
+            ยืนยันผู้ใช้งาน
+          </button>
+          <div v-else class="w-5 h-5 text-primary-600">
+            <CircleCheckBig />
+          </div>
+
+          <div class="flex gap-2">
+            <!-- Edit mode: บันทึก / ยกเลิก | View mode: แก้ไข / ปิด -->
+            <template v-if="isEditMode">
+              <button class="btn-secondary text-sm" @click="toggleEditMode">
+                ยกเลิก
+              </button>
+              <button class="btn-primary text-sm" @click="saveUserChanges">
+                บันทึก
+              </button>
+            </template>
+            <template v-else>
+              <button class="btn-secondary text-sm" @click="closeEditModal">
+                ปิด
+              </button>
+              <button class="btn-primary text-sm" @click="toggleEditMode">
+                แก้ไข
+              </button>
+            </template>
+          </div>
+        </div>
+      </template>
+    </BaseModal>
+
+    <!-- Role Change Confirmation Modal -->
+    <BaseModal
+      v-if="roleChangeModal && pendingRoleChange"
+      title="ยืนยันการเปลี่ยน Role"
+      size="sm"
+      @close="cancelRoleChange"
+    >
+      <div class="text-center py-2">
+        <p class="text-secondary-600 mb-4">คุณต้องการเปลี่ยน Role จาก</p>
+        <div class="flex items-center justify-center gap-3 mb-4">
+          <span class="badge badge-primary text-sm px-4 py-2">
+            {{ pendingRoleChange.oldRole }}
+          </span>
+          <span class="text-secondary-400">→</span>
+          <span class="badge badge-green text-sm px-4 py-2">
+            {{ pendingRoleChange.newRole }}
+          </span>
+        </div>
+        <p class="text-sm text-secondary-500">การเปลี่ยนแปลงนี้จะมีผลทันที</p>
+      </div>
+
+      <template #footer>
+        <button class="btn-secondary text-sm" @click="cancelRoleChange">
+          ยกเลิก
+        </button>
+        <button class="btn-primary text-sm" @click="confirmRoleChange">
+          ยืนยัน
+        </button>
+      </template>
+    </BaseModal>
   </div>
 </template>

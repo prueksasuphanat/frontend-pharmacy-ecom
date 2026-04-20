@@ -68,6 +68,18 @@ export interface ApiResponse<T> {
 }
 
 /**
+ * Payload for updating a user (Admin)
+ */
+export interface AdminUpdateUserPayload {
+  code?: string;
+  email?: string;
+  title?: string | null;
+  first_name?: string;
+  last_name?: string;
+  phone?: string;
+}
+
+/**
  * Users API service
  */
 export const usersApi = {
@@ -77,8 +89,34 @@ export const usersApi = {
   getAll: (params?: GetUsersParams) =>
     apiClient.get<ApiResponse<User[]>>(
       API_ENDPOINTS.ADMIN.SETTINGS.USERS.BASE,
-      {
-        params,
-      },
+      { params },
+    ),
+
+  /**
+   * Get user by ID
+   * GET /admin/users/:id
+   */
+  getById: (id: number) =>
+    apiClient.get<ApiResponse<User>>(
+      API_ENDPOINTS.ADMIN.SETTINGS.USERS.BY_ID(String(id)),
+    ),
+
+  /**
+   * Get user by ID (Admin only)
+   * GET /admin/users/:id
+   */
+  adminGetById: (id: number) =>
+    apiClient.get<ApiResponse<User>>(
+      API_ENDPOINTS.ADMIN.SETTINGS.USERS.BY_ID(String(id)),
+    ),
+
+  /**
+   * Update user by ID (Admin only)
+   * PUT /admin/users/:id
+   */
+  adminUpdateById: (id: number, payload: AdminUpdateUserPayload) =>
+    apiClient.put<ApiResponse<User>>(
+      API_ENDPOINTS.ADMIN.SETTINGS.USERS.UPDATE(String(id)),
+      payload,
     ),
 };

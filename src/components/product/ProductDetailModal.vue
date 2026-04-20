@@ -36,8 +36,7 @@ const product = computed(() =>
 const price = computed(() => {
   if (!product.value) return 0;
   const prices = MOCK_PRICES[props.productId!];
-  const role = auth.roleName as "retail" | "wholesale" | "clinic";
-  return prices?.[role] ?? product.value.base_price;
+  return 1000;
 });
 
 const inWishlist = ref(false); // TODO: check from wishlist store
@@ -202,9 +201,7 @@ onUnmounted(() => {
                   >
                     <div class="flex items-start justify-between mb-4">
                       <div>
-                        <p class="text-xs text-secondary-500 mb-1">
-                          ราคา ({{ auth.currentUser?.role_label }})
-                        </p>
+                        <p class="text-xs text-secondary-500 mb-1">ราคา ****</p>
                         <div class="flex items-baseline gap-2">
                           <p class="text-4xl font-bold text-primary-700">
                             {{ formatPrice(price) }}
