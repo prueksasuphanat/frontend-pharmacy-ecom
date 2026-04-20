@@ -19,7 +19,7 @@ export const adminRoutes: RouteRecordRaw = {
       component: () => import("@/views/admin/AdminOrderDetailView.vue"),
     },
     {
-      path: "inventory",
+      path: "products",
       component: () => import("@/views/admin/AdminInventoryView.vue"),
     },
     {

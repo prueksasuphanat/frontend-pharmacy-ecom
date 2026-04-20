@@ -1,7 +1,7 @@
 import { defineStore } from "pinia";
 import type { User } from "@/types";
-import { usersApi } from "@/api/users";
-import type { GetUsersParams } from "@/api/users";
+import { usersApi } from "@/api";
+import type { GetUsersParams } from "@/api";
 import { useToast } from "@/composables";
 import dayjs from "dayjs";
 
@@ -154,7 +154,7 @@ export const useUsersStore = defineStore("users", {
 
     async adminUpdateUserById(
       id: number,
-      payload: import("@/api/users").AdminUpdateUserPayload,
+      payload: import("@/api").AdminUpdateUserPayload,
     ): Promise<boolean> {
       this.isLoading = true;
       this.error = null;

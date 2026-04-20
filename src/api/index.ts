@@ -9,8 +9,8 @@
 
 export * from "./client";
 export * from "./auth";
-export * from "./products";
+export * from "./admin/products";
 export * from "./cart";
 export * from "./notifications";
-export * from "./users";
-export * from "./categories";
+export * from "./admin/settings/users";
+export * from "./admin/settings/categories";

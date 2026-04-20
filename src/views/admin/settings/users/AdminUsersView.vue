@@ -12,7 +12,7 @@ import { useRouter } from "vue-router";
 import { useUsersStore } from "@/stores";
 import { formatDate } from "@/utils";
 
-import type { GetUsersParams } from "@/api/users";
+import type { GetUsersParams } from "@/api";
 import type { Column } from "@/components/ui/BaseTable.vue";
 import type { User } from "@/types";
 

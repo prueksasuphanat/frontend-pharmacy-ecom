@@ -1,5 +1,4 @@
 // Product type definitions
-// Extracted from src/mocks/products.ts
 
 export type DrugType =
   | "otc"
@@ -9,27 +8,45 @@ export type DrugType =
   | "cosmetic";
 
 export interface Product {
-  id: string;
+  id: number;
+  pmc_product_id: number;
+  code: string;
   name: string;
-  generic_name: string;
-  brand_name: string;
-  description: string;
-  image_url: string;
-  sku: string;
-  stock: number;
-  base_price: number;
-  unit: string;
-  dosage_form: string;
-  strength: string;
-  registration_no: string;
-  manufacturer: string;
-  reorder_level: number;
-  drug_type: DrugType;
-  drug_type_label: string;
-  is_deleted: boolean;
+  default_price: string;
+  is_special_pricing_enabled: boolean;
+  quantity: number;
+  is_active: boolean;
+  is_delete: boolean;
+  category_id: number | null;
   created_at: string;
+  updated_at: string;
+  category: {
+    id: number;
+    name: string;
+  } | null;
 }
 
+export interface ProductListParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  is_active?: boolean;
+  category_id?: number;
+  is_special_pricing_enabled?: boolean;
+}
+
+export interface ProductListResponse {
+  success: boolean;
+  data: Product[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+// Legacy types (keep for backward compatibility)
 export interface ProductFilters {
   drug_type?: DrugType;
   search?: string;
@@ -37,8 +54,6 @@ export interface ProductFilters {
   max_price?: number;
   in_stock?: boolean;
 }
-
-export type ProductFormData = Omit<Product, "id" | "created_at">;
 
 export interface PriceByRole {
   retail: number;

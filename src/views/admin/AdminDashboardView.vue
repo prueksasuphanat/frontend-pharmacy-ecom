@@ -203,7 +203,7 @@ function fmt(n: number) {
       <div class="card">
         <div class="flex items-center justify-between mb-4">
           <h2 class="font-bold text-secondary-900">⚠️ สินค้าใกล้หมด</h2>
-          <RouterLink to="/admin/inventory" class="text-xs text-primary-600"
+          <RouterLink to="/admin/products" class="text-xs text-primary-600"
             >ดูทั้งหมด →</RouterLink
           >
         </div>

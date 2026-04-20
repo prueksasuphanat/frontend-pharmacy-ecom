@@ -4,7 +4,7 @@
  * Handles all category-related API calls
  */
 
-import { apiClient } from "./client";
+import { apiClient } from "../../client";
 import type {
   Category,
   CategoryListParams,

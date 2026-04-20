@@ -13,7 +13,7 @@ import { useRoute } from "vue-router";
 import NotificationBell from "@/components/notification/NotificationBell.vue";
 import { computed, onMounted, onUnmounted } from "vue";
 import { useNotificationStore } from "@/stores/notification.store";
-import { useUsersStore } from "@/stores/users.store";
+import { useUsersStore } from "@/stores/admin/settings/users.store";
 import LoadingOverlay from "@/components/ui/LoadingOverlay.vue";
 
 const auth = useAuthStore();
@@ -24,7 +24,7 @@ const route = useRoute();
 const mobileLinks = [
   { to: "/admin/dashboard", label: "แดชบอร์ด", icon: LayoutDashboard },
   { to: "/admin/orders", label: "คำสั่งซื้อ", icon: ShoppingBag },
-  { to: "/admin/inventory", label: "สินค้า", icon: Package },
+  { to: "/admin/products", label: "สินค้า", icon: Package },
   { to: "/admin/logs", label: "บันทึก", icon: BarChart2 },
   { to: "/admin/settings", label: "ตั้งค่า", icon: Settings },
 ];

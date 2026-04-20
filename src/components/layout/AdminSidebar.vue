@@ -20,7 +20,7 @@ const settingsExpanded = ref(false);
 const links = [
   { to: "/admin/dashboard", label: "แดชบอร์ด", icon: LayoutDashboard },
   { to: "/admin/orders", label: "คำสั่งซื้อ", icon: ShoppingBag },
-  { to: "/admin/inventory", label: "สินค้า", icon: Package },
+  { to: "/admin/products", label: "สินค้า", icon: Package },
   { to: "/admin/logs", label: "บันทึกกิจกรรม", icon: BarChart2 },
 ];
 

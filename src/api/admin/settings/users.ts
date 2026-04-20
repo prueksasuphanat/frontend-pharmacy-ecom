@@ -4,7 +4,7 @@
  * Handles user management API calls (Admin only)
  */
 
-import { apiClient } from "./client";
+import { apiClient } from "../../client";
 import { API_ENDPOINTS } from "@/constants";
 
 /**

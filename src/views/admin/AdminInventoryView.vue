@@ -1,19 +1,473 @@
 <script setup lang="ts">
-import { ref, computed } from "vue";
-import { MOCK_PRODUCTS } from "@/__mocks__/products";
-import { MOCK_LOTS } from "@/__mocks__/inventory";
-import { Search, Plus, AlertTriangle, Edit, Eye } from "lucide-vue-next";
-import { BaseInput, BaseSelect } from "@/components/ui";
+import { ref, onMounted, computed } from "vue";
+import { Search, Edit } from "lucide-vue-next";
+import {
+  BaseInput,
+  BaseSelect,
+  BaseTable,
+  BaseToggle,
+  BaseModal,
+  LoadingOverlay,
+} from "@/components/ui";
+import type { Column } from "@/components/ui/BaseTable.vue";
+import type { Product } from "@/types";
+import { useProductStore, useCategoryStore } from "@/stores";
+import { formatDate } from "@/utils";
+
+// Stores
+const productStore = useProductStore();
+const categoryStore = useCategoryStore();
+
+// State
+const searchQuery = ref("");
+const statusFilter = ref<string>("all");
+const categoryFilter = ref<string>("all");
+const specialPricingFilter = ref<string>("all");
+
+// Modal state
+const editModalOpen = ref(false);
+const modalLoading = ref(false);
+const selectedProduct = ref<Product | null>(null);
+const productForm = ref({
+  code: "",
+  name: "",
+  default_price: "",
+  quantity: 0,
+  category_id: null as number | null,
+  is_special_pricing_enabled: false,
+});
+
+// Computed
+const products = computed(() => productStore.products);
+const loading = computed(() => productStore.isLoading);
+const pagination = computed(() => productStore.pagination);
+const categories = computed(() => categoryStore.categories);
+
+// Table columns
+const columns: Column<Product>[] = [
+  { key: "code", label: "รหัสสินค้า", width: "120px" },
+  { key: "name", label: "ชื่อสินค้า", minWidth: "250px" },
+  { key: "category", label: "ประเภท", width: "150px" },
+  { key: "quantity", label: "คงเหลือ", width: "100px", align: "center" },
+  { key: "default_price", label: "ราคากลาง", width: "120px", align: "right" },
+  {
+    key: "is_special_pricing_enabled",
+    label: "ราคาตามผู้ใช้",
+    width: "120px",
+    align: "center",
+  },
+  { key: "is_active", label: "สถานะ", width: "100px", align: "center" },
+  { key: "actions", label: "จัดการ", width: "100px", align: "center" },
+];
+
+// Filter options
+const statusOptions = [
+  { value: "all", label: "ทั้งหมด" },
+  { value: "active", label: "ใช้งาน" },
+  { value: "inactive", label: "ไม่ใช้งาน" },
+];
+
+const specialPricingOptions = [
+  { value: "all", label: "ทั้งหมด" },
+  { value: "enabled", label: "เปิดใช้งาน" },
+  { value: "disabled", label: "ปิดใช้งาน" },
+];
+
+const categoryOptions = computed(() => [
+  { value: "all", label: "ทุกประเภท" },
+  ...categories.value.map((cat) => ({
+    value: cat.id.toString(),
+    label: cat.name,
+  })),
+]);
+
+const categoryOptionsForForm = computed(() => [
+  { value: "", label: "ไม่ระบุ" },
+  ...categories.value.map((cat) => ({
+    value: cat.id.toString(),
+    label: cat.name,
+  })),
+]);
+
+// Fetch products
+async function fetchProducts() {
+  await productStore.getProducts({
+    page: pagination.value.page,
+    limit: pagination.value.limit,
+    search: searchQuery.value || undefined,
+    is_active:
+      statusFilter.value === "all"
+        ? undefined
+        : statusFilter.value === "active",
+    category_id:
+      categoryFilter.value === "all"
+        ? undefined
+        : parseInt(categoryFilter.value),
+    is_special_pricing_enabled:
+      specialPricingFilter.value === "all"
+        ? undefined
+        : specialPricingFilter.value === "enabled",
+  });
+}
+
+// Handle page change
+function handlePageChange(page: number) {
+  productStore.pagination.page = page;
+  fetchProducts();
+}
+
+// Handle search
+function handleSearch() {
+  productStore.pagination.page = 1;
+  fetchProducts();
+}
+
+// Handle filter change
+function handleFilterChange() {
+  productStore.pagination.page = 1;
+  fetchProducts();
+}
+
+// Handle toggle status
+async function handleToggleStatus(product: Product) {
+  await productStore.toggleProductActive(product.id);
+}
+
+// Handle edit product
+async function handleEditProduct(product: Product) {
+  selectedProduct.value = product;
+  modalLoading.value = true;
+  editModalOpen.value = true;
+
+  // Fetch fresh data
+  const fresh = await productStore.getProductById(product.id);
+  modalLoading.value = false;
+
+  if (fresh) {
+    selectedProduct.value = fresh;
+    productForm.value = {
+      code: fresh.code,
+      name: fresh.name,
+      default_price: fresh.default_price,
+      quantity: fresh.quantity,
+      category_id: fresh.category_id,
+      is_special_pricing_enabled: fresh.is_special_pricing_enabled,
+    };
+  }
+}
+
+// Close edit modal
+function closeEditModal() {
+  editModalOpen.value = false;
+  selectedProduct.value = null;
+  productForm.value = {
+    code: "",
+    name: "",
+    default_price: "",
+    quantity: 0,
+    category_id: null,
+    is_special_pricing_enabled: false,
+  };
+}
+
+// Update product
+async function updateProduct() {
+  if (!selectedProduct.value) return;
+
+  if (!productForm.value.code.trim() || !productForm.value.name.trim()) {
+    return;
+  }
+
+  modalLoading.value = true;
+  const success = await productStore.updateProduct(selectedProduct.value.id, {
+    code: productForm.value.code.trim(),
+    name: productForm.value.name.trim(),
+    default_price: productForm.value.default_price,
+    quantity: productForm.value.quantity,
+    category_id: productForm.value.category_id,
+    is_special_pricing_enabled: productForm.value.is_special_pricing_enabled,
+  });
+  modalLoading.value = false;
+
+  if (success) {
+    closeEditModal();
+  }
+}
+
+// Format price
+function formatPrice(price: string | number): string {
+  const numPrice = typeof price === "string" ? parseFloat(price) : price;
+  return numPrice.toLocaleString("th-TH", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+// Initialize
+onMounted(async () => {
+  // Fetch categories for filter
+  await categoryStore.getCategories({ limit: 100 });
+  // Fetch products
+  await fetchProducts();
+});
 </script>
 
 <template>
   <div>
+    <LoadingOverlay :loading="loading && products.length > 0" />
+
+    <!-- Header -->
     <div class="page-header mb-6">
       <h1 class="page-title">สินค้า</h1>
-
-      <button class="btn-primary text-sm gap-1.5">
-        <Plus class="w-4 h-4" /> เพิ่มสินค้าใหม่
-      </button>
     </div>
+
+    <!-- Filters -->
+    <div class="card mb-6">
+      <div class="flex flex-col gap-4">
+        <!-- Row 1: Search -->
+        <div class="flex-1">
+          <BaseInput
+            v-model="searchQuery"
+            placeholder="ค้นหาชื่อสินค้า หรือรหัสสินค้า..."
+            @input="handleSearch"
+          >
+            <template #prefix>
+              <Search class="w-4 h-4 text-secondary-400" />
+            </template>
+          </BaseInput>
+        </div>
+
+        <!-- Row 2: Filters -->
+        <div class="flex flex-col sm:flex-row gap-4">
+          <div class="w-full sm:w-48">
+            <BaseSelect
+              v-model="categoryFilter"
+              :options="categoryOptions"
+              @change="handleFilterChange"
+            />
+          </div>
+
+          <div class="w-full sm:w-48">
+            <BaseSelect
+              v-model="statusFilter"
+              :options="statusOptions"
+              @change="handleFilterChange"
+            />
+          </div>
+
+          <div class="w-full sm:w-48">
+            <BaseSelect
+              v-model="specialPricingFilter"
+              :options="specialPricingOptions"
+              @change="handleFilterChange"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <BaseTable
+      :columns="columns"
+      :data="products"
+      :loading="loading"
+      :pagination="pagination"
+      @page-change="handlePageChange"
+      empty-text="ไม่พบข้อมูลสินค้า"
+    >
+      <!-- Category -->
+      <template #cell-category="{ row }">
+        <span v-if="row.category" class="text-sm text-secondary-700">
+          {{ row.category.name }}
+        </span>
+        <span v-else class="text-sm text-secondary-400">-</span>
+      </template>
+
+      <!-- Quantity -->
+      <template #cell-quantity="{ value }">
+        <span
+          :class="[
+            'font-medium',
+            (value as number) === 0
+              ? 'text-red-600'
+              : (value as number) < 10
+                ? 'text-yellow-600'
+                : 'text-green-600',
+          ]"
+        >
+          {{ value }}
+        </span>
+      </template>
+
+      <!-- Price -->
+      <template #cell-default_price="{ value }">
+        <span class="text-sm font-medium text-secondary-900">
+          ฿{{ formatPrice(value as string) }}
+        </span>
+      </template>
+
+      <!-- Special Pricing -->
+      <template #cell-is_special_pricing_enabled="{ value }">
+        <span
+          v-if="value"
+          class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700"
+        >
+          เปิดใช้งาน
+        </span>
+        <span v-else class="text-sm text-secondary-400">-</span>
+      </template>
+
+      <!-- Status Toggle -->
+      <template #cell-is_active="{ row }">
+        <BaseToggle
+          :model-value="row.is_active"
+          active-color="primary"
+          @change="handleToggleStatus(row)"
+        />
+      </template>
+
+      <!-- Actions -->
+      <template #cell-actions="{ row }">
+        <div class="flex items-center justify-center">
+          <button
+            @click="handleEditProduct(row)"
+            class="p-1.5 text-primary-600 hover:bg-blue-50 rounded-lg transition-colors"
+            title="แก้ไข"
+          >
+            <Edit class="w-4 h-4" />
+          </button>
+        </div>
+      </template>
+    </BaseTable>
+
+    <!-- Edit Product Modal -->
+    <BaseModal
+      v-if="editModalOpen && selectedProduct"
+      title="แก้ไขสินค้า"
+      size="md"
+      @close="closeEditModal"
+    >
+      <div class="relative min-h-[200px]">
+        <LoadingOverlay :loading="modalLoading" text="กำลังโหลดข้อมูล..." />
+
+        <div class="flex flex-col gap-4 py-2">
+          <!-- Code -->
+          <BaseInput
+            v-model="productForm.code"
+            label="รหัสสินค้า"
+            placeholder="กรอกรหัสสินค้า"
+            :disabled="modalLoading"
+          />
+
+          <!-- Name -->
+          <BaseInput
+            v-model="productForm.name"
+            label="ชื่อสินค้า"
+            placeholder="กรอกชื่อสินค้า"
+            :disabled="modalLoading"
+          />
+
+          <!-- Category -->
+          <div>
+            <label class="label">ประเภทสินค้า</label>
+            <BaseSelect
+              v-model="productForm.category_id"
+              :options="categoryOptionsForForm"
+              :disabled="modalLoading"
+            />
+          </div>
+
+          <!-- Price and Quantity -->
+          <div class="grid grid-cols-2 gap-4">
+            <BaseInput
+              v-model="productForm.default_price"
+              label="ราคากลาง (บาท)"
+              type="number"
+              step="0.01"
+              placeholder="0.00"
+              :disabled="modalLoading"
+            />
+
+            <BaseInput
+              v-model.number="productForm.quantity"
+              label="จำนวนคงเหลือ"
+              type="number"
+              placeholder="0"
+              :disabled="modalLoading"
+            />
+          </div>
+
+          <!-- Special Pricing Toggle -->
+          <div class="flex items-center justify-between">
+            <label class="label">เปิดใช้งานราคาตามผู้ใช้</label>
+            <BaseToggle
+              v-model="productForm.is_special_pricing_enabled"
+              active-color="primary"
+              :disabled="modalLoading"
+            />
+          </div>
+
+          <!-- Metadata -->
+          <div
+            class="pt-4 mt-4 border-t border-secondary-100 grid grid-cols-2 gap-x-4 gap-y-2 text-sm"
+          >
+            <div>
+              <p class="text-secondary-400 text-xs mb-0.5">PMC Product ID</p>
+              <p class="text-secondary-900 font-medium">
+                {{ selectedProduct.pmc_product_id }}
+              </p>
+            </div>
+            <div>
+              <p class="text-secondary-400 text-xs mb-0.5">สถานะ</p>
+              <span
+                :class="
+                  selectedProduct.is_active
+                    ? 'badge badge-green'
+                    : 'badge badge-red'
+                "
+                class="text-xs"
+              >
+                {{ selectedProduct.is_active ? "ใช้งาน" : "ไม่ใช้งาน" }}
+              </span>
+            </div>
+            <div>
+              <p class="text-secondary-400 text-xs mb-0.5">สร้างเมื่อ</p>
+              <p class="text-secondary-900 font-medium">
+                {{
+                  formatDate(selectedProduct.created_at, "DD MMM BBBB HH:mm")
+                }}
+              </p>
+            </div>
+            <div>
+              <p class="text-secondary-400 text-xs mb-0.5">อัปเดตล่าสุด</p>
+              <p class="text-secondary-900 font-medium">
+                {{
+                  formatDate(selectedProduct.updated_at, "DD MMM BBBB HH:mm")
+                }}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <template #footer>
+        <button
+          class="btn-secondary text-sm"
+          @click="closeEditModal"
+          :disabled="modalLoading"
+        >
+          ยกเลิก
+        </button>
+        <button
+          class="btn-primary text-sm"
+          @click="updateProduct"
+          :disabled="
+            modalLoading || !productForm.code.trim() || !productForm.name.trim()
+          "
+        >
+          {{ modalLoading ? "กำลังบันทึก..." : "บันทึก" }}
+        </button>
+      </template>
+    </BaseModal>
   </div>
 </template>
