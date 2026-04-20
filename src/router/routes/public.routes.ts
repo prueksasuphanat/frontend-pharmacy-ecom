@@ -9,8 +9,18 @@ export const publicRoutes: RouteRecordRaw[] = [
   },
   {
     path: "/register",
-    component: () => import("@/views/public/RegisterView.vue"),
+    component: () => import("@/views/public/register/RegisterView.vue"),
     meta: { guestOnly: true },
+  },
+  {
+    path: "/register/complete",
+    component: () => import("@/views/public/register/RegisterComplete.vue"),
+    meta: { guestOnly: true },
+    beforeEnter: (_to, _from) => {
+      if (!window.history.state?.fromRegister) {
+        return { path: "/" };
+      }
+    },
   },
   {
     path: "/verify-email",

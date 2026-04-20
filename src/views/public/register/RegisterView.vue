@@ -3,17 +3,19 @@ import { ref } from "vue";
 import { RouterLink, useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/auth.store";
 import { Mail, Eye, EyeOff } from "lucide-vue-next";
+import { useForm } from "vee-validate";
+import { useToast } from "@/composables";
+import type { RegisterData } from "@/types";
+import "@/utils/validation";
+
 import {
   VInput,
   VCheckbox,
   VFileUpload,
   VSelect,
   VDatePicker,
-  BaseTextarea,
+  VTextarea,
 } from "@/components/ui";
-import { useForm } from "vee-validate";
-import { useToast } from "@/composables";
-import "@/utils/validation"; // import validation rules
 
 const auth = useAuthStore();
 const router = useRouter();
@@ -21,24 +23,21 @@ const toast = useToast();
 
 const showPw = ref(false);
 const isLoading = ref(false);
-const registered = ref(false);
 
-// ตัวเลือกคำนำหน้า
 const prefixOptions = [
-  { value: "mr", label: "นาย" },
-  { value: "mrs", label: "นาง" },
-  { value: "ms", label: "นางสาว" },
+  { value: "นาย", label: "นาย" },
+  { value: "นาง", label: "นาง" },
+  { value: "นางสาว", label: "นางสาว" },
 ];
 
-// กำหนด validation schema
-const { handleSubmit, values } = useForm({
+const { handleSubmit, values, errors } = useForm({
   validationSchema: {
     username: "required",
-    prefix: "required",
-    firstName: "required",
-    lastName: "required",
-    birthDate: "required",
-    address: "required",
+    title: "required",
+    first_name: "required",
+    last_name: "required",
+    birthdate: "required",
+    phone: "required",
     email: "required|email",
     password: "required|password",
     password_confirmation: "required|confirmed:@password",
@@ -46,7 +45,7 @@ const { handleSubmit, values } = useForm({
       if (!value || value.length === 0) {
         return "กรุณาอัปโหลดเอกสารยืนยันตัวตน";
       }
-      // Check each file size (5MB)
+
       const maxSize = 5 * 1024 * 1024;
       for (const file of value) {
         if (file.size > maxSize) {
@@ -64,32 +63,55 @@ const { handleSubmit, values } = useForm({
   },
 });
 
-// Handle form submission
-const onSubmit = handleSubmit(async (values) => {
-  isLoading.value = true;
+const onSubmit = handleSubmit(
+  async (formValues) => {
+    isLoading.value = true;
 
-  try {
-    // TODO: replace with POST /auth/register
-    // await auth.register(values.email, values.password);
+    console.log("✅ Form validation passed!", formValues);
 
-    // แสดง toast success
-    toast.success("สมัครสมาชิกสำเร็จ!");
+    try {
+      const registerData: RegisterData = {
+        email: formValues.email,
+        password: formValues.password,
+        username: formValues.username,
+        title: formValues.title,
+        first_name: formValues.first_name,
+        last_name: formValues.last_name,
+        birthdata: formValues.birthdate,
+        phone: formValues.phone,
+        address: formValues.address,
+        files: formValues.verificationDocument || null,
+      };
 
-    registered.value = true;
+      const success = await auth.register(registerData);
 
-    // Redirect หลัง 2 วินาที
-    setTimeout(() => {
-      router.push("/products");
-    }, 2000);
-  } catch (error: any) {
-    // แสดง toast error
-    toast.error(
-      error.message || "ไม่สามารถสมัครสมาชิกได้ กรุณาลองใหม่อีกครั้ง",
-    );
-  } finally {
-    isLoading.value = false;
-  }
-});
+      if (success) {
+        toast.success("สมัครสมาชิกสำเร็จ!");
+        router.push({
+          path: "/register/complete",
+          state: { fromRegister: true },
+        });
+      } else {
+        toast.error(
+          auth.error || "ไม่สามารถสมัครสมาชิกได้ กรุณาลองใหม่อีกครั้ง",
+        );
+      }
+    } catch (error: any) {
+      toast.error(
+        error.message || "ไม่สามารถสมัครสมาชิกได้ กรุณาลองใหม่อีกครั้ง",
+      );
+    } finally {
+      isLoading.value = false;
+    }
+  },
+
+  (validationErrors) => {
+    // This callback runs when validation FAILS
+    console.log("❌ Form validation failed!", validationErrors);
+    console.log("Current values:", values);
+    toast.error("กรุณากรอกข้อมูลให้ครบถ้วน");
+  },
+);
 </script>
 
 <template>
@@ -104,32 +126,10 @@ const onSubmit = handleSubmit(async (values) => {
           <span class="text-white font-bold text-xl">Rx</span>
         </div>
         <h1 class="text-2xl font-bold text-secondary-900">สมัครสมาชิก</h1>
-        <p class="text-secondary-500 text-sm mt-1">
-          เริ่มต้นใช้งานPhanadrugฟรี
-        </p>
+        <p class="text-secondary-500 text-sm mt-1">เริ่มต้นใช้งาน Phanadrug</p>
       </div>
 
-      <!-- Success state -->
-      <div v-if="registered" class="card text-center">
-        <div
-          class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4"
-        >
-          <Mail class="w-8 h-8 text-green-600" />
-        </div>
-        <h2 class="font-bold text-lg text-secondary-900 mb-2">
-          ตรวจสอบอีเมลของคุณ
-        </h2>
-        <p class="text-secondary-500 text-sm mb-6">
-          เราได้ส่งลิงก์ยืนยันตัวตนไปที่
-          <strong>{{ values.email }}</strong> กรุณายืนยันก่อนเข้าใช้งาน
-        </p>
-        <!-- TODO: actually send email verify token -->
-        <RouterLink to="/products" class="btn-primary w-full"
-          >ไปดูสินค้าก่อน</RouterLink
-        >
-      </div>
-
-      <div v-else class="card">
+      <div class="card">
         <form @submit="onSubmit" novalidate class="space-y-4">
           <VInput
             name="email"
@@ -162,21 +162,21 @@ const onSubmit = handleSubmit(async (values) => {
 
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <VSelect
-              name="prefix"
+              name="title"
               label="คำนำหน้า"
               :options="prefixOptions"
               placeholder="เลือกคำนำหน้า"
               required
             />
             <VInput
-              name="firstName"
+              name="first_name"
               type="text"
               label="ชื่อจริง"
               placeholder="กรอกชื่อจริง"
               required
             />
             <VInput
-              name="lastName"
+              name="last_name"
               type="text"
               label="นามสกุล"
               placeholder="กรอกนามสกุล"
@@ -184,15 +184,23 @@ const onSubmit = handleSubmit(async (values) => {
             />
           </div>
 
+          <VInput
+            name="phone"
+            type="tel"
+            label="เบอร์โทรศัพท์"
+            placeholder="0812345678"
+            required
+          />
+
           <VDatePicker
-            name="birthDate"
+            name="birthdate"
             label="วันเกิด"
             placeholder="เลือกวันเกิด"
             :max="new Date().toISOString().split('T')[0]"
             required
           />
 
-          <BaseTextarea
+          <VTextarea
             name="address"
             label="ที่อยู่"
             placeholder="กรอกที่อยู่ของคุณ"
