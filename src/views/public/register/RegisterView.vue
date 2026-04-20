@@ -87,10 +87,8 @@ const onSubmit = handleSubmit(
 
       if (success) {
         toast.success("สมัครสมาชิกสำเร็จ!");
-        router.push({
-          path: "/register/complete",
-          state: { fromRegister: true },
-        });
+        sessionStorage.setItem("fromRegister", "true");
+        router.push("/register/complete");
       } else {
         toast.error(
           auth.error || "ไม่สามารถสมัครสมาชิกได้ กรุณาลองใหม่อีกครั้ง",

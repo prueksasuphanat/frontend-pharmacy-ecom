@@ -116,6 +116,14 @@ const onSubmit = handleSubmit(async (values) => {
             >สมัครสมาชิก
           </RouterLink>
         </p>
+
+        <p class="text-center text-sm text-secondary-500 mt-5">
+          <RouterLink
+            to="/products"
+            class="text-primary-600 font-medium hover:text-primary-800"
+            >เข้าดูสินค้า >
+          </RouterLink>
+        </p>
       </div>
     </div>
   </div>

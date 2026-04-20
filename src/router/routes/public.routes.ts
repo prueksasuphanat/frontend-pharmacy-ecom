@@ -16,10 +16,13 @@ export const publicRoutes: RouteRecordRaw[] = [
     path: "/register/complete",
     component: () => import("@/views/public/register/RegisterComplete.vue"),
     meta: { guestOnly: true },
-    beforeEnter: (_to, _from) => {
-      if (!window.history.state?.fromRegister) {
-        return { path: "/" };
+    beforeEnter: () => {
+      const allowed = sessionStorage.getItem("fromRegister");
+      if (!allowed) {
+        return { path: "/register" };
       }
+      // Clear so user can't refresh and stay on this page
+      sessionStorage.removeItem("fromRegister");
     },
   },
   {
