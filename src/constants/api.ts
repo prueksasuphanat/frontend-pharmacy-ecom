@@ -50,6 +50,8 @@ export const API_ENDPOINTS = {
         BASE: "/admin/users",
         BY_ID: (id: string) => `/admin/users/${id}`,
         UPDATE: (id: string) => `/admin/users/${id}`,
+        TOGGLEACTVIVE: (id: string) => `/admin/users/toggle-active/${id}`,
+        CHANGEROLE: (id: string) => `/admin/users/change-role/${id}`,
       },
     },
   },

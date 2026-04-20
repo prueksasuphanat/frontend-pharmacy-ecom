@@ -11,7 +11,7 @@ import { API_ENDPOINTS } from "@/constants";
  * User interface matching backend response
  */
 export interface User {
-  id: number;
+  id: number | string;
   code: string;
   pmc_customer_id?: number | null;
   pmc_name?: string | null;
@@ -96,7 +96,7 @@ export const usersApi = {
    * Get user by ID
    * GET /admin/users/:id
    */
-  getById: (id: number) =>
+  getById: (id: number | string) =>
     apiClient.get<ApiResponse<User>>(
       API_ENDPOINTS.ADMIN.SETTINGS.USERS.BY_ID(String(id)),
     ),
@@ -105,7 +105,7 @@ export const usersApi = {
    * Get user by ID (Admin only)
    * GET /admin/users/:id
    */
-  adminGetById: (id: number) =>
+  adminGetById: (id: number | string) =>
     apiClient.get<ApiResponse<User>>(
       API_ENDPOINTS.ADMIN.SETTINGS.USERS.BY_ID(String(id)),
     ),
@@ -114,9 +114,20 @@ export const usersApi = {
    * Update user by ID (Admin only)
    * PUT /admin/users/:id
    */
-  adminUpdateById: (id: number, payload: AdminUpdateUserPayload) =>
+  adminUpdateById: (id: number | string, payload: AdminUpdateUserPayload) =>
     apiClient.put<ApiResponse<User>>(
       API_ENDPOINTS.ADMIN.SETTINGS.USERS.UPDATE(String(id)),
       payload,
+    ),
+
+  toggleActive: (id: number | string) =>
+    apiClient.put<ApiResponse<User>>(
+      API_ENDPOINTS.ADMIN.SETTINGS.USERS.TOGGLEACTVIVE(String(id)),
+    ),
+
+  changeRole: (id: number | string, role: string) =>
+    apiClient.put<ApiResponse<User>>(
+      API_ENDPOINTS.ADMIN.SETTINGS.USERS.CHANGEROLE(String(id)),
+      { role },
     ),
 };

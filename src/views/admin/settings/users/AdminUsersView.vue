@@ -117,11 +117,13 @@ function updateUserRole(userId: number, newRole: string) {
   roleChangeModal.value = true;
 }
 
-function confirmRoleChange() {
+async function confirmRoleChange() {
   if (!pendingRoleChange.value) return;
 
-  // TODO: PATCH /admin/users/:id/role { role_id: newRole }
-  console.log("Confirm role change:", pendingRoleChange.value);
+  await userStore.adminChangeRole(
+    pendingRoleChange.value.userId,
+    pendingRoleChange.value.newRole,
+  );
 
   roleChangeModal.value = false;
   pendingRoleChange.value = null;
@@ -133,8 +135,7 @@ function cancelRoleChange() {
 }
 
 function toggleUserStatus(userId: number) {
-  // TODO: PATCH /admin/users/:id/status { is_active: !currentStatus }
-  userStore.toggleUserActiveLocal(userId);
+  userStore.toggleActive(userId);
 }
 
 const editModalOpen = ref(false);
@@ -406,6 +407,24 @@ onMounted(() => fetchUsers());
       <div class="relative min-h-[120px]">
         <LoadingOverlay :loading="modalLoading" text="กำลังโหลดข้อมูล..." />
 
+        <!-- Mock profile avatar -->
+        <div
+          class="flex items-center gap-3 mb-4 pb-4 border-b border-secondary-100"
+        >
+          <div
+            class="w-14 h-14 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 font-bold text-xl select-none shrink-0"
+          >
+            {{ selectedUser.first_name?.charAt(0).toUpperCase()
+            }}{{ selectedUser.last_name?.charAt(0).toUpperCase() }}
+          </div>
+          <div>
+            <p class="font-semibold text-secondary-900">
+              {{ selectedUser.first_name }} {{ selectedUser.last_name }}
+            </p>
+            <p class="text-sm text-secondary-400">{{ selectedUser.email }}</p>
+          </div>
+        </div>
+
         <!-- View Mode -->
         <dl v-if="!isEditMode" class="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
           <dt class="text-secondary-400">ID</dt>
@@ -484,6 +503,12 @@ onMounted(() => fetchUsers());
           <dd class="text-secondary-900 font-medium">
             {{ selectedUser.address || "-" }}
           </dd>
+
+          <dt class="text-secondary-400">สร้างโดย</dt>
+          <dd class="text-secondary-900 font-medium">-</dd>
+
+          <dt class="text-secondary-400">อัปเดตโดย</dt>
+          <dd class="text-secondary-900 font-medium">-</dd>
 
           <dt class="text-secondary-400">สร้างเมื่อ</dt>
           <dd class="text-secondary-900 font-medium">
