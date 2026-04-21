@@ -48,7 +48,7 @@ const actionColors: Record<string, string> = {
 <template>
   <div>
     <div class="page-header mb-6">
-      <h1 class="page-title">บันทึกกิจกรรม (Audit Log)</h1>
+      <h1 class="page-title">[TODO] บันทึกกิจกรรม (Audit Log)</h1>
       <!-- TODO: GET /admin/logs/export -->
       <span class="text-sm text-secondary-400"
         >{{ filtered.length }} รายการ</span

@@ -92,7 +92,7 @@ function fmt(n: number) {
 
 <template>
   <div>
-    <h1 class="page-title mb-6">แดชบอร์ด</h1>
+    <h1 class="page-title mb-6">[TODO] แดชบอร์ด</h1>
 
     <!-- Stat cards -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">

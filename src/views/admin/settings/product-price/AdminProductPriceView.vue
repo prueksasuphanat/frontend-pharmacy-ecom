@@ -17,17 +17,17 @@ const router = useRouter();
     </button>
 
     <div class="mb-6">
-      <h1 class="page-title">ราคาสินค้า</h1>
+      <h1 class="page-title">[TODO] ราคาสินค้า</h1>
       <p class="text-sm text-secondary-500 mt-1">
         กำหนดราคาสินค้าตาม Role และส่วนลด
       </p>
     </div>
 
     <!-- TODO: Add content here -->
-    <div class="card">
+    <!-- <div class="card">
       <div class="text-center py-12">
         <p class="text-secondary-400">กำลังพัฒนา...</p>
       </div>
-    </div>
+    </div> -->
   </div>
 </template>
