@@ -15,7 +15,8 @@ export async function authGuard(
 
   // Now check auth status with fresh user data
   const isLoggedIn = !!auth.accessToken && !!auth.currentUser;
-  const isAdmin = auth.currentUser?.role === "ADMIN";
+  const isAdmin =
+    auth.currentUser?.role === "ADMIN" || auth.currentUser?.role === "DEMO";
 
   // Guest only pages (login, register)
   if (to.meta.guestOnly && isLoggedIn) {

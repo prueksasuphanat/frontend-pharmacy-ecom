@@ -95,7 +95,7 @@ async function logout() {
         <div class="flex items-center gap-1">
           <!-- Admin badge -->
           <RouterLink
-            v-if="auth.isAdmin"
+            v-if="auth.isAdmin || auth.userRole === 'DEMO'"
             to="/admin/dashboard"
             class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-primary-50 text-primary-700 rounded-lg text-xs font-medium hover:bg-primary-100 transition-colors"
           >

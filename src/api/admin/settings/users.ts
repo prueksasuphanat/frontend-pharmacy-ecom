@@ -24,7 +24,7 @@ export interface User {
   address?: string | null;
   birthdate?: string | null;
   sex?: "MALE" | "FEMALE" | "OTHER" | null;
-  role: "ADMIN" | "PHARMACIST" | "CUSTOMER";
+  role: "ADMIN" | "DEMO" | "PHARMACIST" | "CUSTOMER";
   is_verified: boolean;
   is_active: boolean;
   is_delete: boolean;
@@ -41,7 +41,7 @@ export interface GetUsersParams {
   page?: number;
   limit?: number;
   search?: string;
-  role?: "ADMIN" | "PHARMACIST" | "CUSTOMER";
+  role?: "ADMIN" | "DEMO" | "PHARMACIST" | "CUSTOMER";
   is_verified?: boolean;
   is_active?: boolean;
   is_delete?: boolean;
