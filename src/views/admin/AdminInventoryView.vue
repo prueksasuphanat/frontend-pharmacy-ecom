@@ -89,7 +89,6 @@ const categoryOptionsForForm = computed(() => [
   })),
 ]);
 
-// Fetch products
 async function fetchProducts() {
   await productStore.getProducts({
     page: pagination.value.page,
@@ -110,36 +109,30 @@ async function fetchProducts() {
   });
 }
 
-// Handle page change
 function handlePageChange(page: number) {
   productStore.pagination.page = page;
   fetchProducts();
 }
 
-// Handle search
 function handleSearch() {
   productStore.pagination.page = 1;
   fetchProducts();
 }
 
-// Handle filter change
 function handleFilterChange() {
   productStore.pagination.page = 1;
   fetchProducts();
 }
 
-// Handle toggle status
 async function handleToggleStatus(product: Product) {
   await productStore.toggleProductActive(product.id);
 }
 
-// Handle edit product
 async function handleEditProduct(product: Product) {
   selectedProduct.value = product;
   modalLoading.value = true;
   editModalOpen.value = true;
 
-  // Fetch fresh data
   const fresh = await productStore.getProductById(product.id);
   modalLoading.value = false;
 
@@ -156,7 +149,6 @@ async function handleEditProduct(product: Product) {
   }
 }
 
-// Close edit modal
 function closeEditModal() {
   editModalOpen.value = false;
   selectedProduct.value = null;
@@ -170,7 +162,6 @@ function closeEditModal() {
   };
 }
 
-// Update product
 async function updateProduct() {
   if (!selectedProduct.value) return;
 
@@ -194,7 +185,6 @@ async function updateProduct() {
   }
 }
 
-// Format price
 function formatPrice(price: string | number): string {
   const numPrice = typeof price === "string" ? parseFloat(price) : price;
   return numPrice.toLocaleString("th-TH", {
@@ -203,11 +193,9 @@ function formatPrice(price: string | number): string {
   });
 }
 
-// Initialize
 onMounted(async () => {
-  // Fetch categories for filter
   await categoryStore.getCategories({ limit: 100 });
-  // Fetch products
+
   await fetchProducts();
 });
 </script>

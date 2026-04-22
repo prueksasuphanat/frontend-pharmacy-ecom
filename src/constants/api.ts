@@ -56,5 +56,8 @@ export const API_ENDPOINTS = {
         VERIFIRED: (id: string) => `/admin/users/verifired/${id}`,
       },
     },
+    PRODUCT_PRICES: {
+      BASE: "/admin/product-prices",
+    },
   },
 } as const;

@@ -67,10 +67,13 @@ export const useProductStore = defineStore("product", {
       try {
         const product = await productsApi.getProductById(id);
 
-        // Sync into local list if present
         const idx = this.products.findIndex((p) => p.id === id);
         if (idx !== -1) {
           this.products[idx] = product;
+        }
+
+        if (!product.category) {
+          product.category_id = null;
         }
 
         return product;
