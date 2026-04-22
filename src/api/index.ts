@@ -15,3 +15,4 @@ export * from "./cart";
 export * from "./notifications";
 export * from "./admin/settings/users";
 export * from "./admin/settings/categories";
+export * from "./admin/logs";

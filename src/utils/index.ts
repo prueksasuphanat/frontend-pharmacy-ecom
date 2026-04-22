@@ -11,4 +11,6 @@ export {
   formatDateShort,
   fromNow,
   toLocal,
+  toIctDateRange,
+  toDateParam,
 } from "./dayjs";

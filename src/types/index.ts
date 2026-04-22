@@ -8,3 +8,4 @@ export * from "./notification";
 export * from "./order";
 export * from "./category";
 export * from "./productPrice";
+export * from "./pricingLog";

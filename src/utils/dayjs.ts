@@ -76,3 +76,29 @@ export const fromNow = (date: string | Date | null | undefined): string => {
 
 /** แปลง Date object / ISO string → dayjs instance (tz Bangkok) */
 export const toLocal = (date: string | Date) => dayjs.tz(date, "Asia/Bangkok");
+
+// ─── Date range helpers ───────────────────────────────────────────────────────
+
+/**
+ * แปลง YYYY-MM-DD (local ICT) เป็น UTC range สำหรับ API filter
+ * ใช้คู่กับ backend toIctDateRange()
+ *
+ * @example
+ * toIctDateRange("2026-04-20")
+ * // { gte: "2026-04-19T17:00:00.000Z", lte: "2026-04-20T16:59:59.000Z" }
+ */
+export const toIctDateRange = (
+  dateStr: string,
+): { gte: string; lte: string } => ({
+  gte: dayjs.tz(`${dateStr} 00:00:00`, "Asia/Bangkok").toISOString(),
+  lte: dayjs.tz(`${dateStr} 23:59:59`, "Asia/Bangkok").toISOString(),
+});
+
+/**
+ * แปลง YYYY-MM-DD (local ICT) เป็น string วันที่ UTC
+ * ใช้สำหรับส่ง query param ไป backend
+ *
+ * @example
+ * toUtcDateParam("2026-04-20") // "2026-04-20"  (ส่งตรงๆ ไม่ต้องแปลง)
+ */
+export const toDateParam = (localDate: string): string => localDate;

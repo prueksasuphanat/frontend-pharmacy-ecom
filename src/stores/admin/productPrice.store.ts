@@ -138,23 +138,6 @@ export const useProductPriceStore = defineStore("productPrice", {
       }
     },
 
-    updatePriceLocally(userId: number, productId: number, price: number) {
-      const productPrice = this.productPrices.find(
-        (pp) => pp.product_id === productId,
-      );
-      if (!productPrice) return;
-
-      const userPrice = productPrice.data.find((up) => up.user_id === userId);
-      if (userPrice) {
-        userPrice.price = price;
-      } else {
-        productPrice.data.push({ user_id: userId, price });
-      }
-    },
-
-    /**
-     * Clear all product prices
-     */
     clearProductPrices() {
       this.productPrices = [];
       this.error = null;

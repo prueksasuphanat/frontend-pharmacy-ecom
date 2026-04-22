@@ -265,7 +265,7 @@ function getColumnAlign(align?: "left" | "center" | "right") {
 
 <style scoped>
 .base-table-wrapper {
-  @apply bg-white rounded-xl border border-secondary-100 overflow-hidden;
+  @apply bg-white rounded-xl border border-secondary-100;
 }
 
 .table-hover tbody tr:hover {

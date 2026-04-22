@@ -16,13 +16,35 @@ import {
 const route = useRoute();
 
 const settingsExpanded = ref(false);
+const logsExpanded = ref(false);
 
 const links = [
   { to: "/admin/dashboard", label: "แดชบอร์ด", icon: LayoutDashboard },
   { to: "/admin/orders", label: "คำสั่งซื้อ", icon: ShoppingBag },
   { to: "/admin/products", label: "สินค้า", icon: Package },
-  { to: "/admin/logs", label: "บันทึกกิจกรรม", icon: BarChart2 },
 ];
+
+const logsMenu = {
+  label: "บันทึกกิจกรรม",
+  icon: BarChart2,
+  children: [
+    {
+      to: "/admin/logs/set-up-pricing",
+      label: "การตั้งราคา",
+      icon: BarChart2,
+    },
+    {
+      to: "/admin/logs/user",
+      label: "ผู้ใช้งาน",
+      icon: Users,
+    },
+    {
+      to: "/admin/logs/order",
+      label: "คำสั่งซื้อ",
+      icon: ShoppingBag,
+    },
+  ],
+};
 
 const settingsMenu = {
   label: "ตั้งค่าระบบ",
@@ -51,9 +73,17 @@ function isSettingsActive() {
   return route.path.startsWith("/admin/settings");
 }
 
-// Auto-expand settings menu if on settings page
+function isLogsActive() {
+  return route.path.startsWith("/admin/logs");
+}
+
+// Auto-expand menus if on their pages
 if (isSettingsActive()) {
   settingsExpanded.value = true;
+}
+
+if (isLogsActive()) {
+  logsExpanded.value = true;
 }
 </script>
 
@@ -88,6 +118,42 @@ if (isSettingsActive()) {
         <component :is="link.icon" class="w-4.5 h-4.5 shrink-0" />
         {{ link.label }}
       </RouterLink>
+
+      <!-- Logs Menu with Submenu -->
+      <div>
+        <button
+          @click="logsExpanded = !logsExpanded"
+          :class="[
+            'sidebar-link w-full',
+            { active: isLogsActive() && !logsExpanded },
+          ]"
+        >
+          <component :is="logsMenu.icon" class="w-4.5 h-4.5 shrink-0" />
+          <span class="flex-1 text-left">{{ logsMenu.label }}</span>
+          <ChevronDown
+            :class="[
+              'w-4 h-4 transition-transform shrink-0',
+              logsExpanded ? 'rotate-180' : '',
+            ]"
+          />
+        </button>
+
+        <!-- Submenu -->
+        <div
+          v-show="logsExpanded"
+          class="ml-4 mt-1 space-y-1 border-l-2 border-secondary-100 pl-2"
+        >
+          <RouterLink
+            v-for="child in logsMenu.children"
+            :key="child.to"
+            :to="child.to"
+            :class="['sidebar-link text-sm', { active: isActive(child.to) }]"
+          >
+            <component :is="child.icon" class="w-4 h-4 shrink-0" />
+            {{ child.label }}
+          </RouterLink>
+        </div>
+      </div>
 
       <!-- Settings Menu with Submenu -->
       <div>
