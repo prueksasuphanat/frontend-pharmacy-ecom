@@ -14,11 +14,65 @@ const usersStore = useUsersStore();
 const productStore = useProductStore();
 
 // State
-const users = computed(() => usersStore.users);
+const allUsers = computed(() => usersStore.users);
 const products = ref<Product[]>([]);
 const selectedProducts = ref<Product[]>([]);
 const priceMatrix = ref<Record<string, Record<number, string>>>({});
 const isLoading = ref(false);
+
+// Custom user selection
+const isCustomUserMode = ref(false);
+const selectedUsers = ref<User[]>([]);
+const selectedUserId = ref<number | null>(null);
+
+const users = computed(() =>
+  isCustomUserMode.value ? selectedUsers.value : allUsers.value,
+);
+
+const availableUsers = computed(() => {
+  const selectedIds = selectedUsers.value.map((u) => u.id);
+  return allUsers.value.filter((u) => !selectedIds.includes(u.id));
+});
+
+const userOptions = computed(() =>
+  availableUsers.value.map((u) => ({
+    value: u.id,
+    label: `${getUserFullName(u)} (${u.username})`,
+  })),
+);
+
+function addUserRow() {
+  if (!selectedUserId.value) return;
+  const user = allUsers.value.find(
+    (u) => u.id === Number(selectedUserId.value),
+  );
+  if (!user) return;
+
+  selectedUsers.value.push(user);
+
+  // Initialize price matrix for this user
+  const userKey = String(user.id);
+  if (!priceMatrix.value[userKey]) {
+    priceMatrix.value[userKey] = {};
+  }
+  selectedProducts.value.forEach((product) => {
+    if (priceMatrix.value[userKey][product.id] === undefined) {
+      priceMatrix.value[userKey][product.id] = product.default_price || "0";
+    }
+  });
+
+  selectedUserId.value = null;
+}
+
+function removeUserRow(userId: number) {
+  selectedUsers.value = selectedUsers.value.filter((u) => u.id !== userId);
+}
+
+function onCustomUserModeChange() {
+  selectedUsers.value = [];
+  selectedUserId.value = null;
+  initializePriceMatrix();
+}
 
 // Product selection
 const availableProducts = computed(() => {
@@ -51,7 +105,7 @@ async function fetchProducts() {
 }
 
 function initializePriceMatrix() {
-  users.value.forEach((user) => {
+  allUsers.value.forEach((user) => {
     const userKey = String(user.id);
     if (!priceMatrix.value[userKey]) {
       priceMatrix.value[userKey] = {};
@@ -119,7 +173,7 @@ async function fetchPricesForProducts() {
   if (success) {
     // Update local price matrix from store
     const storePriceMatrix = productPriceStore.priceMatrix;
-    users.value.forEach((user) => {
+    allUsers.value.forEach((user) => {
       const userKey = String(user.id);
       if (!priceMatrix.value[userKey]) {
         priceMatrix.value[userKey] = {};
@@ -201,39 +255,72 @@ onMounted(async () => {
 
     <!-- Main Content -->
     <div v-else class="card">
-      <!-- Add Product Column Section -->
-      <div class="mb-6 pb-6 border-b border-secondary-100">
-        <h3 class="text-sm font-semibold text-secondary-900 mb-3">
-          เพิ่มสินค้า
-        </h3>
-        <div class="flex flex-col sm:flex-row gap-3">
-          <div class="flex-1 sm:max-w-md">
-            <BaseAutocomplete
-              v-model="selectedProductId"
-              :options="productOptions"
-              placeholder="ค้นหาและเลือกสินค้า..."
-              clearable
-              :disabled="availableProducts.length === 0"
-            />
-          </div>
+      <!-- Filters Row -->
+      <div class="mb-4 pb-4 border-b border-secondary-100 space-y-3">
+        <!-- Product -->
+        <div class="flex items-center gap-2">
+          <span class="text-sm font-medium text-secondary-700 w-16 shrink-0"
+            >สินค้า</span
+          >
+          <BaseAutocomplete
+            v-model="selectedProductId"
+            :options="productOptions"
+            placeholder="ค้นหาและเลือกสินค้า..."
+            clearable
+            :disabled="availableProducts.length === 0"
+            class="flex-1 max-w-sm"
+          />
           <button
             @click="addProductColumn"
             :disabled="!selectedProductId || availableProducts.length === 0"
-            class="btn btn-primary flex items-center justify-center gap-2 shrink-0"
+            class="btn btn-primary flex items-center gap-1.5 shrink-0 px-3 py-2 text-sm"
           >
-            <Plus class="w-4 h-4" />
-            <span>เพิ่มสินค้า</span>
+            <Plus class="w-3.5 h-3.5" />
+            เพิ่ม
           </button>
         </div>
-        <p
-          v-if="availableProducts.length === 0"
-          class="text-xs text-secondary-500 mt-2"
-        >
-          ไม่มีสินค้าที่สามารถเพิ่มได้แล้ว
-        </p>
+
+        <!-- User -->
+        <div class="flex items-center gap-2">
+          <div class="w-16 shrink-0 flex items-center gap-1.5">
+            <input
+              id="custom-user-mode"
+              v-model="isCustomUserMode"
+              type="checkbox"
+              class="w-4 h-4 rounded border-secondary-300 text-primary-600 focus:ring-primary-500 cursor-pointer"
+              @change="onCustomUserModeChange"
+            />
+            <label
+              for="custom-user-mode"
+              class="text-sm font-medium text-secondary-700 cursor-pointer select-none"
+            >
+              ลูกค้า
+            </label>
+          </div>
+          <template v-if="isCustomUserMode">
+            <BaseAutocomplete
+              v-model="selectedUserId"
+              :options="userOptions"
+              placeholder="ค้นหาและเลือกลูกค้า..."
+              clearable
+              :disabled="availableUsers.length === 0"
+              class="flex-1 max-w-sm"
+            />
+            <button
+              @click="addUserRow"
+              :disabled="!selectedUserId || availableUsers.length === 0"
+              class="btn btn-primary flex items-center gap-1.5 shrink-0 px-3 py-2 text-sm"
+            >
+              <Plus class="w-3.5 h-3.5" />
+              เพิ่ม
+            </button>
+          </template>
+          <span v-else class="text-sm text-secondary-400"
+            >แสดงลูกค้าทั้งหมด</span
+          >
+        </div>
       </div>
 
-      <!-- Price Matrix Table -->
       <div v-if="selectedProducts.length > 0" class="space-y-4">
         <div
           class="flex flex-col sm:flex-row sm:items-center justify-between gap-3"
@@ -299,28 +386,41 @@ onMounted(async () => {
                 <td
                   class="sticky left-0 z-10 bg-white px-4 py-3 text-sm font-medium text-secondary-900 border-r border-secondary-200 hover:bg-secondary-50"
                 >
-                  <div>
-                    <div
-                      class="font-medium truncate max-w-[140px] sm:max-w-none"
-                    >
-                      {{ getUserFullName(user) }}
+                  <div class="flex items-start justify-between gap-1">
+                    <div class="min-w-0">
+                      <div
+                        class="font-medium truncate max-w-[140px] sm:max-w-none"
+                      >
+                        {{ getUserFullName(user) }}
+                      </div>
+                      <div
+                        class="text-xs text-secondary-500 mt-0.5 truncate max-w-[140px] sm:max-w-none"
+                      >
+                        {{ user.username }}
+                      </div>
+                      <span
+                        class="inline-flex items-center mt-1 px-2 py-0.5 rounded text-xs font-medium"
+                        :class="{
+                          'bg-purple-100 text-purple-800':
+                            user.role === 'ADMIN',
+                          'bg-blue-100 text-blue-800':
+                            user.role === 'PHARMACIST',
+                          'bg-green-100 text-green-800':
+                            user.role === 'CUSTOMER',
+                          'bg-orange-100 text-orange-800': user.role === 'DEMO',
+                        }"
+                      >
+                        {{ user.role }}
+                      </span>
                     </div>
-                    <div
-                      class="text-xs text-secondary-500 mt-0.5 truncate max-w-[140px] sm:max-w-none"
+                    <button
+                      v-if="isCustomUserMode"
+                      @click="removeUserRow(user.id)"
+                      class="flex-shrink-0 p-1 text-secondary-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                      title="ลบลูกค้า"
                     >
-                      {{ user.username }}
-                    </div>
-                    <span
-                      class="inline-flex items-center mt-1 px-2 py-0.5 rounded text-xs font-medium"
-                      :class="{
-                        'bg-purple-100 text-purple-800': user.role === 'ADMIN',
-                        'bg-blue-100 text-blue-800': user.role === 'PHARMACIST',
-                        'bg-green-100 text-green-800': user.role === 'CUSTOMER',
-                        'bg-orange-100 text-orange-800': user.role === 'DEMO',
-                      }"
-                    >
-                      {{ user.role }}
-                    </span>
+                      <X class="w-4 h-4" />
+                    </button>
                   </div>
                 </td>
                 <td
