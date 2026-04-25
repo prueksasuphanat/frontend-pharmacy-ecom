@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from "vue";
 import { useRouter } from "vue-router";
-import { ChevronLeft, Plus, X, Save } from "lucide-vue-next";
+import { ChevronLeft, Plus, X, Save, ArrowLeftRight } from "lucide-vue-next";
 import { BaseInput, BaseAutocomplete } from "@/components/ui";
 import type { User, Product, UpdateProductPricePayload } from "@/types";
 import { useToast } from "@/composables";
@@ -19,6 +19,7 @@ const products = ref<Product[]>([]);
 const selectedProducts = ref<Product[]>([]);
 const priceMatrix = ref<Record<string, Record<number, string>>>({});
 const isLoading = ref(false);
+const isTransposed = ref(false);
 
 // Custom user selection
 const isCustomUserMode = ref(false);
@@ -256,33 +257,35 @@ onMounted(async () => {
     <!-- Main Content -->
     <div v-else class="card">
       <!-- Filters Row -->
-      <div class="mb-4 pb-4 border-b border-secondary-100 space-y-3">
+      <div class="mb-4 pb-4 border-b border-secondary-100 space-y-2">
         <!-- Product -->
-        <div class="flex items-center gap-2">
-          <span class="text-sm font-medium text-secondary-700 w-16 shrink-0"
+        <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+          <span class="text-sm font-medium text-secondary-700 sm:w-16 shrink-0"
             >สินค้า</span
           >
-          <BaseAutocomplete
-            v-model="selectedProductId"
-            :options="productOptions"
-            placeholder="ค้นหาและเลือกสินค้า..."
-            clearable
-            :disabled="availableProducts.length === 0"
-            class="flex-1 max-w-sm"
-          />
-          <button
-            @click="addProductColumn"
-            :disabled="!selectedProductId || availableProducts.length === 0"
-            class="btn btn-primary flex items-center gap-1.5 shrink-0 px-3 py-2 text-sm"
-          >
-            <Plus class="w-3.5 h-3.5" />
-            เพิ่ม
-          </button>
+          <div class="flex items-center gap-2 flex-1">
+            <BaseAutocomplete
+              v-model="selectedProductId"
+              :options="productOptions"
+              placeholder="ค้นหาและเลือกสินค้า..."
+              clearable
+              :disabled="availableProducts.length === 0"
+              class="flex-1 sm:max-w-sm"
+            />
+            <button
+              @click="addProductColumn"
+              :disabled="!selectedProductId || availableProducts.length === 0"
+              class="btn btn-primary flex items-center gap-1.5 shrink-0 px-3 py-2 text-sm"
+            >
+              <Plus class="w-3.5 h-3.5" />
+              <span class="hidden xs:inline">เพิ่ม</span>
+            </button>
+          </div>
         </div>
 
         <!-- User -->
-        <div class="flex items-center gap-2">
-          <div class="w-16 shrink-0 flex items-center gap-1.5">
+        <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+          <div class="sm:w-16 shrink-0 flex items-center gap-1.5">
             <input
               id="custom-user-mode"
               v-model="isCustomUserMode"
@@ -297,51 +300,71 @@ onMounted(async () => {
               ลูกค้า
             </label>
           </div>
-          <template v-if="isCustomUserMode">
-            <BaseAutocomplete
-              v-model="selectedUserId"
-              :options="userOptions"
-              placeholder="ค้นหาและเลือกลูกค้า..."
-              clearable
-              :disabled="availableUsers.length === 0"
-              class="flex-1 max-w-sm"
-            />
-            <button
-              @click="addUserRow"
-              :disabled="!selectedUserId || availableUsers.length === 0"
-              class="btn btn-primary flex items-center gap-1.5 shrink-0 px-3 py-2 text-sm"
+          <div class="flex items-center gap-2 flex-1">
+            <template v-if="isCustomUserMode">
+              <BaseAutocomplete
+                v-model="selectedUserId"
+                :options="userOptions"
+                placeholder="ค้นหาและเลือกลูกค้า..."
+                clearable
+                :disabled="availableUsers.length === 0"
+                class="flex-1 sm:max-w-sm"
+              />
+              <button
+                @click="addUserRow"
+                :disabled="!selectedUserId || availableUsers.length === 0"
+                class="btn btn-primary flex items-center gap-1.5 shrink-0 px-3 py-2 text-sm"
+              >
+                <Plus class="w-3.5 h-3.5" />
+                <span class="hidden xs:inline">เพิ่ม</span>
+              </button>
+            </template>
+            <span v-else class="text-sm text-secondary-400"
+              >แสดงลูกค้าทั้งหมด</span
             >
-              <Plus class="w-3.5 h-3.5" />
-              เพิ่ม
-            </button>
-          </template>
-          <span v-else class="text-sm text-secondary-400"
-            >แสดงลูกค้าทั้งหมด</span
-          >
+          </div>
         </div>
       </div>
 
       <div v-if="selectedProducts.length > 0" class="space-y-4">
-        <div
-          class="flex flex-col sm:flex-row sm:items-center justify-between gap-3"
-        >
+        <div class="flex items-center justify-between gap-2">
           <h3 class="text-sm font-semibold text-secondary-900">
             ตารางราคาสินค้า
           </h3>
-          <button
-            @click="saveAllPrices"
-            :disabled="productPriceStore.isSaving"
-            class="btn btn-primary flex items-center justify-center gap-2 w-full sm:w-auto"
-          >
-            <Save class="w-4 h-4" />
-            <span>{{
-              productPriceStore.isSaving ? "กำลังบันทึก..." : "บันทึกทั้งหมด"
-            }}</span>
-          </button>
+          <div class="flex items-center gap-2">
+            <button
+              @click="isTransposed = !isTransposed"
+              class="btn btn-secondary flex items-center justify-center gap-2"
+              title="สลับแถว/คอลัมน์"
+            >
+              <ArrowLeftRight class="w-4 h-4" />
+              <span class="hidden sm:inline">{{
+                isTransposed ? "ผู้ใช้ × สินค้า" : "สินค้า × ผู้ใช้"
+              }}</span>
+            </button>
+            <button
+              @click="saveAllPrices"
+              :disabled="productPriceStore.isSaving"
+              class="btn btn-primary flex items-center justify-center gap-2"
+            >
+              <Save class="w-4 h-4" />
+              <span class="hidden sm:inline">{{
+                productPriceStore.isSaving ? "กำลังบันทึก..." : "บันทึกทั้งหมด"
+              }}</span>
+              <span class="sm:hidden">{{
+                productPriceStore.isSaving ? "..." : "บันทึก"
+              }}</span>
+            </button>
+          </div>
         </div>
 
         <div class="overflow-x-auto -mx-6 px-6">
-          <table class="w-full border-collapse" style="min-width: 500px">
+          <!-- Normal: users = rows, products = columns -->
+          <table
+            v-if="!isTransposed"
+            class="w-full border-collapse"
+            style="min-width: 500px"
+          >
             <thead>
               <tr class="border-b-2 border-secondary-200">
                 <th
@@ -409,9 +432,8 @@ onMounted(async () => {
                             user.role === 'CUSTOMER',
                           'bg-orange-100 text-orange-800': user.role === 'DEMO',
                         }"
+                        >{{ user.role }}</span
                       >
-                        {{ user.role }}
-                      </span>
                     </div>
                     <button
                       v-if="isCustomUserMode"
@@ -426,6 +448,108 @@ onMounted(async () => {
                 <td
                   v-for="product in selectedProducts"
                   :key="product.id"
+                  class="px-4 py-3 border-r border-secondary-200 last:border-r-0"
+                >
+                  <BaseInput
+                    :model-value="
+                      priceMatrix[String(user.id)]?.[product.id] || ''
+                    "
+                    @update:model-value="
+                      (value: string | number) =>
+                        updatePrice(user.id, product.id, value)
+                    "
+                    type="number"
+                    placeholder="0.00"
+                    class="w-full min-w-[120px]"
+                  />
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- Transposed: products = rows, users = columns -->
+          <table v-else class="w-full border-collapse" style="min-width: 500px">
+            <thead>
+              <tr class="border-b-2 border-secondary-200">
+                <th
+                  class="sticky left-0 z-10 bg-white px-4 py-3 text-left text-sm font-semibold text-secondary-900 w-[160px] sm:min-w-[200px] border-r border-secondary-200"
+                >
+                  สินค้า
+                </th>
+                <th
+                  v-for="user in users"
+                  :key="user.id"
+                  class="px-4 py-3 text-left text-sm font-semibold text-secondary-900 min-w-[160px] sm:min-w-[180px] border-r border-secondary-200 last:border-r-0"
+                >
+                  <div class="flex items-start justify-between gap-2">
+                    <div class="min-w-0">
+                      <div class="font-semibold truncate">
+                        {{ getUserFullName(user) }}
+                      </div>
+                      <div class="text-xs text-secondary-500 mt-0.5">
+                        {{ user.username }}
+                      </div>
+                      <span
+                        class="inline-flex items-center mt-1 px-2 py-0.5 rounded text-xs font-medium"
+                        :class="{
+                          'bg-purple-100 text-purple-800':
+                            user.role === 'ADMIN',
+                          'bg-blue-100 text-blue-800':
+                            user.role === 'PHARMACIST',
+                          'bg-green-100 text-green-800':
+                            user.role === 'CUSTOMER',
+                          'bg-orange-100 text-orange-800': user.role === 'DEMO',
+                        }"
+                        >{{ user.role }}</span
+                      >
+                    </div>
+                    <button
+                      v-if="isCustomUserMode"
+                      @click="removeUserRow(user.id)"
+                      class="flex-shrink-0 p-1 text-secondary-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                      title="ลบลูกค้า"
+                    >
+                      <X class="w-4 h-4" />
+                    </button>
+                  </div>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="product in selectedProducts"
+                :key="product.id"
+                class="border-b border-secondary-100 hover:bg-secondary-50 transition-colors"
+              >
+                <td
+                  class="sticky left-0 z-10 bg-white px-4 py-3 text-sm font-medium text-secondary-900 border-r border-secondary-200 hover:bg-secondary-50"
+                >
+                  <div class="flex items-start justify-between gap-1">
+                    <div class="min-w-0">
+                      <div
+                        class="font-medium truncate max-w-[140px] sm:max-w-none"
+                      >
+                        {{ product.name }}
+                      </div>
+                      <div class="text-xs text-secondary-500 mt-0.5">
+                        {{ product.code }}
+                      </div>
+                      <div class="text-xs text-secondary-500">
+                        ฿{{ product.default_price }}
+                      </div>
+                    </div>
+                    <button
+                      @click="removeProductColumn(product.id)"
+                      class="flex-shrink-0 p-1 text-secondary-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                      title="ลบสินค้า"
+                    >
+                      <X class="w-4 h-4" />
+                    </button>
+                  </div>
+                </td>
+                <td
+                  v-for="user in users"
+                  :key="user.id"
                   class="px-4 py-3 border-r border-secondary-200 last:border-r-0"
                 >
                   <BaseInput

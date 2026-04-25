@@ -48,16 +48,41 @@ const dropdownStyle = ref({ top: "0px", left: "0px", width: "0px" });
 function updateDropdownPosition() {
   if (!triggerRef.value) return;
   const rect = triggerRef.value.getBoundingClientRect();
-  const viewportWidth = window.innerWidth;
+
+  // Use visualViewport when available (accounts for mobile keyboard)
+  const vp = window.visualViewport;
+  const viewportWidth = vp ? vp.width : window.innerWidth;
+  const viewportHeight = vp ? vp.height : window.innerHeight;
+  const vpOffsetTop = vp ? vp.offsetTop : 0;
+  const vpOffsetLeft = vp ? vp.offsetLeft : 0;
 
   // Clamp left so dropdown doesn't overflow right edge, min 8px from left edge
-  const left = Math.max(8, Math.min(rect.left, viewportWidth - rect.width - 8));
+  const left = Math.max(
+    8,
+    Math.min(rect.left - vpOffsetLeft, viewportWidth - rect.width - 8),
+  );
   // Cap width so it never exceeds viewport
   const width = Math.min(rect.width, viewportWidth - left - 8);
 
+  // Decide whether to open above or below based on available space
+  const spaceBelow = viewportHeight - (rect.bottom - vpOffsetTop);
+  const spaceAbove = rect.top - vpOffsetTop;
+  const maxDropdownHeight = 240; // max-h-60 = 15rem = 240px
+
+  let top: number;
+  if (
+    spaceBelow >= Math.min(maxDropdownHeight, 120) ||
+    spaceBelow >= spaceAbove
+  ) {
+    top = rect.bottom + vpOffsetTop + 4;
+  } else {
+    // Open upward
+    top = rect.top + vpOffsetTop - Math.min(maxDropdownHeight, spaceAbove) - 4;
+  }
+
   dropdownStyle.value = {
-    top: `${rect.bottom + 4}px`,
-    left: `${left}px`,
+    top: `${top}px`,
+    left: `${left + vpOffsetLeft}px`,
     width: `${width}px`,
   };
 }
@@ -110,6 +135,16 @@ useEventListener(
 useEventListener(window, "resize", () => {
   if (isOpen.value) updateDropdownPosition();
 });
+
+// Handle mobile keyboard resize via visualViewport API
+if (typeof window !== "undefined" && window.visualViewport) {
+  useEventListener(window.visualViewport, "resize", () => {
+    if (isOpen.value) updateDropdownPosition();
+  });
+  useEventListener(window.visualViewport, "scroll", () => {
+    if (isOpen.value) updateDropdownPosition();
+  });
+}
 
 function open() {
   if (props.disabled) return;
