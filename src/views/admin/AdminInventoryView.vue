@@ -3,11 +3,12 @@ import { ref, onMounted, computed } from "vue";
 import { Search, Edit } from "lucide-vue-next";
 import {
   BaseInput,
-  BaseSelect,
   BaseTable,
   BaseToggle,
   BaseModal,
   LoadingOverlay,
+  BaseMultiSelect,
+  BaseAutocomplete,
 } from "@/components/ui";
 import type { Column } from "@/components/ui/BaseTable.vue";
 import type { Product } from "@/types";
@@ -20,9 +21,9 @@ const categoryStore = useCategoryStore();
 
 // State
 const searchQuery = ref("");
-const statusFilter = ref<string>("all");
-const categoryFilter = ref<string>("all");
-const specialPricingFilter = ref<string>("all");
+const statusFilter = ref<string | number | null>(null);
+const categoryFilter = ref<string | number | null>(null);
+const specialPricingFilter = ref<string | number | null>(null);
 
 // Modal state
 const editModalOpen = ref(false);
@@ -33,7 +34,7 @@ const productForm = ref({
   name: "",
   default_price: "",
   quantity: 0,
-  category_id: null as number | null,
+  category_ids: [] as number[],
   is_special_pricing_enabled: false,
 });
 
@@ -62,32 +63,28 @@ const columns: Column<Product>[] = [
 
 // Filter options
 const statusOptions = [
-  { value: "all", label: "ทั้งหมด" },
   { value: "active", label: "ใช้งาน" },
   { value: "inactive", label: "ไม่ใช้งาน" },
 ];
 
 const specialPricingOptions = [
-  { value: "all", label: "ทั้งหมด" },
   { value: "enabled", label: "เปิดใช้งาน" },
   { value: "disabled", label: "ปิดใช้งาน" },
 ];
 
-const categoryOptions = computed(() => [
-  { value: "all", label: "ทุกประเภท" },
-  ...categories.value.map((cat) => ({
-    value: cat.id.toString(),
+const categoryOptions = computed(() =>
+  categories.value.map((cat) => ({
+    value: cat.id,
     label: cat.name,
   })),
-]);
+);
 
-const categoryOptionsForForm = computed(() => [
-  { value: "", label: "ไม่ระบุ" },
-  ...categories.value.map((cat) => ({
-    value: cat.id.toString(),
+const categoryOptionsForForm = computed(() =>
+  categories.value.map((cat) => ({
+    value: cat.id,
     label: cat.name,
   })),
-]);
+);
 
 async function fetchProducts() {
   await productStore.getProducts({
@@ -95,15 +92,11 @@ async function fetchProducts() {
     limit: pagination.value.limit,
     search: searchQuery.value || undefined,
     is_active:
-      statusFilter.value === "all"
-        ? undefined
-        : statusFilter.value === "active",
+      statusFilter.value === null ? undefined : statusFilter.value === "active",
     category_id:
-      categoryFilter.value === "all"
-        ? undefined
-        : parseInt(categoryFilter.value),
+      categoryFilter.value !== null ? Number(categoryFilter.value) : undefined,
     is_special_pricing_enabled:
-      specialPricingFilter.value === "all"
+      specialPricingFilter.value === null
         ? undefined
         : specialPricingFilter.value === "enabled",
   });
@@ -143,7 +136,7 @@ async function handleEditProduct(product: Product) {
       name: fresh.name,
       default_price: fresh.default_price,
       quantity: fresh.quantity,
-      category_id: fresh.category_id,
+      category_ids: fresh.categories.map((c) => c.category_id),
       is_special_pricing_enabled: fresh.is_special_pricing_enabled,
     };
   }
@@ -157,7 +150,7 @@ function closeEditModal() {
     name: "",
     default_price: "",
     quantity: 0,
-    category_id: null,
+    category_ids: [],
     is_special_pricing_enabled: false,
   };
 }
@@ -171,11 +164,10 @@ async function updateProduct() {
 
   modalLoading.value = true;
   const success = await productStore.updateProduct(selectedProduct.value.id, {
-    code: productForm.value.code.trim(),
     name: productForm.value.name.trim(),
     default_price: productForm.value.default_price,
     quantity: productForm.value.quantity,
-    category_id: productForm.value.category_id,
+    category_ids: productForm.value.category_ids,
     is_special_pricing_enabled: productForm.value.is_special_pricing_enabled,
   });
   modalLoading.value = false;
@@ -228,26 +220,32 @@ onMounted(async () => {
         <!-- Row 2: Filters -->
         <div class="flex flex-col sm:flex-row gap-4">
           <div class="w-full sm:w-48">
-            <BaseSelect
+            <BaseAutocomplete
               v-model="categoryFilter"
               :options="categoryOptions"
-              @change="handleFilterChange"
+              placeholder="ทุกประเภท"
+              clearable
+              @update:model-value="handleFilterChange"
             />
           </div>
 
           <div class="w-full sm:w-48">
-            <BaseSelect
+            <BaseAutocomplete
               v-model="statusFilter"
               :options="statusOptions"
-              @change="handleFilterChange"
+              placeholder="สถานะทั้งหมด"
+              clearable
+              @update:model-value="handleFilterChange"
             />
           </div>
 
           <div class="w-full sm:w-48">
-            <BaseSelect
+            <BaseAutocomplete
               v-model="specialPricingFilter"
               :options="specialPricingOptions"
-              @change="handleFilterChange"
+              placeholder="ราคาตามผู้ใช้ทั้งหมด"
+              clearable
+              @update:model-value="handleFilterChange"
             />
           </div>
         </div>
@@ -265,9 +263,15 @@ onMounted(async () => {
     >
       <!-- Category -->
       <template #cell-category="{ row }">
-        <span v-if="row.category" class="text-sm text-secondary-700">
-          {{ row.category.name }}
-        </span>
+        <div v-if="row.categories?.length" class="flex flex-wrap gap-1">
+          <span
+            v-for="c in row.categories"
+            :key="c.category_id"
+            class="badge badge-teal text-xs"
+          >
+            {{ c.category.name }}
+          </span>
+        </div>
         <span v-else class="text-sm text-secondary-400">-</span>
       </template>
 
@@ -356,14 +360,13 @@ onMounted(async () => {
           />
 
           <!-- Category -->
-          <div>
-            <label class="label">ประเภทสินค้า</label>
-            <BaseSelect
-              v-model="productForm.category_id"
-              :options="categoryOptionsForForm"
-              :disabled="modalLoading"
-            />
-          </div>
+          <BaseMultiSelect
+            v-model="productForm.category_ids"
+            label="ประเภทสินค้า"
+            placeholder="เลือกประเภทสินค้า"
+            :options="categoryOptionsForForm"
+            :disabled="modalLoading"
+          />
 
           <!-- Price and Quantity -->
           <div class="grid grid-cols-2 gap-4">

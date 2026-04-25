@@ -4,10 +4,11 @@ export interface PricingLogProduct {
   id: number;
   code: string;
   name: string;
-  category: {
-    id: number;
-    name: string;
-  } | null;
+  categories: {
+    product_id: number;
+    category_id: number;
+    category: { id: number; name: string };
+  }[];
 }
 
 export interface PricingLogUser {

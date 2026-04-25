@@ -3,10 +3,10 @@ import { ref, onMounted, computed } from "vue";
 import { Search, Plus, Edit, Trash2 } from "lucide-vue-next";
 import {
   BaseInput,
-  BaseSelect,
   BaseTable,
   BaseToggle,
   BaseModal,
+  BaseAutocomplete,
 } from "@/components/ui";
 import type { Column, PaginationConfig } from "@/components/ui/BaseTable.vue";
 import type { Category } from "@/types";
@@ -18,7 +18,7 @@ const categoryStore = useCategoryStore();
 
 // State
 const searchQuery = ref("");
-const statusFilter = ref<string>("all");
+const statusFilter = ref<string | number | null>(null);
 
 // Modal state
 const addModalOpen = ref(false);
@@ -46,7 +46,6 @@ const columns: Column<Category>[] = [
 
 // Status filter options
 const statusOptions = [
-  { value: "all", label: "ทั้งหมด" },
   { value: "active", label: "ใช้งาน" },
   { value: "inactive", label: "ไม่ใช้งาน" },
 ];
@@ -58,9 +57,7 @@ async function fetchCategories() {
     limit: pagination.value.limit,
     search: searchQuery.value || null,
     is_active:
-      statusFilter.value === "all"
-        ? undefined
-        : statusFilter.value === "active",
+      statusFilter.value === null ? undefined : statusFilter.value === "active",
   });
 }
 
@@ -226,10 +223,12 @@ onMounted(() => {
 
         <!-- Status Filter -->
         <div class="w-full sm:w-48">
-          <BaseSelect
+          <BaseAutocomplete
             v-model="statusFilter"
             :options="statusOptions"
-            @change="handleStatusFilterChange"
+            placeholder="สถานะทั้งหมด"
+            clearable
+            @update:model-value="handleStatusFilterChange"
           />
         </div>
       </div>

@@ -11,11 +11,11 @@ import {
 } from "lucide-vue-next";
 import {
   BaseInput,
-  BaseSelect,
   BaseTable,
   BaseDatePicker,
   LoadingOverlay,
   BaseModal,
+  BaseAutocomplete,
 } from "@/components/ui";
 import type { Column } from "@/components/ui/BaseTable.vue";
 import type { PricingType } from "@/types";
@@ -32,7 +32,7 @@ const pricingType = computed({
 });
 const searchQuery = ref("");
 const dateFilter = ref("");
-const userFilter = ref<string>("all");
+const userFilter = ref<string | number | null>(null);
 const users = ref<User[]>([]);
 
 const pricingTypeOptions = [
@@ -40,13 +40,12 @@ const pricingTypeOptions = [
   { value: "user", label: "ราคาตามผู้ใช้" },
 ];
 
-const userOptions = computed(() => [
-  { value: "all", label: "ผู้ใช้ทั้งหมด" },
-  ...users.value.map((u) => ({
-    value: String(u.id),
+const userOptions = computed(() =>
+  users.value.map((u) => ({
+    value: u.id,
     label: `${u.first_name || ""} ${u.last_name || ""} (${u.username})`.trim(),
   })),
-]);
+);
 
 const showProductModal = ref(false);
 const showUserModal = ref(false);
@@ -143,8 +142,7 @@ async function fetchLogs() {
     limit: pagination.value.limit,
     search: searchQuery.value || undefined,
     changed_at: dateFilter.value || undefined,
-    user_id:
-      userFilter.value !== "all" ? parseInt(userFilter.value) : undefined,
+    user_id: userFilter.value !== null ? Number(userFilter.value) : undefined,
   });
 }
 
@@ -159,11 +157,6 @@ async function fetchUsers() {
 
 function clearDateFilter() {
   dateFilter.value = "";
-  handleFilterChange();
-}
-
-function clearUserFilter() {
-  userFilter.value = "all";
   handleFilterChange();
 }
 
@@ -224,7 +217,8 @@ function exportToCSV() {
     if (isDefault.value) {
       return [
         ...base,
-        log.product.category?.name || "-",
+        log.product.categories?.map((c: any) => c.category.name).join(", ") ||
+          "-",
         log.old_price,
         log.new_price,
         priceDiff(log.old_price, log.new_price).toFixed(2),
@@ -345,11 +339,11 @@ watch(
         <!-- Row 1: Pricing type + Search -->
         <div class="flex flex-col sm:flex-row gap-4">
           <div class="w-full sm:w-56">
-            <BaseSelect
+            <BaseAutocomplete
               v-model="pricingType"
               label="ประเภทการตั้งราคา"
               :options="pricingTypeOptions"
-              @change="handlePricingTypeChange"
+              @update:model-value="handlePricingTypeChange"
             />
           </div>
           <div class="flex-1">
@@ -387,20 +381,14 @@ watch(
 
           <!-- User filter (special pricing only) -->
           <div v-if="!isDefault" class="w-full sm:flex-1 relative">
-            <BaseSelect
+            <BaseAutocomplete
               v-model="userFilter"
               label="กรองตามผู้ใช้"
+              placeholder="ค้นหาผู้ใช้..."
               :options="userOptions"
-              @change="handleFilterChange"
+              clearable
+              @update:model-value="handleFilterChange"
             />
-            <button
-              v-if="userFilter !== 'all'"
-              @click="clearUserFilter"
-              class="absolute right-10 top-[38px] p-1 text-secondary-400 hover:text-secondary-600 transition-colors"
-              title="ล้างตัวกรอง"
-            >
-              <X class="w-4 h-4" />
-            </button>
           </div>
           <div v-else class="w-full sm:flex-1"></div>
         </div>
@@ -436,7 +424,11 @@ watch(
       <!-- Category (default only) -->
       <template #cell-category="{ row }">
         <span class="text-sm text-secondary-600">
-          {{ row.product.category?.name || "-" }}
+          {{
+            row.product.categories
+              ?.map((c: any) => c.category.name)
+              .join(", ") || "-"
+          }}
         </span>
       </template>
 
@@ -577,7 +569,11 @@ watch(
             <div>
               <p class="text-secondary-400 text-xs mb-0.5">ประเภท</p>
               <p class="text-secondary-900 font-medium">
-                {{ selectedProduct.category?.name || "-" }}
+                {{
+                  selectedProduct.categories
+                    ?.map((c: any) => c.category.name)
+                    .join(", ") || "-"
+                }}
               </p>
             </div>
             <div>

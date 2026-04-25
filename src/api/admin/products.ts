@@ -49,12 +49,20 @@ export async function getProductById(id: number): Promise<Product> {
   return response.data.data;
 }
 
+export interface UpdateProductPayload {
+  name?: string;
+  default_price?: string | number;
+  quantity?: number;
+  is_special_pricing_enabled?: boolean;
+  category_ids?: number[] | null; // [] = ลบทุก category, null/undefined = ไม่เปลี่ยน
+}
+
 /**
  * Update product
  */
 export async function updateProduct(
   id: number,
-  data: Partial<Product>,
+  data: UpdateProductPayload,
 ): Promise<Product> {
   const response = await apiClient.put<{
     success: boolean;

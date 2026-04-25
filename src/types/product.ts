@@ -7,6 +7,15 @@ export type DrugType =
   | "supplement"
   | "cosmetic";
 
+export interface ProductCategory {
+  product_id: number;
+  category_id: number;
+  category: {
+    id: number;
+    name: string;
+  };
+}
+
 export interface Product {
   id: number;
   pmc_product_id: number;
@@ -17,13 +26,9 @@ export interface Product {
   quantity: number;
   is_active: boolean;
   is_delete: boolean;
-  category_id: number | null;
   created_at: string;
   updated_at: string;
-  category: {
-    id: number;
-    name: string;
-  } | null;
+  categories: ProductCategory[];
 }
 
 export interface ProductListParams {
@@ -31,7 +36,7 @@ export interface ProductListParams {
   limit?: number;
   search?: string;
   is_active?: boolean;
-  category_id?: number;
+  category_id?: number; // filter สินค้าที่มี category นั้น (ยังใช้ได้เหมือนเดิม)
   is_special_pricing_enabled?: boolean;
 }
 

@@ -2,7 +2,7 @@
 import { ref, onMounted, computed } from "vue";
 import { useRouter } from "vue-router";
 import { ChevronLeft, Plus, X, Save } from "lucide-vue-next";
-import { BaseSelect, BaseInput } from "@/components/ui";
+import { BaseSelect, BaseInput, BaseAutocomplete } from "@/components/ui";
 import { usersApi } from "@/api/admin/settings/users";
 import { productsApi } from "@/api";
 import type { User } from "@/api/admin/settings/users";
@@ -29,12 +29,12 @@ const availableProducts = computed(() => {
 
 const productOptions = computed(() =>
   availableProducts.value.map((p) => ({
-    value: String(p.id),
+    value: p.id,
     label: `${p.code} - ${p.name}`,
   })),
 );
 
-const selectedProductId = ref<string>("");
+const selectedProductId = ref<number | null>(null);
 
 // Fetch data
 async function fetchUsers() {
@@ -85,11 +85,8 @@ async function addProductColumn() {
   if (!product) return;
 
   selectedProducts.value.push(product);
-
-  // Fetch prices for this product
   await fetchPricesForProducts();
-
-  selectedProductId.value = "";
+  selectedProductId.value = null;
 }
 
 function removeProductColumn(productId: number) {
@@ -225,10 +222,11 @@ onMounted(async () => {
         </h3>
         <div class="flex gap-3">
           <div class="flex-1 max-w-md">
-            <BaseSelect
+            <BaseAutocomplete
               v-model="selectedProductId"
               :options="productOptions"
-              placeholder="เลือกสินค้าที่ต้องการตั้งราคา"
+              placeholder="ค้นหาและเลือกสินค้า..."
+              clearable
               :disabled="availableProducts.length === 0"
             />
           </div>

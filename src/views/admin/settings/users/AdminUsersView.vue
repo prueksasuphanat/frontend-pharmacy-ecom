@@ -19,15 +19,14 @@ import type { User } from "@/types";
 import {
   BaseTable,
   BaseInput,
-  BaseSelect,
   BaseToggle,
   LoadingOverlay,
   BaseModal,
   BaseDatePicker,
+  BaseAutocomplete,
 } from "@/components/ui";
 
 const ROLE_OPTIONS = [
-  { value: "", label: "ทุก Role" },
   { value: "ADMIN", label: "ผู้ดูแลระบบ" },
   { value: "CUSTOMER", label: "ลูกค้า" },
 ];
@@ -40,7 +39,6 @@ const TITLE_OPTIONS = [
 ];
 
 const STATUS_OPTIONS = [
-  { value: "", label: "ทุกสถานะ" },
   { value: "true", label: "ใช้งาน" },
   { value: "false", label: "ระงับ" },
 ];
@@ -60,8 +58,8 @@ const router = useRouter();
 const userStore = useUsersStore();
 
 const searchQuery = ref("");
-const selectedRole = ref("");
-const selectedStatus = ref("");
+const selectedRole = ref<string | number | null>(null);
+const selectedStatus = ref<string | number | null>(null);
 const loading = ref(false);
 
 const ROLE_OPTIONS_FOR_EDIT = ROLE_OPTIONS.filter((r) => r.value !== "");
@@ -103,7 +101,7 @@ const fetchUsers = async (page = 1) => {
     if (searchQuery.value) params.search = searchQuery.value;
     if (selectedRole.value)
       params.role = selectedRole.value as GetUsersParams["role"];
-    if (selectedStatus.value !== "")
+    if (selectedStatus.value !== null)
       params.is_active = selectedStatus.value === "true";
 
     await userStore.getUsers(params);
@@ -317,15 +315,19 @@ onMounted(() => fetchUsers());
           class="flex-1 min-w-0"
         />
 
-        <BaseSelect
+        <BaseAutocomplete
           v-model="selectedRole"
           :options="ROLE_OPTIONS"
+          placeholder="ทุก Role"
+          clearable
           class="w-full sm:w-48 shrink-0"
         />
 
-        <BaseSelect
+        <BaseAutocomplete
           v-model="selectedStatus"
           :options="STATUS_OPTIONS"
+          placeholder="ทุกสถานะ"
+          clearable
           class="w-full sm:w-40 shrink-0"
         />
       </div>
@@ -369,11 +371,11 @@ onMounted(() => fetchUsers());
 
         <!-- Role Column -->
         <template #cell-role="{ row }">
-          <BaseSelect
+          <BaseAutocomplete
             :model-value="row.role"
             :options="ROLE_OPTIONS_FOR_EDIT"
+            class="max-w-[140px]"
             @update:model-value="updateUserRole(row.id, $event as string)"
-            class="py-1.5 text-xs w-full max-w-[140px]"
           />
         </template>
 
@@ -646,9 +648,10 @@ onMounted(() => fetchUsers());
           <div>
             <p class="label mb-1">ชื่อ-นามสกุล</p>
             <div class="flex gap-2">
-              <BaseSelect
+              <BaseAutocomplete
                 v-model="editForm.title"
                 :options="TITLE_OPTIONS"
+                placeholder="คำนำหน้า"
                 class="w-32 shrink-0"
               />
               <BaseInput

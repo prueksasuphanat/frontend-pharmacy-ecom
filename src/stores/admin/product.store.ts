@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import type { Product, ProductListParams } from "@/types";
 import { productsApi } from "@/api";
+import type { UpdateProductPayload } from "@/api/admin/products";
 import { useToast } from "@/composables";
 
 interface ProductState {
@@ -72,10 +73,6 @@ export const useProductStore = defineStore("product", {
           this.products[idx] = product;
         }
 
-        if (!product.category) {
-          product.category_id = null;
-        }
-
         return product;
       } catch (err: any) {
         this.error =
@@ -88,7 +85,10 @@ export const useProductStore = defineStore("product", {
       }
     },
 
-    async updateProduct(id: number, data: Partial<Product>): Promise<boolean> {
+    async updateProduct(
+      id: number,
+      data: UpdateProductPayload,
+    ): Promise<boolean> {
       this.isLoading = true;
       this.error = null;
       const toast = useToast();
