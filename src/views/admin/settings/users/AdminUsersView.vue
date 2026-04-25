@@ -79,7 +79,7 @@ const columns: Column<User>[] = [
     width: "120px",
   },
   { key: "is_active", label: "สถานะ", align: "left", width: "90px" },
-  { key: "actions", label: "", align: "right", width: "10px" },
+  { key: "actions", label: "", align: "right", width: "10px", fixed: "right" },
 ];
 
 const users = computed(() => userStore.users);

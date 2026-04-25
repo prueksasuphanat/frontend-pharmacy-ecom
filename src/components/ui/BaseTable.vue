@@ -9,6 +9,7 @@ export interface Column<T> {
   width?: string;
   minWidth?: string;
   sortable?: boolean;
+  fixed?: "left" | "right" | boolean; // true = "left"
 }
 
 export interface PaginationConfig {
@@ -118,6 +119,48 @@ function getColumnAlign(align?: "left" | "center" | "right") {
   if (align === "right") return "text-right";
   return "text-left";
 }
+
+// Compute sticky offset for each fixed column
+const stickyOffsets = computed(() => {
+  const offsets: Record<string, { side: "left" | "right"; offset: number }> =
+    {};
+
+  // Left-fixed columns: accumulate from left
+  let leftOffset = 0;
+  for (const col of props.columns) {
+    const side =
+      col.fixed === true ? "left" : col.fixed === "left" ? "left" : null;
+    if (side === "left") {
+      offsets[String(col.key)] = { side: "left", offset: leftOffset };
+      leftOffset += parseFloat(col.width ?? col.minWidth ?? "0") || 0;
+    }
+  }
+
+  // Right-fixed columns: accumulate from right (reverse order)
+  let rightOffset = 0;
+  for (const col of [...props.columns].reverse()) {
+    if (col.fixed === "right") {
+      offsets[String(col.key)] = { side: "right", offset: rightOffset };
+      rightOffset += parseFloat(col.width ?? col.minWidth ?? "0") || 0;
+    }
+  }
+
+  return offsets;
+});
+
+function getFixedStyle(column: Column<T>): Record<string, string> | undefined {
+  const info = stickyOffsets.value[String(column.key)];
+  if (!info) return undefined;
+  return {
+    position: "sticky",
+    [info.side]: `${info.offset}px`,
+    zIndex: "2",
+  };
+}
+
+function isFixed(column: Column<T>) {
+  return !!column.fixed;
+}
 </script>
 
 <template>
@@ -135,15 +178,19 @@ function getColumnAlign(align?: "left" | "center" | "right") {
             <th
               v-for="column in columns"
               :key="String(column.key)"
-              :class="getColumnAlign(column.align)"
-              :style="
-                column.width || column.minWidth
+              :class="[
+                getColumnAlign(column.align),
+                { 'sticky-col': isFixed(column) },
+              ]"
+              :style="{
+                ...(column.width || column.minWidth
                   ? {
                       ...(column.width ? { width: column.width } : {}),
                       minWidth: column.minWidth ?? column.width,
                     }
-                  : undefined
-              "
+                  : {}),
+                ...getFixedStyle(column),
+              }"
             >
               <slot :name="`header-${String(column.key)}`" :column="column">
                 {{ column.label }}
@@ -180,7 +227,11 @@ function getColumnAlign(align?: "left" | "center" | "right") {
             <td
               v-for="column in columns"
               :key="String(column.key)"
-              :class="getColumnAlign(column.align)"
+              :class="[
+                getColumnAlign(column.align),
+                { 'sticky-col': isFixed(column) },
+              ]"
+              :style="getFixedStyle(column)"
             >
               <slot
                 :name="`cell-${String(column.key)}`"
@@ -266,6 +317,7 @@ function getColumnAlign(align?: "left" | "center" | "right") {
 <style scoped>
 .base-table-wrapper {
   @apply bg-white rounded-xl border border-secondary-100;
+  clip-path: inset(0 round 0.75rem);
 }
 
 .table-hover tbody tr:hover {
@@ -282,5 +334,21 @@ function getColumnAlign(align?: "left" | "center" | "right") {
 
 .pagination-btn-active {
   @apply bg-primary-600 text-white hover:bg-primary-700;
+}
+
+.sticky-col {
+  @apply bg-white;
+}
+
+.table-hover tbody tr:hover .sticky-col {
+  @apply bg-secondary-50;
+}
+
+.table-striped tbody tr:nth-child(even) .sticky-col {
+  @apply bg-secondary-50/50;
+}
+
+thead .sticky-col {
+  @apply bg-white z-10;
 }
 </style>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from "vue";
-import { onClickOutside } from "@vueuse/core";
+import { useEventListener } from "@vueuse/core";
 import { ChevronDown, X } from "lucide-vue-next";
 
 export interface AutocompleteOption {
@@ -36,12 +36,32 @@ const emit = defineEmits<{
 }>();
 
 const containerRef = ref<HTMLElement>();
+const triggerRef = ref<HTMLElement>();
+const dropdownRef = ref<HTMLElement>();
 const inputRef = ref<HTMLInputElement>();
 const isOpen = ref(false);
 const query = ref("");
 const activeIndex = ref(-1);
 
-// Sync display text when modelValue changes externally
+const dropdownStyle = ref({ top: "0px", left: "0px", width: "0px" });
+
+function updateDropdownPosition() {
+  if (!triggerRef.value) return;
+  const rect = triggerRef.value.getBoundingClientRect();
+  const viewportWidth = window.innerWidth;
+
+  // Clamp left so dropdown doesn't overflow right edge, min 8px from left edge
+  const left = Math.max(8, Math.min(rect.left, viewportWidth - rect.width - 8));
+  // Cap width so it never exceeds viewport
+  const width = Math.min(rect.width, viewportWidth - left - 8);
+
+  dropdownStyle.value = {
+    top: `${rect.bottom + 4}px`,
+    left: `${left}px`,
+    width: `${width}px`,
+  };
+}
+
 const selectedLabel = computed(() => {
   if (
     props.modelValue === null ||
@@ -69,14 +89,37 @@ const filteredOptions = computed(() => {
   return props.options.filter((o) => o.label.toLowerCase().includes(q));
 });
 
-onClickOutside(containerRef, () => close());
+// Close when clicking outside both trigger and teleported dropdown
+useEventListener(document, "mousedown", (e: MouseEvent) => {
+  if (!isOpen.value) return;
+  const target = e.target as Node;
+  if (containerRef.value?.contains(target)) return;
+  if (dropdownRef.value?.contains(target)) return;
+  close();
+});
+
+useEventListener(
+  window,
+  "scroll",
+  () => {
+    if (isOpen.value) updateDropdownPosition();
+  },
+  { capture: true, passive: true },
+);
+
+useEventListener(window, "resize", () => {
+  if (isOpen.value) updateDropdownPosition();
+});
 
 function open() {
   if (props.disabled) return;
   isOpen.value = true;
   query.value = "";
   activeIndex.value = -1;
-  nextTick(() => inputRef.value?.focus());
+  nextTick(() => {
+    updateDropdownPosition();
+    inputRef.value?.focus();
+  });
 }
 
 function close() {
@@ -137,6 +180,7 @@ function onKeydown(e: KeyboardEvent) {
 
     <!-- Trigger -->
     <div
+      ref="triggerRef"
       class="input flex items-center gap-2 cursor-pointer"
       :class="{
         'pl-9': icon,
@@ -201,36 +245,43 @@ function onKeydown(e: KeyboardEvent) {
       </div>
     </div>
 
-    <!-- Dropdown -->
-    <Transition name="slide-up">
-      <ul
-        v-if="isOpen"
-        class="absolute z-50 mt-1 w-full bg-white border border-secondary-200 rounded-xl shadow-lg max-h-60 overflow-y-auto py-1"
-      >
-        <li
-          v-if="filteredOptions.length === 0"
-          class="px-4 py-2.5 text-sm text-secondary-400"
+    <!-- Teleport to body — escapes overflow:hidden / stacking context of any parent -->
+    <Teleport to="body">
+      <Transition name="slide-up">
+        <div
+          v-if="isOpen"
+          ref="dropdownRef"
+          :style="dropdownStyle"
+          class="fixed z-[9999] bg-white border border-secondary-200 rounded-xl shadow-lg overflow-hidden"
         >
-          {{ noResultText }}
-        </li>
-        <li
-          v-for="(option, i) in filteredOptions"
-          :key="option.value"
-          class="px-4 py-2.5 text-sm cursor-pointer transition-colors"
-          :class="{
-            'bg-primary-50 text-primary-700': option.value === modelValue,
-            'bg-secondary-50': i === activeIndex && option.value !== modelValue,
-            'text-secondary-400 cursor-not-allowed': option.disabled,
-            'hover:bg-secondary-50 text-secondary-700':
-              !option.disabled && option.value !== modelValue,
-          }"
-          @click="select(option)"
-          @mouseenter="activeIndex = i"
-        >
-          {{ option.label }}
-        </li>
-      </ul>
-    </Transition>
+          <div class="max-h-60 overflow-y-auto py-1">
+            <div
+              v-if="filteredOptions.length === 0"
+              class="px-4 py-2.5 text-sm text-secondary-400"
+            >
+              {{ noResultText }}
+            </div>
+            <div
+              v-for="(option, i) in filteredOptions"
+              :key="option.value"
+              class="px-4 py-2.5 text-sm cursor-pointer transition-colors"
+              :class="{
+                'bg-primary-50 text-primary-700': option.value === modelValue,
+                'bg-secondary-50':
+                  i === activeIndex && option.value !== modelValue,
+                'text-secondary-400 cursor-not-allowed': option.disabled,
+                'hover:bg-secondary-50 text-secondary-700':
+                  !option.disabled && option.value !== modelValue,
+              }"
+              @click="select(option)"
+              @mouseenter="activeIndex = i"
+            >
+              {{ option.label }}
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
 
     <p v-if="error" class="error-msg mt-1.5">{{ error }}</p>
   </div>

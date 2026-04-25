@@ -19,12 +19,11 @@ import {
 } from "@/components/ui";
 import type { Column } from "@/components/ui/BaseTable.vue";
 import type { PricingType } from "@/types";
-import { usePricingLogStore } from "@/stores";
+import { usePricingLogStore, useUsersStore } from "@/stores";
 import { formatDateTime } from "@/utils";
-import { usersApi } from "@/api/admin/settings/users";
-import type { User } from "@/api/admin/settings/users";
 
 const store = usePricingLogStore();
+const usersStore = useUsersStore();
 
 const pricingType = computed({
   get: () => store.pricingType,
@@ -33,7 +32,7 @@ const pricingType = computed({
 const searchQuery = ref("");
 const dateFilter = ref("");
 const userFilter = ref<string | number | null>(null);
-const users = ref<User[]>([]);
+const users = computed(() => usersStore.users);
 
 const pricingTypeOptions = [
   { value: "default", label: "ราคากลาง" },
@@ -70,18 +69,19 @@ const defaultColumns: Column<any>[] = [
   { key: "new_price", label: "ราคาใหม่", width: "120px", align: "right" },
   { key: "diff", label: "ส่วนต่าง", width: "120px", align: "right" },
   { key: "user", label: "ผู้เปลี่ยน", width: "160px" },
-  { key: "actions", label: "", width: "50px", align: "center" },
+  { key: "actions", label: "", width: "50px", align: "center", fixed: "right" },
 ];
 
 const specialColumns: Column<any>[] = [
   { key: "changed_at", label: "วันที่เปลี่ยน", width: "160px" },
   { key: "product", label: "สินค้า", minWidth: "180px" },
+  { key: "category", label: "ประเภท", width: "150px" },
   { key: "target_user", label: "ผู้ใช้ที่ตั้งราคา", width: "160px" },
   { key: "old_price", label: "ราคาเดิม", width: "110px", align: "right" },
   { key: "new_price", label: "ราคาใหม่", width: "110px", align: "right" },
   { key: "diff", label: "ส่วนต่าง", width: "110px", align: "right" },
   { key: "changed_by_user", label: "ผู้เปลี่ยน", width: "150px" },
-  { key: "actions", label: "", width: "80px", align: "center" },
+  { key: "actions", label: "", width: "80px", align: "center", fixed: "right" },
 ];
 
 const columns = computed(() =>
@@ -147,12 +147,7 @@ async function fetchLogs() {
 }
 
 async function fetchUsers() {
-  try {
-    const res = await usersApi.getAll({ limit: 100, is_active: true });
-    users.value = res.data.data;
-  } catch (err) {
-    console.error("Failed to fetch users:", err);
-  }
+  await usersStore.getUsers({ limit: 100, is_active: true });
 }
 
 function clearDateFilter() {
@@ -421,15 +416,18 @@ watch(
         </div>
       </template>
 
-      <!-- Category (default only) -->
+      <!-- Category -->
       <template #cell-category="{ row }">
-        <span class="text-sm text-secondary-600">
-          {{
-            row.product.categories
-              ?.map((c: any) => c.category.name)
-              .join(", ") || "-"
-          }}
-        </span>
+        <div v-if="row.product.categories?.length" class="flex flex-wrap gap-1">
+          <span
+            v-for="c in row.product.categories"
+            :key="c.category_id"
+            class="badge badge-teal text-xs"
+          >
+            {{ c.category.name }}
+          </span>
+        </div>
+        <span v-else class="text-sm text-secondary-400">-</span>
       </template>
 
       <!-- Target user (special only) -->
@@ -568,13 +566,19 @@ watch(
             </div>
             <div>
               <p class="text-secondary-400 text-xs mb-0.5">ประเภท</p>
-              <p class="text-secondary-900 font-medium">
-                {{
-                  selectedProduct.categories
-                    ?.map((c: any) => c.category.name)
-                    .join(", ") || "-"
-                }}
-              </p>
+              <div
+                v-if="selectedProduct.categories?.length"
+                class="flex flex-wrap gap-1 mt-0.5"
+              >
+                <span
+                  v-for="c in selectedProduct.categories"
+                  :key="c.category_id"
+                  class="badge badge-teal text-xs"
+                >
+                  {{ c.category.name }}
+                </span>
+              </div>
+              <p v-else class="text-secondary-400 font-medium">-</p>
             </div>
             <div>
               <p class="text-secondary-400 text-xs mb-0.5">ราคาปัจจุบัน</p>

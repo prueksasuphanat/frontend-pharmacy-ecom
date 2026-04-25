@@ -83,9 +83,11 @@ onUnmounted(() => notif.stopPolling());
       </header>
 
       <!-- Main content -->
-      <main class="relative flex-1 overflow-y-auto p-6">
+      <main class="relative flex-1 min-h-0 p-0">
         <LoadingOverlay :loading="usersStore.isLoading" />
-        <RouterView />
+        <div class="h-full overflow-y-auto pt-6 px-6 pb-[100px]">
+          <RouterView />
+        </div>
       </main>
     </div>
 

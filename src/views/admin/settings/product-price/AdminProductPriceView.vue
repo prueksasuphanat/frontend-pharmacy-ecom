@@ -2,20 +2,19 @@
 import { ref, onMounted, computed } from "vue";
 import { useRouter } from "vue-router";
 import { ChevronLeft, Plus, X, Save } from "lucide-vue-next";
-import { BaseSelect, BaseInput, BaseAutocomplete } from "@/components/ui";
-import { usersApi } from "@/api/admin/settings/users";
-import { productsApi } from "@/api";
-import type { User } from "@/api/admin/settings/users";
-import type { Product, UpdateProductPricePayload } from "@/types";
+import { BaseInput, BaseAutocomplete } from "@/components/ui";
+import type { User, Product, UpdateProductPricePayload } from "@/types";
 import { useToast } from "@/composables";
-import { useProductPriceStore } from "@/stores";
+import { useProductPriceStore, useUsersStore, useProductStore } from "@/stores";
 
 const router = useRouter();
 const toast = useToast();
 const productPriceStore = useProductPriceStore();
+const usersStore = useUsersStore();
+const productStore = useProductStore();
 
 // State
-const users = ref<User[]>([]);
+const users = computed(() => usersStore.users);
 const products = ref<Product[]>([]);
 const selectedProducts = ref<Product[]>([]);
 const priceMatrix = ref<Record<string, Record<number, string>>>({});
@@ -38,30 +37,17 @@ const selectedProductId = ref<number | null>(null);
 
 // Fetch data
 async function fetchUsers() {
-  try {
-    const response = await usersApi.getAll({
-      is_active: true,
-      is_delete: false,
-    });
-    users.value = response.data.data;
-    initializePriceMatrix();
-  } catch (error) {
-    console.error("Error fetching users:", error);
-    toast.error("เกิดข้อผิดพลาดในการโหลดข้อมูลผู้ใช้");
-  }
+  await usersStore.getUsers({ is_active: true, is_delete: false });
+  initializePriceMatrix();
 }
 
 async function fetchProducts() {
-  try {
-    const response = await productsApi.getProducts({
-      is_active: true,
-      limit: 1000,
-    });
-    products.value = response.data;
-  } catch (error) {
-    console.error("Error fetching products:", error);
-    toast.error("เกิดข้อผิดพลาดในการโหลดข้อมูลสินค้า");
-  }
+  await productStore.getProducts({
+    is_active: true,
+    limit: 1000,
+    is_special_pricing_enabled: true,
+  });
+  products.value = productStore.products;
 }
 
 function initializePriceMatrix() {
@@ -220,8 +206,8 @@ onMounted(async () => {
         <h3 class="text-sm font-semibold text-secondary-900 mb-3">
           เพิ่มสินค้า
         </h3>
-        <div class="flex gap-3">
-          <div class="flex-1 max-w-md">
+        <div class="flex flex-col sm:flex-row gap-3">
+          <div class="flex-1 sm:max-w-md">
             <BaseAutocomplete
               v-model="selectedProductId"
               :options="productOptions"
@@ -233,7 +219,7 @@ onMounted(async () => {
           <button
             @click="addProductColumn"
             :disabled="!selectedProductId || availableProducts.length === 0"
-            class="btn btn-primary flex items-center gap-2"
+            class="btn btn-primary flex items-center justify-center gap-2 shrink-0"
           >
             <Plus class="w-4 h-4" />
             <span>เพิ่มสินค้า</span>
@@ -249,14 +235,16 @@ onMounted(async () => {
 
       <!-- Price Matrix Table -->
       <div v-if="selectedProducts.length > 0" class="space-y-4">
-        <div class="flex items-center justify-between">
+        <div
+          class="flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+        >
           <h3 class="text-sm font-semibold text-secondary-900">
             ตารางราคาสินค้า
           </h3>
           <button
             @click="saveAllPrices"
             :disabled="productPriceStore.isSaving"
-            class="btn btn-primary flex items-center gap-2"
+            class="btn btn-primary flex items-center justify-center gap-2 w-full sm:w-auto"
           >
             <Save class="w-4 h-4" />
             <span>{{
@@ -266,18 +254,18 @@ onMounted(async () => {
         </div>
 
         <div class="overflow-x-auto -mx-6 px-6">
-          <table class="w-full border-collapse">
+          <table class="w-full border-collapse" style="min-width: 500px">
             <thead>
               <tr class="border-b-2 border-secondary-200">
                 <th
-                  class="sticky left-0 z-10 bg-white px-4 py-3 text-left text-sm font-semibold text-secondary-900 min-w-[200px] border-r border-secondary-200"
+                  class="sticky left-0 z-10 bg-white px-4 py-3 text-left text-sm font-semibold text-secondary-900 w-[160px] sm:min-w-[200px] border-r border-secondary-200"
                 >
                   ผู้ใช้
                 </th>
                 <th
                   v-for="product in selectedProducts"
                   :key="product.id"
-                  class="px-4 py-3 text-left text-sm font-semibold text-secondary-900 min-w-[250px] border-r border-secondary-200 last:border-r-0"
+                  class="px-4 py-3 text-left text-sm font-semibold text-secondary-900 min-w-[180px] sm:min-w-[220px] border-r border-secondary-200 last:border-r-0"
                 >
                   <div class="flex items-start justify-between gap-2">
                     <div class="flex-1 min-w-0">
@@ -285,10 +273,10 @@ onMounted(async () => {
                         {{ product.name }}
                       </div>
                       <div class="text-xs text-secondary-500 mt-0.5">
-                        รหัส: {{ product.code }}
+                        {{ product.code }}
                       </div>
                       <div class="text-xs text-secondary-500">
-                        ราคาเริ่มต้น: ฿{{ product.default_price }}
+                        ฿{{ product.default_price }}
                       </div>
                     </div>
                     <button
@@ -312,26 +300,27 @@ onMounted(async () => {
                   class="sticky left-0 z-10 bg-white px-4 py-3 text-sm font-medium text-secondary-900 border-r border-secondary-200 hover:bg-secondary-50"
                 >
                   <div>
-                    <div class="font-medium">{{ getUserFullName(user) }}</div>
-                    <div class="text-xs text-secondary-500 mt-0.5">
+                    <div
+                      class="font-medium truncate max-w-[140px] sm:max-w-none"
+                    >
+                      {{ getUserFullName(user) }}
+                    </div>
+                    <div
+                      class="text-xs text-secondary-500 mt-0.5 truncate max-w-[140px] sm:max-w-none"
+                    >
                       {{ user.username }}
                     </div>
-                    <div class="text-xs text-secondary-500">
-                      <span
-                        class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium"
-                        :class="{
-                          'bg-purple-100 text-purple-800':
-                            user.role === 'ADMIN',
-                          'bg-blue-100 text-blue-800':
-                            user.role === 'PHARMACIST',
-                          'bg-green-100 text-green-800':
-                            user.role === 'CUSTOMER',
-                          'bg-orange-100 text-orange-800': user.role === 'DEMO',
-                        }"
-                      >
-                        {{ user.role }}
-                      </span>
-                    </div>
+                    <span
+                      class="inline-flex items-center mt-1 px-2 py-0.5 rounded text-xs font-medium"
+                      :class="{
+                        'bg-purple-100 text-purple-800': user.role === 'ADMIN',
+                        'bg-blue-100 text-blue-800': user.role === 'PHARMACIST',
+                        'bg-green-100 text-green-800': user.role === 'CUSTOMER',
+                        'bg-orange-100 text-orange-800': user.role === 'DEMO',
+                      }"
+                    >
+                      {{ user.role }}
+                    </span>
                   </div>
                 </td>
                 <td
@@ -349,7 +338,7 @@ onMounted(async () => {
                     "
                     type="number"
                     placeholder="0.00"
-                    class="w-full"
+                    class="w-full min-w-[120px]"
                   />
                 </td>
               </tr>
@@ -361,7 +350,7 @@ onMounted(async () => {
         <div class="mt-4 p-4 bg-secondary-50 rounded-lg">
           <div class="text-sm text-secondary-600">
             <span class="font-medium">สรุป:</span>
-            กำลังตั้งราคาสำหรับ
+            ตั้งราคาสำหรับ
             <span class="font-semibold text-secondary-900">{{
               selectedProducts.length
             }}</span>

@@ -236,49 +236,51 @@ function onKeydown(e: KeyboardEvent) {
 
     <!-- Dropdown -->
     <Transition name="slide-up">
-      <ul
+      <div
         v-if="isOpen"
-        class="absolute z-50 mt-1 w-full bg-white border border-secondary-200 rounded-xl shadow-lg max-h-60 overflow-y-auto py-1"
+        class="absolute z-50 mt-1 w-full bg-white border border-secondary-200 rounded-xl shadow-lg overflow-hidden"
       >
-        <li
-          v-if="filteredOptions.length === 0"
-          class="px-4 py-2.5 text-sm text-secondary-400"
-        >
-          {{ noResultText }}
-        </li>
-        <li
-          v-for="(option, i) in filteredOptions"
-          :key="option.value"
-          class="px-4 py-2.5 text-sm cursor-pointer transition-colors flex items-center justify-between gap-2"
-          :class="{
-            'bg-primary-50 text-primary-700': isSelected(option.value),
-            'bg-secondary-50': i === activeIndex && !isSelected(option.value),
-            'text-secondary-400 cursor-not-allowed':
-              option.disabled || (isMaxReached && !isSelected(option.value)),
-            'hover:bg-secondary-50 text-secondary-700':
-              !option.disabled && !isSelected(option.value) && !isMaxReached,
-          }"
-          @click="select(option)"
-          @mouseenter="activeIndex = i"
-        >
-          <span>{{ option.label }}</span>
-          <!-- Checkmark -->
-          <svg
-            v-if="isSelected(option.value)"
-            class="w-4 h-4 shrink-0 text-primary-600"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+        <div class="max-h-60 overflow-y-auto py-1">
+          <div
+            v-if="filteredOptions.length === 0"
+            class="px-4 py-2.5 text-sm text-secondary-400"
           >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2.5"
-              d="M5 13l4 4L19 7"
-            />
-          </svg>
-        </li>
-      </ul>
+            {{ noResultText }}
+          </div>
+          <div
+            v-for="(option, i) in filteredOptions"
+            :key="option.value"
+            class="px-4 py-2.5 text-sm cursor-pointer transition-colors flex items-center justify-between gap-2"
+            :class="{
+              'bg-primary-50 text-primary-700': isSelected(option.value),
+              'bg-secondary-50': i === activeIndex && !isSelected(option.value),
+              'text-secondary-400 cursor-not-allowed':
+                option.disabled || (isMaxReached && !isSelected(option.value)),
+              'hover:bg-secondary-50 text-secondary-700':
+                !option.disabled && !isSelected(option.value) && !isMaxReached,
+            }"
+            @click="select(option)"
+            @mouseenter="activeIndex = i"
+          >
+            <span>{{ option.label }}</span>
+            <!-- Checkmark -->
+            <svg
+              v-if="isSelected(option.value)"
+              class="w-4 h-4 shrink-0 text-primary-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2.5"
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+          </div>
+        </div>
+      </div>
     </Transition>
 
     <p v-if="error" class="error-msg mt-1.5">{{ error }}</p>
