@@ -9,14 +9,14 @@ export interface Column<T> {
   width?: string;
   minWidth?: string;
   sortable?: boolean;
-  fixed?: "left" | "right" | boolean; // true = "left"
+  fixed?: "left" | "right" | boolean;
 }
 
 export interface PaginationConfig {
   page: number;
   totalPages: number;
   total: number;
-  limit?: number; // Items per page (optional, will be calculated if not provided)
+  limit?: number;
 }
 
 interface Props {
@@ -41,7 +41,6 @@ const emit = defineEmits<{
   sort: [column: keyof T | string, direction: "asc" | "desc"];
 }>();
 
-// Pagination calculations
 const totalPages = computed(() => {
   if (!props.pagination) return 0;
   return props.pagination.totalPages;
@@ -76,19 +75,16 @@ const visiblePages = computed(() => {
   const pages: (number | string)[] = [];
 
   if (total <= 5) {
-    // Show all pages if 5 or less
     for (let i = 1; i <= total; i++) {
       pages.push(i);
     }
   } else {
-    // Always show first page
     pages.push(1);
 
     if (current > 2) {
       pages.push("...");
     }
 
-    // Show pages around current (only 1 page on each side)
     const start = Math.max(2, current - 1);
     const end = Math.min(total - 1, current + 1);
 
@@ -100,7 +96,6 @@ const visiblePages = computed(() => {
       pages.push("...");
     }
 
-    // Always show last page
     pages.push(total);
   }
 
@@ -350,5 +345,11 @@ function isFixed(column: Column<T>) {
 
 thead .sticky-col {
   @apply bg-white z-10;
+}
+
+@media (max-width: 767px) {
+  .sticky-col {
+    position: static !important;
+  }
 }
 </style>

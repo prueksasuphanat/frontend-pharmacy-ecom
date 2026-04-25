@@ -46,8 +46,8 @@ const categories = computed(() => categoryStore.categories);
 
 // Table columns
 const columns: Column<Product>[] = [
-  { key: "code", label: "รหัสสินค้า", width: "120px", fixed: "left" },
-  { key: "name", label: "ชื่อสินค้า", minWidth: "250px", fixed: "left" },
+  { key: "code", label: "รหัสสินค้า", width: "120px" },
+  { key: "name", label: "ชื่อสินค้า", minWidth: "250px" },
   { key: "category", label: "ประเภท", width: "150px" },
   { key: "quantity", label: "คงเหลือ", width: "100px", align: "center" },
   { key: "default_price", label: "ราคากลาง", width: "120px", align: "right" },

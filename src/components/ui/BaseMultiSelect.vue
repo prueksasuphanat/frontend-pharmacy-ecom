@@ -167,7 +167,7 @@ function onKeydown(e: KeyboardEvent) {
 
     <!-- Trigger box -->
     <div
-      class="input min-h-[42px] h-auto flex flex-wrap items-center gap-1.5 cursor-text py-1.5"
+      class="input min-h-[42px] h-auto flex items-stretch gap-1.5 cursor-text py-1.5 pr-2"
       :class="{
         'pl-9': icon,
         'border-red-300 focus-within:border-red-500 focus-within:ring-red-500':
@@ -182,37 +182,40 @@ function onKeydown(e: KeyboardEvent) {
         class="absolute left-3 top-3.5 w-4 h-4 text-secondary-400 pointer-events-none"
       />
 
-      <!-- Tags -->
-      <span
-        v-for="opt in selectedOptions"
-        :key="opt.value"
-        class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-primary-100 text-primary-700 text-xs font-medium"
-      >
-        {{ opt.label }}
-        <button
-          type="button"
-          class="hover:text-primary-900 transition-colors"
-          @click="removeTag(opt.value, $event)"
+      <!-- Tags + input -->
+      <div class="flex flex-wrap items-center gap-1.5 flex-1 min-w-0">
+        <!-- Tags -->
+        <span
+          v-for="opt in selectedOptions"
+          :key="opt.value"
+          class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-primary-100 text-primary-700 text-xs font-medium"
         >
-          <X class="w-3 h-3" />
-        </button>
-      </span>
+          {{ opt.label }}
+          <button
+            type="button"
+            class="hover:text-primary-900 transition-colors"
+            @click="removeTag(opt.value, $event)"
+          >
+            <X class="w-3 h-3" />
+          </button>
+        </span>
 
-      <!-- Search input -->
-      <input
-        v-if="!disabled"
-        ref="inputRef"
-        :value="query"
-        class="flex-1 min-w-[80px] outline-none bg-transparent text-sm"
-        :placeholder="selectedOptions.length === 0 ? placeholder : ''"
-        :disabled="disabled"
-        @input="onInput"
-        @keydown="onKeydown"
-        @focus="open"
-      />
+        <!-- Search input -->
+        <input
+          v-if="!disabled"
+          ref="inputRef"
+          :value="query"
+          class="flex-1 min-w-[80px] outline-none bg-transparent text-sm"
+          :placeholder="selectedOptions.length === 0 ? placeholder : ''"
+          :disabled="disabled"
+          @input="onInput"
+          @keydown="onKeydown"
+          @focus="open"
+        />
+      </div>
 
       <!-- Right icons -->
-      <div class="flex items-center gap-1 ml-auto shrink-0">
+      <div class="flex items-center gap-1 shrink-0 self-center">
         <button
           v-if="(modelValue ?? []).length > 0"
           type="button"
