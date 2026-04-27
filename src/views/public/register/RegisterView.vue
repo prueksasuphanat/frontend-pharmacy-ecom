@@ -2,7 +2,7 @@
 import { ref } from "vue";
 import { RouterLink, useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/auth.store";
-import { Mail, Eye, EyeOff } from "lucide-vue-next";
+import { Mail, Eye, EyeOff, Camera, X } from "lucide-vue-next";
 import { useForm } from "vee-validate";
 import { useToast } from "@/composables";
 import type { RegisterData } from "@/types";
@@ -23,6 +23,29 @@ const toast = useToast();
 
 const showPw = ref(false);
 const isLoading = ref(false);
+
+// Profile image preview
+const profileFile = ref<File | null>(null);
+const profilePreview = ref<string | null>(null);
+const profileInputRef = ref<HTMLInputElement | null>(null);
+
+function onProfileChange(e: Event) {
+  const file = (e.target as HTMLInputElement).files?.[0];
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) {
+    toast.error("รูปโปรไฟล์ต้องมีขนาดไม่เกิน 5 MB");
+    return;
+  }
+  profileFile.value = file;
+  profilePreview.value = URL.createObjectURL(file);
+}
+
+function removeProfile() {
+  profileFile.value = null;
+  if (profilePreview.value) URL.revokeObjectURL(profilePreview.value);
+  profilePreview.value = null;
+  if (profileInputRef.value) profileInputRef.value.value = "";
+}
 
 const prefixOptions = [
   { value: "นาย", label: "นาย" },
@@ -45,7 +68,6 @@ const { handleSubmit, values, errors } = useForm({
       if (!value || value.length === 0) {
         return "กรุณาอัปโหลดเอกสารยืนยันตัวตน";
       }
-
       const maxSize = 5 * 1024 * 1024;
       for (const file of value) {
         if (file.size > maxSize) {
@@ -55,9 +77,7 @@ const { handleSubmit, values, errors } = useForm({
       return true;
     },
     agreed: (value: boolean) => {
-      if (!value) {
-        return "กรุณายอมรับข้อกำหนดการใช้งานและนโยบายความเป็นส่วนตัว";
-      }
+      if (!value) return "กรุณายอมรับข้อกำหนดการใช้งานและนโยบายความเป็นส่วนตัว";
       return true;
     },
   },
@@ -66,9 +86,6 @@ const { handleSubmit, values, errors } = useForm({
 const onSubmit = handleSubmit(
   async (formValues) => {
     isLoading.value = true;
-
-    console.log("✅ Form validation passed!", formValues);
-
     try {
       const registerData: RegisterData = {
         email: formValues.email,
@@ -81,6 +98,7 @@ const onSubmit = handleSubmit(
         phone: formValues.phone,
         address: formValues.address,
         files: formValues.verificationDocument || null,
+        profileImage: profileFile.value || null,
       };
 
       const success = await auth.register(registerData);
@@ -102,9 +120,7 @@ const onSubmit = handleSubmit(
       isLoading.value = false;
     }
   },
-
   (validationErrors) => {
-    // This callback runs when validation FAILS
     console.log("❌ Form validation failed!", validationErrors);
     console.log("Current values:", values);
     toast.error("กรุณากรอกข้อมูลให้ครบถ้วน");
@@ -117,6 +133,7 @@ const onSubmit = handleSubmit(
     class="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 flex items-center justify-center p-4"
   >
     <div class="w-full max-w-md">
+      <!-- Header -->
       <div class="text-center mb-8">
         <div
           class="w-14 h-14 bg-primary-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-primary-200"
@@ -129,6 +146,58 @@ const onSubmit = handleSubmit(
 
       <div class="card">
         <form @submit="onSubmit" novalidate class="space-y-4">
+          <!-- Profile Image -->
+          <div class="flex flex-col items-center gap-2 pb-2">
+            <div class="relative group">
+              <!-- Avatar circle -->
+              <div
+                class="w-24 h-24 rounded-full overflow-hidden border-2 border-dashed border-secondary-300 bg-secondary-50 flex items-center justify-center transition-colors group-hover:border-primary-400"
+                :class="{
+                  'border-solid border-primary-400 bg-primary-50':
+                    profilePreview,
+                }"
+              >
+                <img
+                  v-if="profilePreview"
+                  :src="profilePreview"
+                  alt="profile preview"
+                  class="w-full h-full object-cover"
+                />
+                <Camera
+                  v-else
+                  class="w-8 h-8 text-secondary-300 group-hover:text-primary-400 transition-colors"
+                />
+              </div>
+
+              <!-- Upload overlay button -->
+              <label
+                class="absolute inset-0 rounded-full cursor-pointer"
+                title="เลือกรูปโปรไฟล์"
+              >
+                <input
+                  ref="profileInputRef"
+                  type="file"
+                  accept="image/*"
+                  class="sr-only"
+                  @change="onProfileChange"
+                />
+              </label>
+
+              <!-- Remove button -->
+              <button
+                v-if="profilePreview"
+                type="button"
+                class="absolute -top-1 -right-1 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow transition-colors"
+                @click="removeProfile"
+              >
+                <X class="w-3.5 h-3.5" />
+              </button>
+            </div>
+            <p class="text-xs text-secondary-400">
+              {{ profileFile ? profileFile.name : "รูปโปรไฟล์ (ไม่บังคับ)" }}
+            </p>
+          </div>
+
           <VInput
             name="email"
             type="email"
@@ -207,7 +276,7 @@ const onSubmit = handleSubmit(
 
           <VFileUpload
             name="verificationDocument"
-            label="เอกสารยืนยัน"
+            label="เอกสารยืนยันตัวตน"
             accept="image/*,.pdf"
             :max-size="5"
             :multiple="true"
@@ -237,6 +306,7 @@ const onSubmit = handleSubmit(
             {{ isLoading ? "กำลังสมัคร..." : "สมัครสมาชิก" }}
           </button>
         </form>
+
         <p class="text-center text-sm text-secondary-500 mt-5">
           มีบัญชีแล้ว?
           <RouterLink to="/login" class="text-primary-600 font-medium"

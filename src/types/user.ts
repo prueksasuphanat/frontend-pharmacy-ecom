@@ -3,6 +3,23 @@
 // ============================================================
 
 /**
+ * User attachment (profile image or document)
+ */
+export interface UserAttachment {
+  id: number;
+  user_id: number;
+  url: string;
+  name: string;
+  type: string | null;
+  mime_type: string | null;
+  size: number | null;
+  created_at: string;
+  updated_at: string;
+  created_by: number | null;
+  updated_by: number | null;
+}
+
+/**
  * User entity representing a registered user in the system
  */
 export interface User {
@@ -28,6 +45,8 @@ export interface User {
   created_by: number | null;
   updated_by: number | null;
   expired_date: string | null;
+  profile_image?: UserAttachment | null;
+  attachments?: UserAttachment[];
 }
 
 /**
@@ -51,5 +70,6 @@ export interface RegisterData {
   birthdata: string;
   phone?: string;
   address?: string;
-  files?: File;
+  files?: File[] | null;
+  profileImage?: File | null;
 }

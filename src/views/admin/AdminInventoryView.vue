@@ -9,6 +9,8 @@ import {
   LoadingOverlay,
   BaseMultiSelect,
   BaseAutocomplete,
+  BaseTextarea,
+  ImageUploader,
 } from "@/components/ui";
 import type { Column } from "@/components/ui/BaseTable.vue";
 import type { Product } from "@/types";
@@ -29,9 +31,15 @@ const specialPricingFilter = ref<string | number | null>(null);
 const editModalOpen = ref(false);
 const modalLoading = ref(false);
 const selectedProduct = ref<Product | null>(null);
+const imageFile = ref<File | null>(null);
+const removeImage = ref(false);
 const productForm = ref({
   code: "",
   name: "",
+  generic_name: "",
+  unit_name: "",
+  using: "",
+  warning: "",
   default_price: "",
   quantity: 0,
   category_ids: [] as number[],
@@ -43,6 +51,13 @@ const products = computed(() => productStore.products);
 const loading = computed(() => productStore.isLoading);
 const pagination = computed(() => productStore.pagination);
 const categories = computed(() => categoryStore.categories);
+
+const currentImageUrl = computed(() => {
+  if (removeImage.value) return null;
+  const attachments = selectedProduct.value?.attachments;
+  if (!attachments || attachments.length === 0) return null;
+  return attachments[0].url;
+});
 
 // Table columns
 const columns: Column<Product>[] = [
@@ -131,6 +146,8 @@ async function handleEditProduct(product: Product) {
   selectedProduct.value = product;
   modalLoading.value = true;
   editModalOpen.value = true;
+  imageFile.value = null;
+  removeImage.value = false;
 
   const fresh = await productStore.getProductById(product.id);
   modalLoading.value = false;
@@ -140,6 +157,10 @@ async function handleEditProduct(product: Product) {
     productForm.value = {
       code: fresh.code,
       name: fresh.name,
+      generic_name: fresh.generic_name ?? "",
+      unit_name: fresh.unit_name ?? "",
+      using: fresh.using ?? "",
+      warning: fresh.warning ?? "",
       default_price: fresh.default_price,
       quantity: fresh.quantity,
       category_ids: fresh.categories.map((c) => c.category_id),
@@ -151,9 +172,15 @@ async function handleEditProduct(product: Product) {
 function closeEditModal() {
   editModalOpen.value = false;
   selectedProduct.value = null;
+  imageFile.value = null;
+  removeImage.value = false;
   productForm.value = {
     code: "",
     name: "",
+    generic_name: "",
+    unit_name: "",
+    using: "",
+    warning: "",
     default_price: "",
     quantity: 0,
     category_ids: [],
@@ -161,21 +188,31 @@ function closeEditModal() {
   };
 }
 
+function handleImageChange(file: File | File[] | null) {
+  imageFile.value = Array.isArray(file) ? (file[0] ?? null) : file;
+}
+
 async function updateProduct() {
   if (!selectedProduct.value) return;
-
-  if (!productForm.value.code.trim() || !productForm.value.name.trim()) {
-    return;
-  }
+  if (!productForm.value.code.trim() || !productForm.value.name.trim()) return;
 
   modalLoading.value = true;
-  const success = await productStore.updateProduct(selectedProduct.value.id, {
-    name: productForm.value.name.trim(),
-    default_price: productForm.value.default_price,
-    quantity: productForm.value.quantity,
-    category_ids: productForm.value.category_ids,
-    is_special_pricing_enabled: productForm.value.is_special_pricing_enabled,
-  });
+  const success = await productStore.updateProduct(
+    selectedProduct.value.id,
+    {
+      name: productForm.value.name.trim(),
+      default_price: productForm.value.default_price,
+      quantity: productForm.value.quantity,
+      category_ids: productForm.value.category_ids,
+      is_special_pricing_enabled: productForm.value.is_special_pricing_enabled,
+      generic_name: productForm.value.generic_name || undefined,
+      unit_name: productForm.value.unit_name || undefined,
+      using: productForm.value.using || undefined,
+      warning: productForm.value.warning || undefined,
+    },
+    imageFile.value,
+    removeImage.value,
+  );
   modalLoading.value = false;
 
   if (success) {
@@ -193,7 +230,6 @@ function formatPrice(price: string | number): string {
 
 onMounted(async () => {
   await categoryStore.getCategories({ limit: 100 });
-
   await fetchProducts();
 });
 </script>
@@ -210,9 +246,9 @@ onMounted(async () => {
     <!-- Filters -->
     <div class="card mb-6">
       <div class="flex flex-col gap-4">
-        <!-- Row 1: Search -->
         <div class="flex-1">
           <BaseInput
+            label="ค้นหา"
             v-model="searchQuery"
             placeholder="ค้นหาชื่อสินค้า หรือรหัสสินค้า..."
             @input="handleSearch"
@@ -223,10 +259,10 @@ onMounted(async () => {
           </BaseInput>
         </div>
 
-        <!-- Row 2: Filters -->
         <div class="flex flex-col sm:flex-row gap-4">
           <div class="w-full sm:w-48">
             <BaseAutocomplete
+              label="ประเภทสินค้า"
               v-model="categoryFilter"
               :options="categoryOptions"
               placeholder="ทุกประเภท"
@@ -234,22 +270,22 @@ onMounted(async () => {
               @update:model-value="handleFilterChange"
             />
           </div>
-
           <div class="w-full sm:w-48">
             <BaseAutocomplete
-              v-model="statusFilter"
-              :options="statusOptions"
-              placeholder="สถานะทั้งหมด"
+              label="ประเภทการตั้งราคา"
+              v-model="specialPricingFilter"
+              :options="specialPricingOptions"
+              placeholder="ราคาตามผู้ใช้ทั้งหมด"
               clearable
               @update:model-value="handleFilterChange"
             />
           </div>
-
           <div class="w-full sm:w-48">
             <BaseAutocomplete
-              v-model="specialPricingFilter"
-              :options="specialPricingOptions"
-              placeholder="ราคาตามผู้ใช้ทั้งหมด"
+              label="สถานะ"
+              v-model="statusFilter"
+              :options="statusOptions"
+              placeholder="สถานะทั้งหมด"
               clearable
               @update:model-value="handleFilterChange"
             />
@@ -267,7 +303,6 @@ onMounted(async () => {
       @page-change="handlePageChange"
       empty-text="ไม่พบข้อมูลสินค้า"
     >
-      <!-- Category -->
       <template #cell-category="{ row }">
         <div v-if="row.categories?.length" class="flex flex-wrap gap-1">
           <span
@@ -281,7 +316,6 @@ onMounted(async () => {
         <span v-else class="text-sm text-secondary-400">-</span>
       </template>
 
-      <!-- Quantity -->
       <template #cell-quantity="{ value }">
         <span
           :class="[
@@ -297,14 +331,12 @@ onMounted(async () => {
         </span>
       </template>
 
-      <!-- Price -->
       <template #cell-default_price="{ value }">
         <span class="text-sm font-medium text-secondary-900">
           ฿{{ formatPrice(value as string) }}
         </span>
       </template>
 
-      <!-- Special Pricing -->
       <template #cell-is_special_pricing_enabled="{ value }">
         <span
           v-if="value"
@@ -315,7 +347,6 @@ onMounted(async () => {
         <span v-else class="text-sm text-secondary-400">-</span>
       </template>
 
-      <!-- Status Toggle -->
       <template #cell-is_active="{ row }">
         <BaseToggle
           :model-value="row.is_active"
@@ -324,7 +355,6 @@ onMounted(async () => {
         />
       </template>
 
-      <!-- Actions -->
       <template #cell-actions="{ row }">
         <div class="flex items-center justify-center">
           <button
@@ -342,30 +372,66 @@ onMounted(async () => {
     <BaseModal
       v-if="editModalOpen && selectedProduct"
       title="แก้ไขสินค้า"
-      size="md"
+      size="lg"
       @close="closeEditModal"
     >
       <div class="relative min-h-[200px]">
         <LoadingOverlay :loading="modalLoading" text="กำลังโหลดข้อมูล..." />
 
-        <div class="flex flex-col gap-4 py-2">
-          <!-- Code -->
-          <BaseInput
-            v-model="productForm.code"
-            label="รหัสสินค้า"
-            placeholder="กรอกรหัสสินค้า"
-            :disabled="modalLoading"
-          />
+        <div class="grid grid-cols-2 gap-5 py-2">
+          <!-- รูปภาพ -->
+          <div class="">
+            <ImageUploader
+              class="w-[300px] h-[300px]"
+              :model-value="imageFile"
+              :current-image-url="currentImageUrl"
+              :disabled="modalLoading"
+              :max-size-mb="5"
+              @update:model-value="
+                (f) => {
+                  imageFile = f;
+                  removeImage = false;
+                }
+              "
+              @remove="
+                () => {
+                  imageFile = null;
+                  removeImage = true;
+                }
+              "
+            />
+          </div>
 
-          <!-- Name -->
-          <BaseInput
-            v-model="productForm.name"
-            label="ชื่อสินค้า"
-            placeholder="กรอกชื่อสินค้า"
-            :disabled="modalLoading"
-          />
+          <div class="flex flex-col gap-4">
+            <BaseInput
+              v-model="productForm.code"
+              label="รหัสสินค้า"
+              placeholder="รหัสสินค้า"
+              :disabled="modalLoading"
+            />
 
-          <!-- Category -->
+            <BaseInput
+              v-model="productForm.name"
+              label="ชื่อสินค้า"
+              placeholder="ชื่อสินค้า"
+              :disabled="modalLoading"
+            />
+
+            <BaseInput
+              v-model="productForm.generic_name"
+              label="ชื่อสามัญ"
+              placeholder="ชื่อสามัญ"
+              :disabled="modalLoading"
+            />
+
+            <BaseInput
+              v-model="productForm.unit_name"
+              label="หน่วยนับ"
+              placeholder="เม็ด, ขวด, กล่อง"
+              :disabled="modalLoading"
+            />
+          </div>
+
           <BaseMultiSelect
             v-model="productForm.category_ids"
             label="ประเภทสินค้า"
@@ -374,29 +440,26 @@ onMounted(async () => {
             :disabled="modalLoading"
           />
 
-          <!-- Price and Quantity -->
-          <div class="grid grid-cols-2 gap-4">
-            <BaseInput
-              v-model="productForm.default_price"
-              label="ราคากลาง (บาท)"
-              type="number"
-              step="0.01"
-              placeholder="0.00"
-              :disabled="modalLoading"
-            />
-
-            <BaseInput
-              v-model.number="productForm.quantity"
-              label="จำนวนคงเหลือ"
-              type="number"
-              placeholder="0"
-              :disabled="modalLoading"
-            />
-          </div>
-
-          <!-- Special Pricing Toggle -->
-          <div class="flex items-center justify-between">
-            <label class="label">เปิดใช้งานราคาตามผู้ใช้</label>
+          <!-- ราคา + จำนวน + ราคาพิเศษ -->
+          <BaseInput
+            v-model="productForm.default_price"
+            label="ราคากลาง (บาท)"
+            type="number"
+            step="0.01"
+            placeholder="0.00"
+            :disabled="modalLoading"
+          />
+          <BaseInput
+            v-model.number="productForm.quantity"
+            label="จำนวนคงเหลือ"
+            type="number"
+            placeholder="0"
+            :disabled="modalLoading"
+          />
+          <div
+            class="flex items-center justify-between border border-secondary-200 rounded-[15px] px-3 mt-6 h-[42px]"
+          >
+            <span class="text-sm text-secondary-700">ราคาตามผู้ใช้</span>
             <BaseToggle
               v-model="productForm.is_special_pricing_enabled"
               active-color="primary"
@@ -404,45 +467,54 @@ onMounted(async () => {
             />
           </div>
 
+          <!-- วิธีใช้ + คำเตือน -->
+          <BaseTextarea
+            v-model="productForm.using"
+            label="วิธีใช้"
+            placeholder="กรอกวิธีใช้"
+            :rows="3"
+            :disabled="modalLoading"
+          />
+          <BaseTextarea
+            v-model="productForm.warning"
+            label="คำเตือน"
+            placeholder="กรอกคำเตือน"
+            :rows="3"
+            :disabled="modalLoading"
+          />
+
           <!-- Metadata -->
-          <div
-            class="pt-4 mt-4 border-t border-secondary-100 grid grid-cols-2 gap-x-4 gap-y-2 text-sm"
-          >
-            <div>
-              <p class="text-secondary-400 text-xs mb-0.5">PMC Product ID</p>
-              <p class="text-secondary-900 font-medium">
-                {{ selectedProduct.pmc_product_id }}
-              </p>
-            </div>
-            <div>
-              <p class="text-secondary-400 text-xs mb-0.5">สถานะ</p>
-              <span
-                :class="
-                  selectedProduct.is_active
-                    ? 'badge badge-green'
-                    : 'badge badge-red'
-                "
-                class="text-xs"
-              >
-                {{ selectedProduct.is_active ? "ใช้งาน" : "ไม่ใช้งาน" }}
-              </span>
-            </div>
-            <div>
-              <p class="text-secondary-400 text-xs mb-0.5">สร้างเมื่อ</p>
-              <p class="text-secondary-900 font-medium">
-                {{
-                  formatDate(selectedProduct.created_at, "DD MMM BBBB HH:mm")
-                }}
-              </p>
-            </div>
-            <div>
-              <p class="text-secondary-400 text-xs mb-0.5">อัปเดตล่าสุด</p>
-              <p class="text-secondary-900 font-medium">
-                {{
-                  formatDate(selectedProduct.updated_at, "DD MMM BBBB HH:mm")
-                }}
-              </p>
-            </div>
+
+          <div>
+            <p class="text-secondary-400 text-xs mb-0.5">PMC Product ID</p>
+            <p class="text-secondary-900 font-medium">
+              {{ selectedProduct.pmc_product_id ?? "-" }}
+            </p>
+          </div>
+          <div>
+            <p class="text-secondary-400 text-xs mb-0.5">สถานะ</p>
+            <span
+              :class="
+                selectedProduct.is_active
+                  ? 'badge badge-green'
+                  : 'badge badge-red'
+              "
+              class="text-xs"
+            >
+              {{ selectedProduct.is_active ? "ใช้งาน" : "ไม่ใช้งาน" }}
+            </span>
+          </div>
+          <div>
+            <p class="text-secondary-400 text-xs mb-0.5">สร้างเมื่อ</p>
+            <p class="text-secondary-900 font-medium">
+              {{ formatDate(selectedProduct.created_at, "DD MMM BBBB") }}
+            </p>
+          </div>
+          <div>
+            <p class="text-secondary-400 text-xs mb-0.5">อัปเดตล่าสุด</p>
+            <p class="text-secondary-900 font-medium">
+              {{ formatDate(selectedProduct.updated_at, "DD MMM BBBB") }}
+            </p>
           </div>
         </div>
       </div>

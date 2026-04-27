@@ -7,6 +7,7 @@ import {
   ChevronLeft,
   CircleCheckBig,
   File,
+  ImageOff,
 } from "lucide-vue-next";
 import { useRouter } from "vue-router";
 import { useUsersStore } from "@/stores";
@@ -41,17 +42,6 @@ const TITLE_OPTIONS = [
 const STATUS_OPTIONS = [
   { value: "true", label: "ใช้งาน" },
   { value: "false", label: "ระงับ" },
-];
-
-const MOCKFILES = [
-  {
-    url: "https://pdfobject.com/pdf/sample.pdf",
-    name: "ใบไรซักอย่าง.pdf",
-  },
-  {
-    url: "https://pdfobject.com/pdf/sample.pdf",
-    name: "ใบไรซักอย่าง2.pdf",
-  },
 ];
 
 const router = useRouter();
@@ -96,7 +86,7 @@ const fetchUsers = async (page = 1) => {
     loading.value = true;
     const params: GetUsersParams = {
       page,
-      limit: pagination.value.limit,
+      limit: 10,
     };
     if (searchQuery.value) params.search = searchQuery.value;
     if (selectedRole.value)
@@ -231,9 +221,14 @@ async function saveUserChanges() {
   modalLoading.value = false;
 }
 
+function rejectUser() {
+  if (!selectedUser.value) return;
+  // TODO: implement reject user logic
+  console.log("TODO: reject user", selectedUser.value.id);
+}
+
 function verifyUser() {
   if (!selectedUser.value) return;
-
   userStore.verifiredUser(selectedUser.value.id).then((ok) => {
     if (ok && selectedUser.value) {
       selectedUser.value = { ...selectedUser.value, is_verified: true };
@@ -417,168 +412,192 @@ onMounted(() => fetchUsers());
 
     <BaseModal
       v-if="editModalOpen && selectedUser"
-      title="แก้ไขผู้ใช้งาน"
+      title="ข้อมูลผู้ใช้งาน"
       size="md"
       @close="closeEditModal"
     >
-      <!-- Loading overlay -->
       <div class="relative min-h-[120px]">
         <LoadingOverlay :loading="modalLoading" text="กำลังโหลดข้อมูล..." />
 
-        <!-- Mock profile avatar -->
-        <div
-          class="flex items-center gap-3 mb-4 pb-4 border-b border-secondary-100"
-        >
+        <!-- Profile Header -->
+        <div class="flex gap-4 mb-5">
+          <!-- Avatar -->
           <div
-            class="w-14 h-14 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 font-bold text-xl select-none shrink-0"
+            class="w-16 h-16 rounded-2xl overflow-hidden shrink-0 bg-primary-100 flex items-center justify-center shadow-sm"
           >
-            {{ selectedUser.first_name?.charAt(0).toUpperCase()
-            }}{{ selectedUser.last_name?.charAt(0).toUpperCase() }}
+            <img
+              v-if="selectedUser.profile_image?.url"
+              :src="selectedUser.profile_image.url"
+              :alt="`${selectedUser.first_name} ${selectedUser.last_name}`"
+              class="w-full h-full object-cover"
+            />
+            <span
+              v-else
+              class="text-primary-600 font-bold text-2xl select-none"
+            >
+              {{ selectedUser.first_name?.charAt(0).toUpperCase()
+              }}{{ selectedUser.last_name?.charAt(0).toUpperCase() }}
+            </span>
           </div>
-          <div>
-            <p class="font-semibold text-secondary-900">
-              {{ selectedUser.first_name }} {{ selectedUser.last_name }}
+
+          <!-- Name + badges -->
+          <div class="flex-1 min-w-0">
+            <p
+              class="font-semibold text-secondary-900 text-base leading-tight truncate"
+            >
+              {{
+                [
+                  selectedUser.title,
+                  selectedUser.first_name,
+                  selectedUser.last_name,
+                ]
+                  .filter(Boolean)
+                  .join(" ") || "-"
+              }}
             </p>
-            <p class="text-sm text-secondary-400">{{ selectedUser.email }}</p>
+            <p class="text-sm text-secondary-400 truncate mb-2">
+              @{{ selectedUser.username }} · {{ selectedUser.email }}
+            </p>
+            <div class="flex flex-wrap gap-1.5">
+              <span class="badge badge-primary text-xs">{{
+                selectedUser.role
+              }}</span>
+              <span
+                :class="
+                  selectedUser.is_active
+                    ? 'badge badge-green'
+                    : 'badge badge-red'
+                "
+                class="text-xs"
+              >
+                {{ selectedUser.is_active ? "ใช้งาน" : "ระงับ" }}
+              </span>
+              <span
+                :class="
+                  selectedUser.is_verified
+                    ? 'badge badge-green'
+                    : 'badge badge-yellow'
+                "
+                class="text-xs"
+              >
+                {{ selectedUser.is_verified ? "✓ ยืนยันแล้ว" : "รอยืนยัน" }}
+              </span>
+            </div>
           </div>
         </div>
 
         <!-- View Mode -->
-        <dl v-if="!isEditMode" class="grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
-          <dt class="text-secondary-400">ID</dt>
-          <dd class="text-secondary-900 font-medium">{{ selectedUser.id }}</dd>
-
-          <dt class="text-secondary-400">รหัสผู้ใช้</dt>
-          <dd class="text-secondary-900 font-medium">
-            {{ selectedUser.code || "-" }}
-          </dd>
-
-          <dt class="text-secondary-400">อีเมล</dt>
-          <dd class="text-secondary-900 font-medium break-all">
-            {{ selectedUser.email }}
-          </dd>
-
-          <dt class="text-secondary-400">Username</dt>
-          <dd class="text-secondary-900 font-medium">
-            {{ selectedUser.username }}
-          </dd>
-
-          <dt class="text-secondary-400">ชื่อ-นามสกุล</dt>
-          <dd class="text-secondary-900 font-medium">
-            {{
-              [
-                selectedUser.title,
-                selectedUser.first_name,
-                selectedUser.last_name,
-              ]
-                .filter(Boolean)
-                .join(" ") || "-"
-            }}
-          </dd>
-
-          <dt class="text-secondary-400">เบอร์โทร</dt>
-          <dd class="text-secondary-900 font-medium">
-            {{ selectedUser.phone || "-" }}
-          </dd>
-
-          <dt class="text-secondary-400">วันเกิด</dt>
-          <dd class="text-secondary-900 font-medium">
-            {{ selectedUser.birthdate || "-" }}
-          </dd>
-
-          <dt class="text-secondary-400">ที่อยู่</dt>
-          <dd class="text-secondary-900 font-medium">
-            {{ selectedUser.address || "-" }}
-          </dd>
-
-          <dt class="text-secondary-400">Role</dt>
-          <dd class="text-secondary-900 font-medium">
-            {{ selectedUser.role }}
-          </dd>
-
-          <dt class="text-secondary-400">สถานะ</dt>
-          <dd>
-            <span
-              :class="
-                selectedUser.is_active ? 'badge badge-green' : 'badge badge-red'
-              "
-              class="text-xs"
-            >
-              {{ selectedUser.is_active ? "ใช้งาน" : "ระงับ" }}
-            </span>
-          </dd>
-
-          <dt class="text-secondary-400">ยืนยันอีเมล</dt>
-          <dd>
-            <span
-              :class="
-                selectedUser.is_verified
-                  ? 'badge badge-green'
-                  : 'badge badge-red'
-              "
-              class="text-xs"
-            >
-              {{ selectedUser.is_verified ? "✓ ยืนยัน" : "ยังไม่ยืนยัน" }}
-            </span>
-          </dd>
-
-          <dt class="text-secondary-400">วันหมดอายุผู้ใช้งาน</dt>
-          <dd class="text-secondary-900 font-medium">
-            {{ formatDate(selectedUser.expired_date, "DD MMM BBBB") }}
-          </dd>
-
-          <dt class="text-secondary-400">สร้างโดย</dt>
-          <dd class="text-secondary-900 font-medium">
-            {{ userStore.getFullName(selectedUser.created_by) || "-" }}
-          </dd>
-
-          <dt class="text-secondary-400">อัปเดตโดย</dt>
-          <dd class="text-secondary-900 font-medium">
-            {{ userStore.getFullName(selectedUser.updated_by) || "-" }}
-          </dd>
-
-          <dt class="text-secondary-400">สร้างเมื่อ</dt>
-          <dd class="text-secondary-900 font-medium">
-            {{ formatDate(selectedUser.created_at, "DD MMM BBBB HH:mm") }}
-          </dd>
-
-          <dt class="text-secondary-400">อัปเดตล่าสุด</dt>
-          <dd class="text-secondary-900 font-medium">
-            {{ formatDate(selectedUser.updated_at, "DD MMM BBBB HH:mm") }}
-          </dd>
-
-          <dt
-            class="text-secondary-400 col-span-2 pt-2 border-t border-secondary-100"
+        <div v-if="!isEditMode" class="space-y-4">
+          <!-- Info grid -->
+          <div
+            class="bg-secondary-50 rounded-xl p-4 grid grid-cols-2 gap-x-6 gap-y-3 text-sm"
           >
-            เอกสารแนบ
-          </dt>
-          <dd class="col-span-2">
-            <div v-if="MOCKFILES.length" class="flex flex-col gap-2">
+            <div>
+              <p class="text-xs text-secondary-400 mb-0.5">ID</p>
+              <p class="font-medium text-secondary-900">
+                {{ selectedUser.id }}
+              </p>
+            </div>
+            <div>
+              <p class="text-xs text-secondary-400 mb-0.5">รหัสผู้ใช้</p>
+              <p class="font-medium text-secondary-900">
+                {{ selectedUser.code || "-" }}
+              </p>
+            </div>
+            <div>
+              <p class="text-xs text-secondary-400 mb-0.5">เบอร์โทร</p>
+              <p class="font-medium text-secondary-900">
+                {{ selectedUser.phone || "-" }}
+              </p>
+            </div>
+            <div>
+              <p class="text-xs text-secondary-400 mb-0.5">วันเกิด</p>
+              <p class="font-medium text-secondary-900">
+                {{ selectedUser.birthdate || "-" }}
+              </p>
+            </div>
+            <div class="col-span-2">
+              <p class="text-xs text-secondary-400 mb-0.5">ที่อยู่</p>
+              <p class="font-medium text-secondary-900">
+                {{ selectedUser.address || "-" }}
+              </p>
+            </div>
+            <div>
+              <p class="text-xs text-secondary-400 mb-0.5">วันหมดอายุ</p>
+              <p class="font-medium text-secondary-900">
+                {{
+                  formatDate(selectedUser.expired_date, "DD MMM BBBB") || "-"
+                }}
+              </p>
+            </div>
+            <div>
+              <p class="text-xs text-secondary-400 mb-0.5">สร้างเมื่อ</p>
+              <p class="font-medium text-secondary-900">
+                {{ formatDate(selectedUser.created_at, "DD MMM BBBB") }}
+              </p>
+            </div>
+            <div>
+              <p class="text-xs text-secondary-400 mb-0.5">สร้างโดย</p>
+              <p class="font-medium text-secondary-900">
+                {{ userStore.getFullName(selectedUser.created_by) || "-" }}
+              </p>
+            </div>
+            <div>
+              <p class="text-xs text-secondary-400 mb-0.5">อัปเดตโดย</p>
+              <p class="font-medium text-secondary-900">
+                {{ userStore.getFullName(selectedUser.updated_by) || "-" }}
+              </p>
+            </div>
+          </div>
+
+          <!-- Attachments -->
+          <div>
+            <p
+              class="text-xs font-medium text-secondary-500 uppercase tracking-wide mb-2"
+            >
+              เอกสารแนบ
+            </p>
+            <div
+              v-if="selectedUser.attachments?.length"
+              class="flex flex-col gap-2"
+            >
               <a
-                v-for="file in MOCKFILES"
-                :key="file.url"
+                v-for="file in selectedUser.attachments"
+                :key="file.id"
                 :href="file.url"
                 target="_blank"
                 rel="noopener noreferrer"
-                class="flex items-center gap-2 px-3 py-2 rounded-lg border border-secondary-200 hover:border-primary-400 hover:bg-primary-50 transition-colors group"
+                class="flex items-center gap-3 px-3 py-2.5 rounded-xl border border-secondary-200 hover:border-primary-400 hover:bg-primary-50 transition-colors group"
               >
-                <!-- Icon: PDF or Image -->
-
+                <img
+                  v-if="file.mime_type?.startsWith('image/')"
+                  :src="file.url"
+                  :alt="file.name"
+                  class="w-9 h-9 rounded-lg object-cover shrink-0"
+                />
+                <div
+                  v-else
+                  class="w-9 h-9 rounded-lg bg-secondary-100 flex items-center justify-center shrink-0"
+                >
+                  <File class="w-4 h-4 text-secondary-400" />
+                </div>
                 <span
                   class="text-sm text-secondary-700 group-hover:text-primary-600 truncate flex-1"
+                  >{{ file.name }}</span
                 >
-                  {{ file.name }}
-                </span>
-                <File class="w-4 h-4 text-primary-600" />
+                <span
+                  v-if="file.size"
+                  class="text-xs text-secondary-400 shrink-0"
+                  >{{ (file.size / 1024).toFixed(0) }} KB</span
+                >
               </a>
             </div>
-            <p v-else class="text-secondary-400 text-sm">-</p>
-          </dd>
-        </dl>
+            <p v-else class="text-sm text-secondary-400 py-2">ไม่มีเอกสารแนบ</p>
+          </div>
+        </div>
 
         <!-- Edit Mode -->
-        <div v-else class="flex flex-col gap-4">
-          <!-- Read-only info -->
+        <div v-else class="space-y-3">
           <div
             class="bg-secondary-50 rounded-xl px-4 py-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm"
           >
@@ -601,32 +620,6 @@ onMounted(() => fetchUsers());
               </p>
             </div>
             <div>
-              <p class="text-secondary-400 text-xs mb-0.5">สถานะ</p>
-              <span
-                :class="
-                  selectedUser.is_active
-                    ? 'badge badge-green'
-                    : 'badge badge-red'
-                "
-                class="text-xs"
-              >
-                {{ selectedUser.is_active ? "ใช้งาน" : "ระงับ" }}
-              </span>
-            </div>
-            <div>
-              <p class="text-secondary-400 text-xs mb-0.5">ยืนยันอีเมล</p>
-              <span
-                :class="
-                  selectedUser.is_verified
-                    ? 'badge badge-green'
-                    : 'badge badge-red'
-                "
-                class="text-xs"
-              >
-                {{ selectedUser.is_verified ? "✓ ยืนยัน" : "ยังไม่ยืนยัน" }}
-              </span>
-            </div>
-            <div>
               <p class="text-secondary-400 text-xs mb-0.5">สร้างเมื่อ</p>
               <p class="text-secondary-900 font-medium">
                 {{ formatDate(selectedUser.created_at, "DD/MM/BBBB HH:mm") }}
@@ -645,6 +638,7 @@ onMounted(() => fetchUsers());
             type="email"
             placeholder="กรอกอีเมล"
           />
+
           <div>
             <p class="label mb-1">ชื่อ-นามสกุล</p>
             <div class="flex gap-2">
@@ -666,48 +660,52 @@ onMounted(() => fetchUsers());
               />
             </div>
           </div>
+
           <BaseInput
             v-model="editForm.phone"
             label="เบอร์โทร"
             type="tel"
             placeholder="กรอกเบอร์โทร"
           />
-
           <BaseDatePicker
             v-model="editForm.expired_date"
             label="วันหมดอายุผู้ใช้งาน"
-            placeholder="เลือกวันหมดอายุผู้ใช้งาน"
+            placeholder="เลือกวันหมดอายุ"
           />
         </div>
       </div>
-      <!-- end relative wrapper -->
 
       <template #footer>
-        <div class="flex justify-between w-full">
-          <button
-            class="btn-primary text-sm"
-            v-if="selectedUser.code && !selectedUser.is_verified"
-            :class="{ 'opacity-40 cursor-not-allowed': !selectedUser.code }"
-            @click="verifyUser"
-          >
-            ยืนยันผู้ใช้งาน
-          </button>
-          <div
-            v-else-if="selectedUser.is_verified"
-            class="w-5 h-5 text-primary-600"
-          >
-            <CircleCheckBig />
-          </div>
-          <button
-            class="btn-primary text-sm opacity-40 cursor-not-allowed"
-            v-else
-            disabled
-          >
-            ยืนยันผู้ใช้งาน
-          </button>
-
+        <div class="flex justify-between w-full gap-2">
+          <!-- Left: verify / reject / already verified -->
           <div class="flex gap-2">
-            <!-- Edit mode: บันทึก / ยกเลิก | View mode: แก้ไข / ปิด -->
+            <template v-if="!selectedUser.is_verified">
+              <!-- ยืนยัน: ต้องมี code -->
+              <button
+                class="btn-primary text-sm"
+                :class="{ 'opacity-40 cursor-not-allowed': !selectedUser.code }"
+                :disabled="!selectedUser.code"
+                @click="verifyUser"
+              >
+                <CircleCheckBig class="w-4 h-4" />
+                อนุมัติ
+              </button>
+              <!-- ไม่อนุมัติ -->
+              <button class="btn-danger text-sm" @click="rejectUser">
+                ไม่อนุมัติ
+              </button>
+            </template>
+            <div
+              v-else
+              class="flex items-center gap-1.5 text-sm text-primary-600 font-medium"
+            >
+              <CircleCheckBig class="w-4 h-4" />
+              อนุมัติแล้ว
+            </div>
+          </div>
+
+          <!-- Right: edit / save / cancel / close -->
+          <div class="flex gap-2">
             <template v-if="isEditMode">
               <button class="btn-secondary text-sm" @click="toggleEditMode">
                 ยกเลิก
@@ -721,6 +719,7 @@ onMounted(() => fetchUsers());
                 ปิด
               </button>
               <button class="btn-primary text-sm" @click="toggleEditMode">
+                <Edit class="w-4 h-4" />
                 แก้ไข
               </button>
             </template>

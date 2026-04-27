@@ -1,8 +1,7 @@
-import { defineStore } from "pinia";
-import type { User } from "@/types";
-import { apiClient } from "@/api/client";
 import { authApi } from "@/api";
-import type { RegisterData } from "@/types";
+import { apiClient } from "@/api/client";
+import type { RegisterData, User } from "@/types";
+import { defineStore } from "pinia";
 
 interface LoginResponse {
   success: boolean;
@@ -139,7 +138,7 @@ export const useAuthStore = defineStore("auth", {
         const response = await authApi.register(params);
 
         return true;
-      } catch (err) {
+      } catch (err: any) {
         this.error = err.response?.data?.message || "ลงทะเบียนไม่สำเร็จ";
         return false;
       } finally {

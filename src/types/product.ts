@@ -16,11 +16,27 @@ export interface ProductCategory {
   };
 }
 
+export interface ProductAttachment {
+  id: number;
+  product_id: number;
+  url: string;
+  name: string;
+  type: string | null;
+  mime_type: string | null;
+  size: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Product {
   id: number;
   pmc_product_id: number;
   code: string;
   name: string;
+  generic_name: string | null;
+  unit_name: string | null;
+  using: string | null;
+  warning: string | null;
   default_price: string;
   is_special_pricing_enabled: boolean;
   quantity: number;
@@ -29,6 +45,7 @@ export interface Product {
   created_at: string;
   updated_at: string;
   categories: ProductCategory[];
+  attachments?: ProductAttachment[];
 }
 
 export interface ProductListParams {

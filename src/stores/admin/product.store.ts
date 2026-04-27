@@ -1,8 +1,8 @@
-import { defineStore } from "pinia";
-import type { Product, ProductListParams } from "@/types";
 import { productsApi } from "@/api";
 import type { UpdateProductPayload } from "@/api/admin/products";
 import { useToast } from "@/composables";
+import type { Product, ProductListParams } from "@/types";
+import { defineStore } from "pinia";
 
 interface ProductState {
   products: Product[];
@@ -88,13 +88,20 @@ export const useProductStore = defineStore("product", {
     async updateProduct(
       id: number,
       data: UpdateProductPayload,
+      imageFile?: File | null,
+      removeAttachments?: boolean,
     ): Promise<boolean> {
       this.isLoading = true;
       this.error = null;
       const toast = useToast();
 
       try {
-        const updated = await productsApi.updateProduct(id, data);
+        const updated = await productsApi.updateProduct(
+          id,
+          data,
+          imageFile,
+          removeAttachments,
+        );
 
         // Update in local state
         const idx = this.products.findIndex((p) => p.id === id);

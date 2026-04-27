@@ -131,7 +131,7 @@ function fullName(user: {
   first_name: string;
   last_name: string;
 }): string {
-  return [user.title, user.first_name, user.last_name]
+  return [user?.title, user?.first_name, user?.last_name]
     .filter(Boolean)
     .join(" ");
 }
@@ -482,7 +482,7 @@ watch(
 
       <!-- User / changed_by_user (default) -->
       <template #cell-user="{ row }">
-        <div>
+        <div v-if="row.user">
           <p class="text-sm text-secondary-700">{{ fullName(row.user) }}</p>
           <p class="text-xs text-secondary-400">{{ row.user.role }}</p>
         </div>

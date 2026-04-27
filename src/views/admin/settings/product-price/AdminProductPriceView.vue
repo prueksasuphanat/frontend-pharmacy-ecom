@@ -51,7 +51,6 @@ function addUserRow() {
 
   selectedUsers.value.push(user);
 
-  // Initialize price matrix for this user
   const userKey = String(user.id);
   if (!priceMatrix.value[userKey]) {
     priceMatrix.value[userKey] = {};
@@ -75,7 +74,6 @@ function onCustomUserModeChange() {
   initializePriceMatrix();
 }
 
-// Product selection
 const availableProducts = computed(() => {
   const selectedIds = selectedProducts.value.map((p) => p.id);
   return products.value.filter((p) => !selectedIds.includes(p.id));
@@ -92,7 +90,7 @@ const selectedProductId = ref<number | null>(null);
 
 // Fetch data
 async function fetchUsers() {
-  await usersStore.getUsers({ is_active: true, is_delete: false });
+  await usersStore.getUsers({ is_delete: false, limit: 1000 });
   initializePriceMatrix();
 }
 
@@ -135,7 +133,6 @@ function removeProductColumn(productId: number) {
     (p) => p.id !== productId,
   );
 
-  // Remove prices for this product from local matrix
   users.value.forEach((user) => {
     const userKey = String(user.id);
     if (priceMatrix.value[userKey]) {
@@ -172,7 +169,6 @@ async function fetchPricesForProducts() {
   const success = await productPriceStore.fetchProductPrices(productIds);
 
   if (success) {
-    // Update local price matrix from store
     const storePriceMatrix = productPriceStore.priceMatrix;
     allUsers.value.forEach((user) => {
       const userKey = String(user.id);
@@ -199,7 +195,6 @@ async function saveAllPrices() {
     return;
   }
 
-  // Build prices array
   const prices: UpdateProductPricePayload[] = [];
 
   users.value.forEach((user) => {
