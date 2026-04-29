@@ -1,5 +1,9 @@
 import { authApi } from "@/api";
 import { apiClient } from "@/api/client";
+import {
+  customerProfileApi,
+  type UpdateProfileData,
+} from "@/api/customer/profile";
 import type { RegisterData, User } from "@/types";
 import { defineStore } from "pinia";
 
@@ -152,6 +156,72 @@ export const useAuthStore = defineStore("auth", {
       this.refreshToken = null;
       localStorage.removeItem("access_token");
       localStorage.removeItem("refresh_token");
+    },
+
+    async logoutWithApi(): Promise<void> {
+      // ยิง API ก่อน (best-effort — ไม่ throw ถ้า fail)
+      try {
+        await authApi.logout();
+      } catch {
+        // ไม่ต้องทำอะไร — clear local state ต่อไปได้เลย
+      } finally {
+        this.currentUser = null;
+        this.accessToken = null;
+        this.refreshToken = null;
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("refresh_token");
+      }
+    },
+
+    async updateProfile(
+      data: UpdateProfileData,
+    ): Promise<{ success: boolean; message: string }> {
+      this.isLoading = true;
+      this.error = null;
+
+      // เก็บ snapshot ไว้ rollback ถ้า API fail
+      const snapshot = this.currentUser ? { ...this.currentUser } : null;
+
+      // Optimistic update — อัปเดต store ทันทีโดยไม่รอ API
+      if (this.currentUser) {
+        this.currentUser = {
+          ...this.currentUser,
+          username: data.username ?? this.currentUser.username,
+          first_name: data.first_name ?? this.currentUser.first_name,
+          last_name: data.last_name ?? this.currentUser.last_name,
+          phone: data.phone ?? this.currentUser.phone,
+          birthdate:
+            data.birthdate !== undefined
+              ? (data.birthdate ?? null)
+              : this.currentUser.birthdate,
+          address:
+            data.address !== undefined
+              ? (data.address ?? null)
+              : this.currentUser.address,
+        };
+      }
+
+      try {
+        const response = await customerProfileApi.updateProfile(data);
+
+        // อัปเดต profile_image ถ้ามีการ upload avatar
+        if (this.currentUser && response.data.data.profile_image) {
+          this.currentUser = {
+            ...this.currentUser,
+            profile_image: response.data.data.profile_image,
+          };
+        }
+
+        return { success: true, message: response.data.message };
+      } catch (err: any) {
+        // Rollback ถ้า API fail
+        if (snapshot) this.currentUser = snapshot;
+        const message = err.response?.data?.message || "อัปเดตข้อมูลไม่สำเร็จ";
+        this.error = message;
+        return { success: false, message };
+      } finally {
+        this.isLoading = false;
+      }
     },
   },
 });

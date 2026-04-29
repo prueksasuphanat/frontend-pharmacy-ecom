@@ -44,7 +44,7 @@ onUnmounted(() => {
 });
 
 async function logout() {
-  auth.logout();
+  await auth.logoutWithApi();
   cart.clearCart();
   router.push("/login");
 }
@@ -116,9 +116,15 @@ async function logout() {
               class="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-secondary-50 transition-colors text-sm font-medium text-secondary-700"
             >
               <div
-                class="w-7 h-7 bg-primary-100 rounded-full flex items-center justify-center"
+                class="w-7 h-7 bg-primary-100 rounded-full flex items-center justify-center overflow-hidden"
               >
-                <User class="w-4 h-4 text-primary-700" />
+                <img
+                  v-if="auth.currentUser?.profile_image?.url"
+                  :src="auth.currentUser.profile_image.url"
+                  alt="รูปโปรไฟล์"
+                  class="w-full h-full object-cover"
+                />
+                <User v-else class="w-4 h-4 text-primary-700" />
               </div>
               <span class="hidden sm:block max-w-24 truncate">{{
                 auth.currentUser?.email?.split("@")[0]

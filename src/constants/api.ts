@@ -44,6 +44,10 @@ export const API_ENDPOINTS = {
     ADDRESS_BY_ID: (id: string) => `/profile/addresses/${id}`,
   },
 
+  CUSTOMER: {
+    PROFILE: "/customer/profile",
+  },
+
   ADMIN: {
     SETTINGS: {
       USERS: {
