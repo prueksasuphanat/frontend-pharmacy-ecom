@@ -12,7 +12,7 @@ import {
   ShoppingCart,
 } from "lucide-vue-next";
 import { RouterLink } from "vue-router";
-import { useNotificationStore } from "@/stores/notification.store";
+import { useNotificationStore } from "@/stores/customer/notification.store";
 import type { Component } from "vue";
 
 const notif = useNotificationStore();

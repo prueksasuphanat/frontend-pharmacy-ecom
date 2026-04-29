@@ -3,7 +3,7 @@ import { ref, computed } from "vue";
 import { Navbar, Footer } from "@/components/layout";
 import { MOCK_PRODUCTS, MOCK_PRICES } from "@/__mocks__/products";
 import { useAuthStore } from "@/stores/auth.store";
-import { useCartStore } from "@/stores/cart.store";
+import { useCartStore } from "@/stores/customer/cart.store";
 import { RouterLink, useRoute } from "vue-router";
 import {
   User,

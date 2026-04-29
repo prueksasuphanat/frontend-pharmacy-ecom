@@ -5,8 +5,8 @@
  * **Validates: Requirements 3.4**
  */
 
+import { useNotificationStore } from "@/stores/customer/notification.store";
 import { computed } from "vue";
-import { useNotificationStore } from "@/stores/notification.store";
 
 /**
  * Notifications composable

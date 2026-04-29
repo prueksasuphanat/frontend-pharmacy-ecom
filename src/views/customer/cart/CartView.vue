@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Navbar, Footer } from "@/components/layout";
-import { useCartStore } from "@/stores/cart.store";
+import { useCartStore } from "@/stores/customer/cart.store";
 import { RouterLink } from "vue-router";
 import {
   Trash2,

@@ -5,8 +5,8 @@
  * **Validates: Requirements 3.3**
  */
 
+import { useCartStore } from "@/stores/customer/cart.store";
 import { computed } from "vue";
-import { useCartStore } from "@/stores/cart.store";
 
 /**
  * Cart composable

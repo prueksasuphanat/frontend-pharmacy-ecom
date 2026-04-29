@@ -1,11 +1,11 @@
-import { defineStore } from "pinia";
-import { ref, computed } from "vue";
-import {
-  MOCK_NOTIFICATIONS,
-  MOCK_ADMIN_NOTIFICATIONS,
-} from "@/__mocks__/users";
-import { useAuthStore } from "./auth.store";
 import type { Notification } from "@/__mocks__/users";
+import {
+  MOCK_ADMIN_NOTIFICATIONS,
+  MOCK_NOTIFICATIONS,
+} from "@/__mocks__/users";
+import { defineStore } from "pinia";
+import { computed, ref } from "vue";
+import { useAuthStore } from "../auth.store";
 
 // TODO: replace polling with real GET /notifications/unread-count every 30s
 // TODO: replace with real PATCH /notifications/:id/read

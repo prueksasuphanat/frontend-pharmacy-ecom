@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import Navbar from "@/components/layout/Navbar.vue";
-import { useNotificationStore } from "@/stores/notification.store";
+import { useNotificationStore } from "@/stores/customer/notification.store";
 import {
   Check,
   Bell,

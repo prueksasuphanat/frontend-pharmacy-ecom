@@ -12,7 +12,7 @@ import {
 import { useRoute } from "vue-router";
 import NotificationBell from "@/components/notification/NotificationBell.vue";
 import { computed, onMounted, onUnmounted } from "vue";
-import { useNotificationStore } from "@/stores/notification.store";
+import { useNotificationStore } from "@/stores/customer/notification.store";
 import { useUsersStore } from "@/stores/admin/settings/users.store";
 import LoadingOverlay from "@/components/ui/LoadingOverlay.vue";
 

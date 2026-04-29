@@ -9,7 +9,7 @@ import {
   ShoppingBag,
 } from "lucide-vue-next";
 import { RouterLink } from "vue-router";
-import { useCartStore } from "@/stores/cart.store";
+import { useCartStore } from "@/stores/customer/cart.store";
 
 const cart = useCartStore();
 const isOpen = ref(false);

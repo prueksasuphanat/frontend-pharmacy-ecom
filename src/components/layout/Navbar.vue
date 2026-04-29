@@ -16,8 +16,8 @@ import {
   Settings,
 } from "lucide-vue-next";
 import { useAuthStore } from "@/stores/auth.store";
-import { useCartStore } from "@/stores/cart.store";
-import { useNotificationStore } from "@/stores/notification.store";
+import { useCartStore } from "@/stores/customer/cart.store";
+import { useNotificationStore } from "@/stores/customer/notification.store";
 import MiniCart from "@/components/cart/MiniCart.vue";
 import NotificationBell from "@/components/notification/NotificationBell.vue";
 

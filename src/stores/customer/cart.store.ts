@@ -1,8 +1,8 @@
-import { defineStore } from "pinia";
-import { ref, computed } from "vue";
-import { MOCK_PRODUCTS, MOCK_PRICES } from "@/__mocks__/products";
-import { useAuthStore } from "./auth.store";
+import { MOCK_PRICES, MOCK_PRODUCTS } from "@/__mocks__/products";
+import { useAuthStore } from "@/stores/auth.store";
 import type { CartItem } from "@/types/cart";
+import { defineStore } from "pinia";
+import { computed, ref } from "vue";
 
 // TODO: replace with server-side cart_items API calls
 
@@ -33,7 +33,7 @@ export const useCartStore = defineStore("cart", () => {
     const product = MOCK_PRODUCTS.find((p) => p.id === productId);
     if (!product) return;
 
-    const roleName = auth.roleName as "retail" | "wholesale" | "clinic";
+    const roleName = "CUSTOMER";
     const prices = MOCK_PRICES[productId];
     const price = prices?.[roleName] ?? product.base_price;
 

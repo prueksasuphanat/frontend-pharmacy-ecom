@@ -2,7 +2,7 @@
 import { computed, ref, watch, onMounted, onUnmounted } from "vue";
 import { MOCK_PRODUCTS, MOCK_PRICES } from "@/__mocks__/products";
 import { useAuthStore } from "@/stores/auth.store";
-import { useCartStore } from "@/stores/cart.store";
+import { useCartStore } from "@/stores/customer/cart.store";
 import { DrugTypeBadge } from "@/components/ui";
 import {
   ShoppingCart,

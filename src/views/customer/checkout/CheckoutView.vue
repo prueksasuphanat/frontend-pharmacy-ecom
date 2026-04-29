@@ -2,7 +2,7 @@
 import { ref, computed } from "vue";
 import { useRouter } from "vue-router";
 import Navbar from "@/components/layout/Navbar.vue";
-import { useCartStore } from "@/stores/cart.store";
+import { useCartStore } from "@/stores/customer/cart.store";
 import { useAuthStore } from "@/stores/auth.store";
 import {
   CheckCircle,

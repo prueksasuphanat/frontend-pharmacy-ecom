@@ -1,0 +1,9 @@
+import type { RouteRecordRaw } from "vue-router";
+
+export const cartRoutes: RouteRecordRaw[] = [
+  {
+    path: "/cart",
+    component: () => import("@/views/customer/cart/CartView.vue"),
+    meta: { requiresAuth: true },
+  },
+];
