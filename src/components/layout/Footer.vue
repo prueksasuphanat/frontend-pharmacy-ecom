@@ -142,7 +142,7 @@ const currentYear = new Date().getFullYear();
             </li>
             <li>
               <RouterLink
-                to="/orders"
+                to="/profile/orders"
                 class="hover:text-primary-400 transition-colors flex items-center gap-2 group"
               >
                 <span
@@ -153,7 +153,7 @@ const currentYear = new Date().getFullYear();
             </li>
             <li>
               <RouterLink
-                to="/profile"
+                to="/profile/information"
                 class="hover:text-primary-400 transition-colors flex items-center gap-2 group"
               >
                 <span

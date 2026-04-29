@@ -97,7 +97,7 @@ async function fetchUsers() {
 async function fetchProducts() {
   await productStore.getProducts({
     is_active: true,
-    limit: 1000,
+    limit: 100000,
     is_special_pricing_enabled: true,
   });
   products.value = productStore.products;

@@ -22,22 +22,26 @@ export const customerRoutes: RouteRecordRaw[] = [
     meta: { requiresAuth: true },
   },
   {
-    path: "/orders",
+    path: "/profile/orders",
     component: () => import("@/views/customer/OrderListView.vue"),
     meta: { requiresAuth: true },
   },
   {
-    path: "/orders/:id",
+    path: "/profile/orders/:id",
     component: () => import("@/views/customer/OrderDetailView.vue"),
     meta: { requiresAuth: true },
   },
   {
     path: "/profile",
+    redirect: "/profile/information",
+  },
+  {
+    path: "/profile/information",
     component: () => import("@/views/customer/ProfileView.vue"),
     meta: { requiresAuth: true },
   },
   {
-    path: "/profile/addresses",
+    path: "/profile/address",
     component: () => import("@/views/customer/AddressBookView.vue"),
     meta: { requiresAuth: true },
   },
@@ -47,7 +51,7 @@ export const customerRoutes: RouteRecordRaw[] = [
     meta: { requiresAuth: true },
   },
   {
-    path: "/wishlist",
+    path: "/profile/wishlist",
     component: () => import("@/views/customer/WishlistView.vue"),
     meta: { requiresAuth: true },
   },

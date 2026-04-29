@@ -1,40 +1,435 @@
 <script setup lang="ts">
-import Navbar from '@/components/layout/Navbar.vue'
-import { MapPin, Plus, Trash2, Check } from 'lucide-vue-next'
-import { ref } from 'vue'
-const addresses = ref([
-  { id:1, label:'บ้าน', recipient:'นาย สมชาย ใจดี', phone:'081-234-5678', address:'123/45 ถ.พหลโยธิน', district:'จตุจักร', province:'กรุงเทพมหานคร', postal_code:'10900', is_default:true },
-  { id:2, label:'ที่ทำงาน', recipient:'สมชาย ใจดี', phone:'02-345-6789', address:'456 ถ.สีลม', district:'บางรัก', province:'กรุงเทพมหานคร', postal_code:'10500', is_default:false },
-])
-// TODO: GET /addresses, POST /addresses, PUT /addresses/:id, DELETE /addresses/:id, PATCH /addresses/:id/default
+import { ref, reactive, computed } from "vue";
+import { Navbar, Footer } from "@/components/layout";
+import { BaseInput, BaseSelect, BaseModal } from "@/components/ui";
+import { useAuthStore } from "@/stores/auth.store";
+import { RouterLink, useRoute } from "vue-router";
+import {
+  User,
+  Package,
+  MapPin,
+  Lock,
+  Heart,
+  ChevronRight,
+  Plus,
+  Trash2,
+  Check,
+  Pencil,
+  Home,
+  Building2,
+  Loader2,
+} from "lucide-vue-next";
+
+const auth = useAuthStore();
+const route = useRoute();
+
+// ── Sidebar menu ──────────────────────────────────────────
+const menuItems = [
+  { to: "/profile/information", label: "ข้อมูลส่วนตัว", icon: User },
+  { to: "/profile/orders", label: "คำสั่งซื้อของฉัน", icon: Package },
+  { to: "/profile/address", label: "ที่อยู่จัดส่ง", icon: MapPin },
+  { to: "/profile/security", label: "เปลี่ยนรหัสผ่าน", icon: Lock },
+  { to: "/profile/wishlist", label: "สินค้าที่บันทึกไว้", icon: Heart },
+];
+
+// ── Address types ─────────────────────────────────────────
+interface Address {
+  id: number;
+  label: string;
+  recipient: string;
+  phone: string;
+  address: string;
+  sub_district: string;
+  district: string;
+  province: string;
+  postal_code: string;
+  is_default: boolean;
+}
+
+// ── Mock data ─────────────────────────────────────────────
+// TODO: GET /api/v1/profile/addresses
+const addresses = ref<Address[]>([
+  {
+    id: 1,
+    label: "บ้าน",
+    recipient: "สมชาย ใจดี",
+    phone: "081-234-5678",
+    address: "123/45 ถ.พหลโยธิน",
+    sub_district: "จตุจักร",
+    district: "จตุจักร",
+    province: "กรุงเทพมหานคร",
+    postal_code: "10900",
+    is_default: true,
+  },
+  {
+    id: 2,
+    label: "ที่ทำงาน",
+    recipient: "สมชาย ใจดี",
+    phone: "02-345-6789",
+    address: "456 อาคาร ABC ชั้น 12 ถ.สีลม",
+    sub_district: "สีลม",
+    district: "บางรัก",
+    province: "กรุงเทพมหานคร",
+    postal_code: "10500",
+    is_default: false,
+  },
+]);
+
+// ── Modal state ───────────────────────────────────────────
+const showModal = ref(false);
+const isEditMode = ref(false);
+const isSaving = ref(false);
+const editingId = ref<number | null>(null);
+
+const labelOptions = [
+  { value: "บ้าน", label: "🏠 บ้าน" },
+  { value: "ที่ทำงาน", label: "🏢 ที่ทำงาน" },
+  { value: "อื่นๆ", label: "📍 อื่นๆ" },
+];
+
+const provinceOptions = [
+  { value: "กรุงเทพมหานคร", label: "กรุงเทพมหานคร" },
+  { value: "นนทบุรี", label: "นนทบุรี" },
+  { value: "ปทุมธานี", label: "ปทุมธานี" },
+  { value: "สมุทรปราการ", label: "สมุทรปราการ" },
+  { value: "เชียงใหม่", label: "เชียงใหม่" },
+  { value: "ขอนแก่น", label: "ขอนแก่น" },
+  { value: "สงขลา", label: "สงขลา" },
+  { value: "ชลบุรี", label: "ชลบุรี" },
+];
+
+const emptyForm = {
+  label: "บ้าน",
+  recipient: "",
+  phone: "",
+  address: "",
+  sub_district: "",
+  district: "",
+  province: "กรุงเทพมหานคร",
+  postal_code: "",
+  is_default: false,
+};
+
+const form = reactive({ ...emptyForm });
+
+// ── Actions ───────────────────────────────────────────────
+function openAddModal() {
+  Object.assign(form, { ...emptyForm });
+  isEditMode.value = false;
+  editingId.value = null;
+  showModal.value = true;
+}
+
+function openEditModal(addr: Address) {
+  Object.assign(form, {
+    label: addr.label,
+    recipient: addr.recipient,
+    phone: addr.phone,
+    address: addr.address,
+    sub_district: addr.sub_district,
+    district: addr.district,
+    province: addr.province,
+    postal_code: addr.postal_code,
+    is_default: addr.is_default,
+  });
+  isEditMode.value = true;
+  editingId.value = addr.id;
+  showModal.value = true;
+}
+
+async function saveAddress() {
+  isSaving.value = true;
+
+  // TODO: POST /api/v1/profile/addresses (create)
+  // TODO: PUT /api/v1/profile/addresses/:id (update)
+  await new Promise((r) => setTimeout(r, 600));
+
+  if (isEditMode.value && editingId.value) {
+    // Update existing
+    const idx = addresses.value.findIndex((a) => a.id === editingId.value);
+    if (idx !== -1) {
+      addresses.value[idx] = {
+        ...addresses.value[idx],
+        ...form,
+      };
+    }
+  } else {
+    // Create new
+    const newId = Math.max(...addresses.value.map((a) => a.id), 0) + 1;
+    addresses.value.push({
+      id: newId,
+      ...form,
+    });
+  }
+
+  isSaving.value = false;
+  showModal.value = false;
+}
+
+async function setDefault(id: number) {
+  // TODO: PATCH /api/v1/profile/addresses/:id/default
+  addresses.value.forEach((a) => {
+    a.is_default = a.id === id;
+  });
+}
+
+async function deleteAddress(id: number) {
+  if (!confirm("ต้องการลบที่อยู่นี้หรือไม่?")) return;
+
+  // TODO: DELETE /api/v1/profile/addresses/:id
+  addresses.value = addresses.value.filter((a) => a.id !== id);
+}
+
+function getLabelIcon(label: string) {
+  if (label === "บ้าน") return Home;
+  if (label === "ที่ทำงาน") return Building2;
+  return MapPin;
+}
 </script>
+
 <template>
-  <div>
+  <div class="flex flex-col min-h-screen">
     <Navbar />
-    <div class="max-w-3xl mx-auto px-4 py-8">
-      <div class="page-header mb-6">
-        <h1 class="page-title">ที่อยู่จัดส่ง</h1>
-        <button class="btn-primary text-sm gap-1.5"><Plus class="w-4 h-4" /> เพิ่มที่อยู่</button>
-      </div>
-      <div class="space-y-3">
-        <div v-for="addr in addresses" :key="addr.id"
-          :class="['card flex gap-4', addr.is_default && 'ring-2 ring-primary-400']">
-          <MapPin class="w-5 h-5 text-primary-600 mt-0.5 shrink-0" />
-          <div class="flex-1">
-            <div class="flex items-center gap-2 mb-1">
-              <span class="font-semibold text-sm text-secondary-900">{{ addr.label }}</span>
-              <span v-if="addr.is_default" class="badge badge-teal text-xs">ค่าเริ่มต้น</span>
+
+    <div class="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-8">
+      <h1 class="page-title mb-6">บัญชีของฉัน</h1>
+
+      <div class="flex flex-col lg:flex-row gap-6">
+        <!-- ── Sidebar ── -->
+        <aside class="w-full lg:w-64 shrink-0">
+          <nav class="card p-2 space-y-0.5">
+            <RouterLink
+              v-for="item in menuItems"
+              :key="item.to"
+              :to="item.to"
+              :class="[
+                'flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm transition-colors',
+                route.path === item.to
+                  ? 'bg-primary-50 text-primary-700 font-medium'
+                  : 'text-secondary-600 hover:bg-secondary-50',
+              ]"
+            >
+              <component :is="item.icon" class="w-4 h-4" />
+              <span class="flex-1">{{ item.label }}</span>
+              <ChevronRight class="w-3.5 h-3.5 opacity-40" />
+            </RouterLink>
+          </nav>
+        </aside>
+
+        <!-- ── Main content ── -->
+        <main class="flex-1 min-w-0">
+          <div class="card">
+            <!-- Header -->
+            <div class="flex items-center justify-between mb-6">
+              <div>
+                <h2 class="text-lg font-bold text-secondary-900">
+                  ที่อยู่จัดส่ง
+                </h2>
+                <p class="text-sm text-secondary-500 mt-0.5">
+                  จัดการที่อยู่สำหรับจัดส่งสินค้า
+                </p>
+              </div>
+              <button @click="openAddModal" class="btn-primary text-sm gap-1.5">
+                <Plus class="w-4 h-4" /> เพิ่มที่อยู่
+              </button>
             </div>
-            <p class="text-sm text-secondary-700">{{ addr.recipient }} · {{ addr.phone }}</p>
-            <p class="text-sm text-secondary-500">{{ addr.address }}, {{ addr.district }}, {{ addr.province }} {{ addr.postal_code }}</p>
-            <div class="flex gap-2 mt-3">
-              <button class="btn-secondary text-xs py-1">แก้ไข</button>
-              <button v-if="!addr.is_default" class="btn-ghost text-xs py-1 text-primary-600 gap-1"><Check class="w-3 h-3" /> ตั้งเป็นค่าเริ่มต้น</button>
-              <button class="btn-ghost text-xs py-1 text-danger gap-1"><Trash2 class="w-3 h-3" /> ลบ</button>
+
+            <!-- Empty state -->
+            <div v-if="addresses.length === 0" class="text-center py-12">
+              <div
+                class="w-16 h-16 bg-secondary-100 rounded-full flex items-center justify-center mx-auto mb-4"
+              >
+                <MapPin class="w-8 h-8 text-secondary-400" />
+              </div>
+              <p class="text-secondary-600 font-medium mb-1">
+                ยังไม่มีที่อยู่จัดส่ง
+              </p>
+              <p class="text-sm text-secondary-400 mb-4">
+                เพิ่มที่อยู่เพื่อใช้ในการสั่งซื้อสินค้า
+              </p>
+              <button @click="openAddModal" class="btn-outline text-sm gap-1.5">
+                <Plus class="w-4 h-4" /> เพิ่มที่อยู่แรก
+              </button>
+            </div>
+
+            <!-- Address list -->
+            <div v-else class="space-y-3">
+              <div
+                v-for="addr in addresses"
+                :key="addr.id"
+                :class="[
+                  'relative rounded-xl border p-4 transition-all',
+                  addr.is_default
+                    ? 'border-primary-300 bg-primary-50/30'
+                    : 'border-secondary-200 hover:border-secondary-300',
+                ]"
+              >
+                <div class="flex gap-3">
+                  <!-- Icon -->
+                  <div
+                    :class="[
+                      'w-10 h-10 rounded-lg flex items-center justify-center shrink-0',
+                      addr.is_default ? 'bg-primary-100' : 'bg-secondary-100',
+                    ]"
+                  >
+                    <component
+                      :is="getLabelIcon(addr.label)"
+                      :class="[
+                        'w-5 h-5',
+                        addr.is_default
+                          ? 'text-primary-600'
+                          : 'text-secondary-500',
+                      ]"
+                    />
+                  </div>
+
+                  <!-- Content -->
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 mb-1">
+                      <span class="font-semibold text-sm text-secondary-900">
+                        {{ addr.label }}
+                      </span>
+                      <span
+                        v-if="addr.is_default"
+                        class="badge badge-teal text-xs"
+                      >
+                        ค่าเริ่มต้น
+                      </span>
+                    </div>
+                    <p class="text-sm text-secondary-700">
+                      {{ addr.recipient }} · {{ addr.phone }}
+                    </p>
+                    <p class="text-sm text-secondary-500 mt-0.5">
+                      {{ addr.address }}, {{ addr.sub_district }},
+                      {{ addr.district }}, {{ addr.province }}
+                      {{ addr.postal_code }}
+                    </p>
+
+                    <!-- Actions -->
+                    <div class="flex items-center gap-2 mt-3">
+                      <button
+                        @click="openEditModal(addr)"
+                        class="btn-ghost text-xs py-1.5 px-3 gap-1"
+                      >
+                        <Pencil class="w-3 h-3" /> แก้ไข
+                      </button>
+                      <button
+                        v-if="!addr.is_default"
+                        @click="setDefault(addr.id)"
+                        class="btn-ghost text-xs py-1.5 px-3 gap-1 text-primary-600"
+                      >
+                        <Check class="w-3 h-3" /> ตั้งเป็นค่าเริ่มต้น
+                      </button>
+                      <button
+                        v-if="!addr.is_default"
+                        @click="deleteAddress(addr.id)"
+                        class="btn-ghost text-xs py-1.5 px-3 gap-1 text-danger"
+                      >
+                        <Trash2 class="w-3 h-3" /> ลบ
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
+        </main>
       </div>
     </div>
+
+    <Footer />
+
+    <!-- ── Add/Edit Address Modal ── -->
+    <BaseModal
+      v-if="showModal"
+      :title="isEditMode ? 'แก้ไขที่อยู่' : 'เพิ่มที่อยู่ใหม่'"
+      size="lg"
+      @close="showModal = false"
+    >
+      <form @submit.prevent="saveAddress" class="space-y-4">
+        <!-- Label -->
+        <BaseSelect
+          v-model="form.label"
+          :options="labelOptions"
+          label="ประเภทที่อยู่"
+        />
+
+        <!-- Recipient + Phone -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <BaseInput
+            v-model="form.recipient"
+            label="ชื่อผู้รับ"
+            placeholder="ชื่อ-นามสกุล ผู้รับสินค้า"
+            required
+          />
+          <BaseInput
+            v-model="form.phone"
+            type="tel"
+            label="เบอร์โทรศัพท์"
+            placeholder="0xx-xxx-xxxx"
+            required
+          />
+        </div>
+
+        <!-- Address -->
+        <BaseInput
+          v-model="form.address"
+          label="ที่อยู่"
+          placeholder="บ้านเลขที่ ซอย ถนน"
+          required
+        />
+
+        <!-- Sub-district + District -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <BaseInput
+            v-model="form.sub_district"
+            label="แขวง/ตำบล"
+            placeholder="แขวง/ตำบล"
+            required
+          />
+          <BaseInput
+            v-model="form.district"
+            label="เขต/อำเภอ"
+            placeholder="เขต/อำเภอ"
+            required
+          />
+        </div>
+
+        <!-- Province + Postal code -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <BaseSelect
+            v-model="form.province"
+            :options="provinceOptions"
+            label="จังหวัด"
+            placeholder="เลือกจังหวัด"
+            required
+          />
+          <BaseInput
+            v-model="form.postal_code"
+            label="รหัสไปรษณีย์"
+            placeholder="xxxxx"
+            required
+          />
+        </div>
+      </form>
+
+      <template #footer>
+        <button @click="showModal = false" class="btn-ghost">ยกเลิก</button>
+        <button
+          @click="saveAddress"
+          :disabled="isSaving"
+          class="btn-primary gap-2 ml-auto"
+        >
+          <Loader2 v-if="isSaving" class="w-4 h-4 animate-spin" />
+          {{
+            isSaving
+              ? "กำลังบันทึก..."
+              : isEditMode
+                ? "บันทึกการแก้ไข"
+                : "เพิ่มที่อยู่"
+          }}
+        </button>
+      </template>
+    </BaseModal>
   </div>
 </template>

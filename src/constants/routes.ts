@@ -20,12 +20,12 @@ export const ROUTES = {
   CART: "/cart",
   CHECKOUT: "/checkout",
   CHECKOUT_SUCCESS: "/checkout/success",
-  ORDERS: "/orders",
-  ORDER_DETAIL: (id: string) => `/orders/${id}`,
-  PROFILE: "/profile",
-  PROFILE_ADDRESSES: "/profile/addresses",
+  ORDERS: "/profile/orders",
+  ORDER_DETAIL: (id: string) => `/profile/orders/${id}`,
+  PROFILE: "/profile/information",
+  PROFILE_ADDRESSES: "/profile/address",
   PROFILE_SECURITY: "/profile/security",
-  WISHLIST: "/wishlist",
+  WISHLIST: "/profile/wishlist",
   NOTIFICATIONS: "/notifications",
 
   // Admin routes (requires admin role)

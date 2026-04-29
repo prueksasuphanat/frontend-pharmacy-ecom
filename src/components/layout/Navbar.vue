@@ -137,28 +137,28 @@ async function logout() {
                   </p>
                 </div>
                 <RouterLink
-                  to="/profile"
+                  to="/profile/information"
                   @click="userMenuOpen = false"
                   class="flex items-center gap-2.5 px-4 py-2 text-sm text-secondary-700 hover:bg-secondary-50"
                 >
                   <User class="w-4 h-4" /> โปรไฟล์
                 </RouterLink>
                 <RouterLink
-                  to="/orders"
+                  to="/profile/orders"
                   @click="userMenuOpen = false"
                   class="flex items-center gap-2.5 px-4 py-2 text-sm text-secondary-700 hover:bg-secondary-50"
                 >
                   <Package class="w-4 h-4" /> คำสั่งซื้อของฉัน
                 </RouterLink>
                 <RouterLink
-                  to="/wishlist"
+                  to="/profile/wishlist"
                   @click="userMenuOpen = false"
                   class="flex items-center gap-2.5 px-4 py-2 text-sm text-secondary-700 hover:bg-secondary-50"
                 >
                   <Heart class="w-4 h-4" /> รายการที่บันทึก
                 </RouterLink>
                 <RouterLink
-                  to="/profile/addresses"
+                  to="/profile/address"
                   @click="userMenuOpen = false"
                   class="flex items-center gap-2.5 px-4 py-2 text-sm text-secondary-700 hover:bg-secondary-50"
                 >

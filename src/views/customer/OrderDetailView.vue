@@ -83,7 +83,7 @@ function cancelOrder() {
     <Navbar />
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div class="flex items-center gap-3 mb-6">
-        <RouterLink to="/orders" class="btn-ghost p-2"
+        <RouterLink to="/profile/orders" class="btn-ghost p-2"
           ><ArrowLeft class="w-4 h-4"
         /></RouterLink>
         <div>
