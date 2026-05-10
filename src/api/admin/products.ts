@@ -1,15 +1,10 @@
 /**
  * Products API service
- *
- * Provides methods for product-related API operations.
  */
 
 import type { Product, ProductListParams, ProductListResponse } from "@/types";
 import { apiClient } from "../client";
 
-/**
- * Get paginated list of products
- */
 export async function getProducts(
   params: ProductListParams = {},
 ): Promise<ProductListResponse> {
@@ -38,25 +33,20 @@ export async function getProducts(
   return response.data;
 }
 
-/**
- * Get product by ID
- */
 export async function getProductById(id: number): Promise<Product> {
-  const response = await apiClient.get<{
-    success: boolean;
-    data: Product;
-  }>(`/admin/products/${id}`);
+  const response = await apiClient.get<{ success: boolean; data: Product }>(
+    `/admin/products/${id}`,
+  );
   return response.data.data;
 }
 
 export interface UpdateProductPayload {
   name?: string;
-  default_price?: string | number;
+  base_unit_id?: number;
   quantity?: number;
   is_special_pricing_enabled?: boolean;
   category_ids?: number[] | null;
   generic_name?: string;
-  unit_name?: string;
   using?: string;
   warning?: string;
 }
@@ -73,8 +63,8 @@ export async function updateProduct(
   const formData = new FormData();
 
   if (data.name !== undefined) formData.append("name", data.name);
-  if (data.default_price !== undefined)
-    formData.append("default_price", String(data.default_price));
+  if (data.base_unit_id !== undefined)
+    formData.append("base_unit_id", String(data.base_unit_id));
   if (data.quantity !== undefined)
     formData.append("quantity", String(data.quantity));
   if (data.is_special_pricing_enabled !== undefined)
@@ -89,8 +79,6 @@ export async function updateProduct(
     );
   if (data.generic_name !== undefined)
     formData.append("generic_name", data.generic_name);
-  if (data.unit_name !== undefined)
-    formData.append("unit_name", data.unit_name);
   if (data.using !== undefined) formData.append("using", data.using);
   if (data.warning !== undefined) formData.append("warning", data.warning);
   if (imageFile) formData.append("file", imageFile);
@@ -106,9 +94,6 @@ export async function updateProduct(
   return response.data.data;
 }
 
-/**
- * Toggle product active status
- */
 export async function toggleProductActive(
   id: number,
   is_active: boolean,

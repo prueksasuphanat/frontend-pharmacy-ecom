@@ -1,18 +1,19 @@
-import { defineStore } from "pinia";
-import type {
-  DefaultPriceLogEntry,
-  DefaultPriceLogByProductEntry,
-  SpecialPriceLogEntry,
-  SpecialPriceLogByProductEntry,
-  SpecialPriceLogByUserEntry,
-  PricingLogProduct,
-  PricingLogUser,
-  PricingLogParams,
-  PricingLogPagination,
-  PricingType,
-} from "@/types";
 import { pricingLogsApi } from "@/api";
 import { useToast } from "@/composables";
+import type {
+  DefaultPriceLogByProductEntry,
+  DefaultPriceLogEntry,
+  PricingLogPagination,
+  PricingLogParams,
+  PricingLogProduct,
+  PricingLogProductUnit,
+  PricingLogUser,
+  PricingType,
+  SpecialPriceLogByProductEntry,
+  SpecialPriceLogByUserEntry,
+  SpecialPriceLogEntry,
+} from "@/types";
+import { defineStore } from "pinia";
 
 interface PricingLogState {
   defaultLogs: DefaultPriceLogEntry[];
@@ -25,6 +26,7 @@ interface PricingLogState {
   specialUserLogs: SpecialPriceLogByUserEntry[];
 
   selectedProduct: (PricingLogProduct & { default_price: string }) | null;
+  selectedProductUnit: PricingLogProductUnit | null;
   selectedUser: PricingLogUser | null;
 
   pagination: PricingLogPagination;
@@ -45,6 +47,7 @@ export const usePricingLogStore = defineStore("pricingLog", {
     specialUserLogs: [],
 
     selectedProduct: null,
+    selectedProductUnit: null,
     selectedUser: null,
 
     pagination: { page: 1, limit: 10, total: 0, totalPages: 1 },
@@ -185,6 +188,7 @@ export const usePricingLogStore = defineStore("pricingLog", {
       this.specialProductLogs = [];
       this.specialUserLogs = [];
       this.selectedProduct = null;
+      this.selectedProductUnit = null;
       this.selectedUser = null;
       this.modalPagination = { page: 1, limit: 10, total: 0, totalPages: 1 };
     },

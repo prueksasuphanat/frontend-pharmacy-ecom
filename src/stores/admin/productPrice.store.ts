@@ -1,11 +1,7 @@
-import { defineStore } from "pinia";
-import type {
-  ProductPriceData,
-  UpdateProductPricePayload,
-  BulkUpdateProductPricesPayload,
-} from "@/types";
 import { productPricesApi } from "@/api";
 import { useToast } from "@/composables";
+import type { ProductPriceData, UpdateProductPricePayload } from "@/types";
+import { defineStore } from "pinia";
 
 interface ProductPriceState {
   productPrices: ProductPriceData[];
@@ -23,32 +19,47 @@ export const useProductPriceStore = defineStore("productPrice", {
   }),
 
   getters: {
+    // price matrix: product_unit_id → user_id → price
     priceMatrix: (state) => {
-      const matrix: Record<string, Record<number, number>> = {};
+      const matrix: Record<number, Record<number, number>> = {};
 
       state.productPrices.forEach((productPrice) => {
-        productPrice.data.forEach((userPrice) => {
-          const userKey = String(userPrice.user_id);
-          if (!matrix[userKey]) {
-            matrix[userKey] = {};
+        productPrice.units.forEach((unitPrice) => {
+          if (!matrix[unitPrice.product_unit_id]) {
+            matrix[unitPrice.product_unit_id] = {};
           }
-          matrix[userKey][productPrice.product_id] = userPrice.price;
+          unitPrice.users.forEach((userPrice) => {
+            matrix[unitPrice.product_unit_id][userPrice.user_id] =
+              userPrice.price;
+          });
         });
       });
 
       return matrix;
     },
 
-    getPriceByUserAndProduct:
-      (state) => (userId: number, productId: number) => {
-        const productPrice = state.productPrices.find(
-          (pp) => pp.product_id === productId,
-        );
-        if (!productPrice) return null;
-
-        const userPrice = productPrice.data.find((up) => up.user_id === userId);
-        return userPrice?.price ?? null;
+    // ดึงราคาของ user สำหรับ product_unit_id ที่ระบุ
+    getPriceByUserAndUnit:
+      (state) => (userId: number, productUnitId: number) => {
+        for (const productPrice of state.productPrices) {
+          const unitPrice = productPrice.units.find(
+            (u) => u.product_unit_id === productUnitId,
+          );
+          if (unitPrice) {
+            const userPrice = unitPrice.users.find((u) => u.user_id === userId);
+            return userPrice?.price ?? null;
+          }
+        }
+        return null;
       },
+
+    // ดึง units ทั้งหมดของ product
+    getUnitsByProduct: (state) => (productId: number) => {
+      const productPrice = state.productPrices.find(
+        (pp) => pp.product_id === productId,
+      );
+      return productPrice?.units ?? [];
+    },
   },
 
   actions: {
@@ -74,7 +85,6 @@ export const useProductPriceStore = defineStore("productPrice", {
           err.response?.data?.message ||
           "เกิดข้อผิดพลาดในการดึงข้อมูลราคาสินค้า";
         toast.error(this.error);
-        console.error("Error fetching product prices:", err);
         return false;
       } finally {
         this.isLoading = false;
@@ -91,24 +101,27 @@ export const useProductPriceStore = defineStore("productPrice", {
       try {
         const response = await productPricesApi.updateProductPrices({ prices });
 
-        // Update local state based on response
-        response.data.data.forEach(({ product_id, user_id, new_price }) => {
-          const productPrice = this.productPrices.find(
-            (pp) => pp.product_id === product_id,
-          );
-          if (productPrice) {
-            const userPrice = productPrice.data.find(
-              (up) => up.user_id === user_id,
+        // Update local state
+        response.data.data.forEach((result) => {
+          if (result.action === "unchanged") return;
+
+          for (const productPrice of this.productPrices) {
+            const unitPrice = productPrice.units.find(
+              (u) => u.product_unit_id === result.product_unit_id,
             );
-            if (userPrice) {
-              userPrice.price = new_price;
-            } else {
-              productPrice.data.push({ user_id, price: new_price });
+            if (unitPrice) {
+              const userPrice = unitPrice.users.find(
+                (u) => u.user_id === result.user_id,
+              );
+              const newPrice = result.new_price ?? result.price ?? 0;
+              if (userPrice) {
+                userPrice.price = newPrice;
+                userPrice.is_special = true;
+              }
             }
           }
         });
 
-        // Show detailed success message
         const updatedCount = response.data.data.filter(
           (r) => r.action === "updated",
         ).length;
@@ -131,7 +144,6 @@ export const useProductPriceStore = defineStore("productPrice", {
         this.error =
           err.response?.data?.message || "เกิดข้อผิดพลาดในการบันทึกราคาสินค้า";
         toast.error(this.error);
-        console.error("Error updating product prices:", err);
         return false;
       } finally {
         this.isSaving = false;

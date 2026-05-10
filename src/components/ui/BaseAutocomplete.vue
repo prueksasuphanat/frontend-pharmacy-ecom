@@ -120,6 +120,11 @@ useEventListener(document, "mousedown", (e: MouseEvent) => {
   const target = e.target as Node;
   if (containerRef.value?.contains(target)) return;
   if (dropdownRef.value?.contains(target)) return;
+  // Don't close if click is inside a modal/dialog (another stacking context)
+  const inModal = (target as Element).closest?.(
+    '[role="dialog"], .modal-overlay, [data-modal]',
+  );
+  if (inModal) return;
   close();
 });
 

@@ -25,6 +25,7 @@ defineEmits<{ close: [] }>();
               ? 'sm:max-w-sm'
               : 'sm:max-w-lg',
         ]"
+        role="dialog"
       >
         <!-- Header -->
         <div

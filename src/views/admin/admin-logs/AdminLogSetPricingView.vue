@@ -18,7 +18,11 @@ import {
   BaseAutocomplete,
 } from "@/components/ui";
 import type { Column } from "@/components/ui/BaseTable.vue";
-import type { PricingType } from "@/types";
+import type {
+  PricingType,
+  DefaultPriceLogEntry,
+  SpecialPriceLogEntry,
+} from "@/types";
 import { usePricingLogStore, useUsersStore } from "@/stores";
 import { formatDateTime } from "@/utils";
 
@@ -55,6 +59,7 @@ const modalLoading = computed(() => store.isModalLoading);
 const pagination = computed(() => store.pagination);
 const modalPagination = computed(() => store.modalPagination);
 const selectedProduct = computed(() => store.selectedProduct);
+const selectedProductUnit = computed(() => store.selectedProductUnit);
 const selectedUser = computed(() => store.selectedUser);
 
 const logs = computed(() =>
@@ -116,6 +121,15 @@ const userModalColumns: Column<any>[] = [
 
 function priceDiff(oldPrice: string, newPrice: string): number {
   return parseFloat(newPrice) - parseFloat(oldPrice);
+}
+
+function productWithUnit(
+  log: DefaultPriceLogEntry | SpecialPriceLogEntry | any,
+): string {
+  const productName = log.product_unit?.product?.name ?? "";
+  const unitName = log.product_unit?.unit?.name ?? "";
+  if (!unitName) return productName;
+  return `${productName} — ${unitName}`;
 }
 
 function formatPrice(price: string | number): string {
@@ -205,15 +219,16 @@ function exportToCSV() {
   const rows = logs.value.map((log: any) => {
     const base = [
       formatDateTime(log.changed_at),
-      log.product.name,
-      log.product.code,
+      productWithUnit(log),
+      log.product_unit?.product?.code ?? "",
     ];
 
     if (isDefault.value) {
       return [
         ...base,
-        log.product.categories?.map((c: any) => c.category.name).join(", ") ||
-          "-",
+        log.product_unit?.product?.categories
+          ?.map((c: any) => c.category.name)
+          .join(", ") || "-",
         log.old_price,
         log.new_price,
         priceDiff(log.old_price, log.new_price).toFixed(2),
@@ -239,8 +254,13 @@ function exportToCSV() {
   link.click();
 }
 
-async function openProductDetail(productId: number) {
+async function openProductDetail(
+  log: DefaultPriceLogEntry | SpecialPriceLogEntry | any,
+) {
   showProductModal.value = true;
+  store.selectedProductUnit = log.product_unit ?? null;
+  const productId = log.product_unit?.product?.id;
+  if (!productId) return;
   if (isDefault.value) {
     await store.fetchDefaultLogsByProduct(productId);
   } else {
@@ -254,17 +274,13 @@ function closeProductModal() {
 }
 
 function handleProductModalPageChange(page: number) {
-  if (!selectedProduct.value) return;
+  const productId =
+    selectedProductUnit.value?.product?.id ?? selectedProduct.value?.id;
+  if (!productId) return;
   if (isDefault.value) {
-    store.fetchDefaultLogsByProduct(selectedProduct.value.id, {
-      page,
-      limit: 10,
-    });
+    store.fetchDefaultLogsByProduct(productId, { page, limit: 10 });
   } else {
-    store.fetchSpecialLogsByProduct(selectedProduct.value.id, {
-      page,
-      limit: 10,
-    });
+    store.fetchSpecialLogsByProduct(productId, { page, limit: 10 });
   }
 }
 
@@ -410,17 +426,22 @@ watch(
       <template #cell-product="{ row }">
         <div>
           <p class="text-sm font-medium text-secondary-900">
-            {{ row.product.name }}
+            {{ productWithUnit(row) }}
           </p>
-          <p class="text-xs text-secondary-400">{{ row.product.code }}</p>
+          <p class="text-xs text-secondary-400">
+            {{ row.product_unit?.product?.code }}
+          </p>
         </div>
       </template>
 
       <!-- Category -->
       <template #cell-category="{ row }">
-        <div v-if="row.product.categories?.length" class="flex flex-wrap gap-1">
+        <div
+          v-if="row.product_unit?.product?.categories?.length"
+          class="flex flex-wrap gap-1"
+        >
           <span
-            v-for="c in row.product.categories"
+            v-for="c in row.product_unit.product.categories"
             :key="c.category_id"
             class="badge badge-teal text-xs"
           >
@@ -506,7 +527,7 @@ watch(
         <div class="flex items-center justify-center gap-1">
           <!-- View product history -->
           <button
-            @click="openProductDetail(row.product_id)"
+            @click="openProductDetail(row)"
             class="p-1.5 text-primary-600 hover:bg-blue-50 rounded-lg transition-colors"
             title="ดูประวัติสินค้า"
           >
@@ -529,8 +550,8 @@ watch(
     <BaseModal
       v-if="showProductModal"
       :title="
-        selectedProduct
-          ? `ประวัติราคา — ${selectedProduct.name}`
+        selectedProductUnit
+          ? `ประวัติราคา — ${selectedProductUnit.product?.name} (${selectedProductUnit.unit?.name})`
           : 'ประวัติราคาสินค้า'
       "
       size="lg"
@@ -540,7 +561,10 @@ watch(
         <LoadingOverlay :loading="modalLoading" />
 
         <!-- Product info with pricing type badge -->
-        <div v-if="selectedProduct" class="mb-4 p-4 bg-secondary-50 rounded-lg">
+        <div
+          v-if="selectedProductUnit"
+          class="mb-4 p-4 bg-secondary-50 rounded-lg"
+        >
           <div class="flex items-start justify-between mb-3">
             <span
               :class="[
@@ -555,23 +579,29 @@ watch(
             <div>
               <p class="text-secondary-400 text-xs mb-0.5">รหัสสินค้า</p>
               <p class="text-secondary-900 font-medium">
-                {{ selectedProduct.code }}
+                {{ selectedProductUnit.product?.code }}
               </p>
             </div>
             <div>
               <p class="text-secondary-400 text-xs mb-0.5">ชื่อสินค้า</p>
               <p class="text-secondary-900 font-medium">
-                {{ selectedProduct.name }}
+                {{ selectedProductUnit.product?.name }}
+              </p>
+            </div>
+            <div>
+              <p class="text-secondary-400 text-xs mb-0.5">หน่วย</p>
+              <p class="text-secondary-900 font-medium">
+                {{ selectedProductUnit.unit?.name ?? "-" }}
               </p>
             </div>
             <div>
               <p class="text-secondary-400 text-xs mb-0.5">ประเภท</p>
               <div
-                v-if="selectedProduct.categories?.length"
+                v-if="selectedProductUnit.product?.categories?.length"
                 class="flex flex-wrap gap-1 mt-0.5"
               >
                 <span
-                  v-for="c in selectedProduct.categories"
+                  v-for="c in selectedProductUnit.product.categories"
                   :key="c.category_id"
                   class="badge badge-teal text-xs"
                 >
@@ -579,12 +609,6 @@ watch(
                 </span>
               </div>
               <p v-else class="text-secondary-400 font-medium">-</p>
-            </div>
-            <div>
-              <p class="text-secondary-400 text-xs mb-0.5">ราคาปัจจุบัน</p>
-              <p class="font-semibold text-primary-600">
-                ฿{{ formatPrice(selectedProduct.default_price) }}
-              </p>
             </div>
           </div>
         </div>
@@ -774,9 +798,11 @@ watch(
           <template #cell-product="{ row }">
             <div>
               <p class="text-sm font-medium text-secondary-900">
-                {{ row.product.name }}
+                {{ productWithUnit(row) }}
               </p>
-              <p class="text-xs text-secondary-400">{{ row.product.code }}</p>
+              <p class="text-xs text-secondary-400">
+                {{ row.product_unit?.product?.code }}
+              </p>
             </div>
           </template>
           <template #cell-old_price="{ value }">

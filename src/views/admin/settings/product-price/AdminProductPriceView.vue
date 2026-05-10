@@ -17,7 +17,10 @@ const productStore = useProductStore();
 const allUsers = computed(() => usersStore.users);
 const products = ref<Product[]>([]);
 const selectedProducts = ref<Product[]>([]);
-const priceMatrix = ref<Record<string, Record<number, string>>>({});
+// Task 1.1: key is product_unit_id → user_id → price string
+const priceMatrix = ref<Record<number, Record<number, string>>>({});
+// Task 1.2: track is_special per cell (product_unit_id → user_id → boolean)
+const specialMatrix = ref<Record<number, Record<number, boolean>>>({});
 const isLoading = ref(false);
 const isTransposed = ref(false);
 
@@ -51,13 +54,15 @@ function addUserRow() {
 
   selectedUsers.value.push(user);
 
-  const userKey = String(user.id);
-  if (!priceMatrix.value[userKey]) {
-    priceMatrix.value[userKey] = {};
-  }
-  selectedProducts.value.forEach((product) => {
-    if (priceMatrix.value[userKey][product.id] === undefined) {
-      priceMatrix.value[userKey][product.id] = product.default_price || "0";
+  // Task 1.9: initialize priceMatrix with product_unit_id keys
+  allProductUnits.value.forEach((unit) => {
+    if (!priceMatrix.value[unit.product_unit_id]) {
+      priceMatrix.value[unit.product_unit_id] = {};
+    }
+    if (priceMatrix.value[unit.product_unit_id][user.id] === undefined) {
+      priceMatrix.value[unit.product_unit_id][user.id] = String(
+        unit.default_price,
+      );
     }
   });
 
@@ -88,6 +93,29 @@ const productOptions = computed(() =>
 
 const selectedProductId = ref<number | null>(null);
 
+// Task 1.3: flatten units from all selectedProducts
+const allProductUnits = computed(() => {
+  return selectedProducts.value.flatMap((product) => {
+    const priceData = productPriceStore.productPrices.find(
+      (pp) => pp.product_id === product.id,
+    );
+    return priceData?.units ?? [];
+  });
+});
+
+// Task 1.4: grouped columns: product → units[] for rendering grouped headers
+const groupedColumns = computed(() => {
+  return selectedProducts.value.map((product) => {
+    const priceData = productPriceStore.productPrices.find(
+      (pp) => pp.product_id === product.id,
+    );
+    return {
+      product,
+      units: priceData?.units ?? [],
+    };
+  });
+});
+
 // Fetch data
 async function fetchUsers() {
   await usersStore.getUsers({ is_delete: false, limit: 1000 });
@@ -104,12 +132,8 @@ async function fetchProducts() {
 }
 
 function initializePriceMatrix() {
-  allUsers.value.forEach((user) => {
-    const userKey = String(user.id);
-    if (!priceMatrix.value[userKey]) {
-      priceMatrix.value[userKey] = {};
-    }
-  });
+  // priceMatrix is now keyed by product_unit_id → user_id
+  // No pre-initialization needed; populated by fetchPricesForProducts
 }
 
 async function addProductColumn() {
@@ -128,29 +152,30 @@ async function addProductColumn() {
   selectedProductId.value = null;
 }
 
+// Task 1.7: delete all product_unit_id keys for that product from priceMatrix and specialMatrix
 function removeProductColumn(productId: number) {
+  const priceData = productPriceStore.productPrices.find(
+    (pp) => pp.product_id === productId,
+  );
+  priceData?.units.forEach((unit) => {
+    delete priceMatrix.value[unit.product_unit_id];
+    delete specialMatrix.value[unit.product_unit_id];
+  });
   selectedProducts.value = selectedProducts.value.filter(
     (p) => p.id !== productId,
   );
-
-  users.value.forEach((user) => {
-    const userKey = String(user.id);
-    if (priceMatrix.value[userKey]) {
-      delete priceMatrix.value[userKey][productId];
-    }
-  });
 }
 
+// Task 1.6: use productUnitId as key instead of productId
 function updatePrice(
-  userId: number | string,
-  productId: number,
+  userId: number,
+  productUnitId: number,
   value: string | number,
 ) {
-  const userKey = String(userId);
-  if (!priceMatrix.value[userKey]) {
-    priceMatrix.value[userKey] = {};
+  if (!priceMatrix.value[productUnitId]) {
+    priceMatrix.value[productUnitId] = {};
   }
-  priceMatrix.value[userKey][productId] = String(value);
+  priceMatrix.value[productUnitId][userId] = String(value);
 }
 
 function getUserFullName(user: User): string {
@@ -160,35 +185,34 @@ function getUserFullName(user: User): string {
   return `${title}${firstName} ${lastName}`.trim() || user.username;
 }
 
+// Task 1.5: read from storePriceMatrix[product_unit_id][user_id] and populate both priceMatrix and specialMatrix
 async function fetchPricesForProducts() {
   if (selectedProducts.value.length === 0) {
     return;
   }
 
   const productIds = selectedProducts.value.map((p) => p.id);
-  const success = await productPriceStore.fetchProductPrices(productIds);
+  await productPriceStore.fetchProductPrices(productIds);
 
-  if (success) {
-    const storePriceMatrix = productPriceStore.priceMatrix;
-    allUsers.value.forEach((user) => {
-      const userKey = String(user.id);
-      if (!priceMatrix.value[userKey]) {
-        priceMatrix.value[userKey] = {};
+  productPriceStore.productPrices.forEach((productPrice) => {
+    productPrice.units.forEach((unitPrice) => {
+      if (!priceMatrix.value[unitPrice.product_unit_id]) {
+        priceMatrix.value[unitPrice.product_unit_id] = {};
       }
-
-      selectedProducts.value.forEach((product) => {
-        const storePrice = storePriceMatrix[userKey]?.[product.id];
-        if (storePrice !== undefined) {
-          priceMatrix.value[userKey][product.id] = String(storePrice);
-        } else {
-          // Use default price if no custom price is set
-          priceMatrix.value[userKey][product.id] = product.default_price || "0";
-        }
+      if (!specialMatrix.value[unitPrice.product_unit_id]) {
+        specialMatrix.value[unitPrice.product_unit_id] = {};
+      }
+      unitPrice.users.forEach((userPrice) => {
+        priceMatrix.value[unitPrice.product_unit_id][userPrice.user_id] =
+          String(userPrice.price);
+        specialMatrix.value[unitPrice.product_unit_id][userPrice.user_id] =
+          userPrice.is_special;
       });
     });
-  }
+  });
 }
 
+// Task 1.8: generate payload { product_unit_id, user_id, price } instead of { product_id, user_id, price }
 async function saveAllPrices() {
   if (selectedProducts.value.length === 0) {
     toast.warning("ไม่มีข้อมูลที่จะบันทึก");
@@ -198,13 +222,12 @@ async function saveAllPrices() {
   const prices: UpdateProductPricePayload[] = [];
 
   users.value.forEach((user) => {
-    const userKey = String(user.id);
-    selectedProducts.value.forEach((product) => {
-      const priceValue = priceMatrix.value[userKey]?.[product.id];
+    allProductUnits.value.forEach((unit) => {
+      const priceValue = priceMatrix.value[unit.product_unit_id]?.[user.id];
       if (priceValue !== undefined) {
         prices.push({
-          product_id: product.id,
-          user_id: Number(user.id),
+          product_unit_id: unit.product_unit_id,
+          user_id: user.id,
           price: Number(priceValue) || 0,
         });
       }
@@ -354,45 +377,94 @@ onMounted(async () => {
         </div>
 
         <div class="overflow-x-auto -mx-6 px-6">
-          <!-- Normal: users = rows, products = columns -->
+          <!-- Normal: users = rows, product_units = columns -->
           <table
             v-if="!isTransposed"
             class="w-full border-collapse"
             style="min-width: 500px"
           >
             <thead>
-              <tr class="border-b-2 border-secondary-200">
+              <!-- Row 1: Product group headers -->
+              <tr class="border-b border-secondary-200">
                 <th
                   class="sticky left-0 z-10 bg-white px-4 py-3 text-left text-sm font-semibold text-secondary-900 w-[160px] sm:min-w-[200px] border-r border-secondary-200"
+                  rowspan="2"
                 >
                   ผู้ใช้
                 </th>
-                <th
-                  v-for="product in selectedProducts"
-                  :key="product.id"
-                  class="px-4 py-3 text-left text-sm font-semibold text-secondary-900 min-w-[180px] sm:min-w-[220px] border-r border-secondary-200 last:border-r-0"
+                <template
+                  v-for="group in groupedColumns"
+                  :key="group.product.id"
                 >
-                  <div class="flex items-start justify-between gap-2">
-                    <div class="flex-1 min-w-0">
-                      <div class="font-semibold text-secondary-900 truncate">
-                        {{ product.name }}
+                  <!-- Empty state: product has no units -->
+                  <th
+                    v-if="group.units.length === 0"
+                    class="px-4 py-3 text-left text-sm font-semibold text-secondary-900 min-w-[180px] border-r border-secondary-200 last:border-r-0"
+                  >
+                    <div class="flex items-start justify-between gap-2">
+                      <div class="flex-1 min-w-0">
+                        <div class="font-semibold text-secondary-900 truncate">
+                          {{ group.product.name }}
+                        </div>
+                        <div class="text-xs text-secondary-500 mt-0.5">
+                          {{ group.product.code }}
+                        </div>
+                        <div class="text-xs text-amber-600 mt-0.5">
+                          สินค้านี้ยังไม่มีหน่วยขาย
+                        </div>
                       </div>
-                      <div class="text-xs text-secondary-500 mt-0.5">
-                        {{ product.code }}
-                      </div>
-                      <div class="text-xs text-secondary-500">
-                        ฿{{ product.default_price }}
-                      </div>
+                      <button
+                        @click="removeProductColumn(group.product.id)"
+                        class="flex-shrink-0 p-1 text-secondary-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                        title="ลบสินค้า"
+                      >
+                        <X class="w-4 h-4" />
+                      </button>
                     </div>
-                    <button
-                      @click="removeProductColumn(product.id)"
-                      class="flex-shrink-0 p-1 text-secondary-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-                      title="ลบสินค้า"
-                    >
-                      <X class="w-4 h-4" />
-                    </button>
-                  </div>
-                </th>
+                  </th>
+                  <!-- Normal: product has units -->
+                  <th
+                    v-else
+                    :colspan="group.units.length"
+                    class="px-4 py-3 text-left text-sm font-semibold text-secondary-900 border-r border-secondary-200 last:border-r-0 border-b border-secondary-100"
+                  >
+                    <div class="flex items-start justify-between gap-2">
+                      <div class="flex-1 min-w-0">
+                        <div class="font-semibold text-secondary-900 truncate">
+                          {{ group.product.name }}
+                        </div>
+                        <div class="text-xs text-secondary-500 mt-0.5">
+                          {{ group.product.code }}
+                        </div>
+                      </div>
+                      <button
+                        @click="removeProductColumn(group.product.id)"
+                        class="flex-shrink-0 p-1 text-secondary-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                        title="ลบสินค้า"
+                      >
+                        <X class="w-4 h-4" />
+                      </button>
+                    </div>
+                  </th>
+                </template>
+              </tr>
+              <!-- Row 2: Unit name + default_price sub-headers -->
+              <tr class="border-b-2 border-secondary-200">
+                <template
+                  v-for="group in groupedColumns"
+                  :key="group.product.id"
+                >
+                  <th
+                    v-for="unit in group.units"
+                    :key="unit.product_unit_id"
+                    class="px-4 py-2 text-left text-xs font-medium text-secondary-700 min-w-[140px] sm:min-w-[160px] border-r border-secondary-200 last:border-r-0"
+                  >
+                    <div class="font-medium">{{ unit.unit_name }}</div>
+                    <div class="text-secondary-500">
+                      ฿{{ unit.default_price }}
+                    </div>
+                  </th>
+                </template>
               </tr>
             </thead>
             <tbody>
@@ -441,28 +513,36 @@ onMounted(async () => {
                   </div>
                 </td>
                 <td
-                  v-for="product in selectedProducts"
-                  :key="product.id"
+                  v-for="unit in allProductUnits"
+                  :key="unit.product_unit_id"
                   class="px-4 py-3 border-r border-secondary-200 last:border-r-0"
                 >
-                  <BaseInput
-                    :model-value="
-                      priceMatrix[String(user.id)]?.[product.id] || ''
+                  <div
+                    :class="
+                      specialMatrix[unit.product_unit_id]?.[user.id]
+                        ? 'rounded ring-1 ring-blue-300 bg-blue-50'
+                        : ''
                     "
-                    @update:model-value="
-                      (value: string | number) =>
-                        updatePrice(user.id, product.id, value)
-                    "
-                    type="number"
-                    placeholder="0.00"
-                    class="w-full min-w-[120px]"
-                  />
+                  >
+                    <BaseInput
+                      :model-value="
+                        priceMatrix[unit.product_unit_id]?.[user.id] ?? ''
+                      "
+                      @update:model-value="
+                        (value: string | number) =>
+                          updatePrice(user.id, unit.product_unit_id, value)
+                      "
+                      type="number"
+                      :placeholder="String(unit.default_price)"
+                      class="w-full min-w-[120px]"
+                    />
+                  </div>
                 </td>
               </tr>
             </tbody>
           </table>
 
-          <!-- Transposed: products = rows, users = columns -->
+          <!-- Transposed: product_units = rows, users = columns -->
           <table v-else class="w-full border-collapse" style="min-width: 500px">
             <thead>
               <tr class="border-b-2 border-secondary-200">
@@ -512,34 +592,31 @@ onMounted(async () => {
             </thead>
             <tbody>
               <tr
-                v-for="product in selectedProducts"
-                :key="product.id"
+                v-for="unit in allProductUnits"
+                :key="unit.product_unit_id"
                 class="border-b border-secondary-100 hover:bg-secondary-50 transition-colors"
               >
                 <td
                   class="sticky left-0 z-10 bg-white px-4 py-3 text-sm font-medium text-secondary-900 border-r border-secondary-200 hover:bg-secondary-50"
                 >
-                  <div class="flex items-start justify-between gap-1">
-                    <div class="min-w-0">
-                      <div
-                        class="font-medium truncate max-w-[140px] sm:max-w-none"
-                      >
-                        {{ product.name }}
-                      </div>
-                      <div class="text-xs text-secondary-500 mt-0.5">
-                        {{ product.code }}
-                      </div>
-                      <div class="text-xs text-secondary-500">
-                        ฿{{ product.default_price }}
-                      </div>
-                    </div>
-                    <button
-                      @click="removeProductColumn(product.id)"
-                      class="flex-shrink-0 p-1 text-secondary-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-                      title="ลบสินค้า"
+                  <div class="min-w-0">
+                    <div
+                      class="font-medium truncate max-w-[140px] sm:max-w-none"
                     >
-                      <X class="w-4 h-4" />
-                    </button>
+                      {{
+                        groupedColumns.find((g) =>
+                          g.units.some(
+                            (u) => u.product_unit_id === unit.product_unit_id,
+                          ),
+                        )?.product.name
+                      }}
+                    </div>
+                    <div class="text-xs text-secondary-500 mt-0.5">
+                      {{ unit.unit_name }}
+                    </div>
+                    <div class="text-xs text-secondary-400">
+                      ฿{{ unit.default_price }}
+                    </div>
                   </div>
                 </td>
                 <td
@@ -547,18 +624,26 @@ onMounted(async () => {
                   :key="user.id"
                   class="px-4 py-3 border-r border-secondary-200 last:border-r-0"
                 >
-                  <BaseInput
-                    :model-value="
-                      priceMatrix[String(user.id)]?.[product.id] || ''
+                  <div
+                    :class="
+                      specialMatrix[unit.product_unit_id]?.[user.id]
+                        ? 'rounded ring-1 ring-blue-300 bg-blue-50'
+                        : ''
                     "
-                    @update:model-value="
-                      (value: string | number) =>
-                        updatePrice(user.id, product.id, value)
-                    "
-                    type="number"
-                    placeholder="0.00"
-                    class="w-full min-w-[120px]"
-                  />
+                  >
+                    <BaseInput
+                      :model-value="
+                        priceMatrix[unit.product_unit_id]?.[user.id] ?? ''
+                      "
+                      @update:model-value="
+                        (value: string | number) =>
+                          updatePrice(user.id, unit.product_unit_id, value)
+                      "
+                      type="number"
+                      :placeholder="String(unit.default_price)"
+                      class="w-full min-w-[120px]"
+                    />
+                  </div>
                 </td>
               </tr>
             </tbody>
@@ -573,7 +658,11 @@ onMounted(async () => {
             <span class="font-semibold text-secondary-900">{{
               selectedProducts.length
             }}</span>
-            สินค้า และ
+            สินค้า (
+            <span class="font-semibold text-secondary-900">{{
+              allProductUnits.length
+            }}</span>
+            หน่วย) และ
             <span class="font-semibold text-secondary-900">{{
               users.length
             }}</span>
