@@ -11,6 +11,7 @@ import {
   Users,
   DollarSign,
   CirclePile,
+  Ruler,
 } from "lucide-vue-next";
 
 const route = useRoute();
@@ -54,6 +55,11 @@ const settingsMenu = {
       to: "/admin/settings/category",
       label: "ประเภทสินค้า",
       icon: CirclePile,
+    },
+    {
+      to: "/admin/settings/units",
+      label: "หน่วยสินค้า",
+      icon: Ruler,
     },
 
     {

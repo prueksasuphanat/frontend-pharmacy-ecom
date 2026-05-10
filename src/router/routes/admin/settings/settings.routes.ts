@@ -18,6 +18,10 @@ export const settingsRoutes: RouteRecordRaw[] = [
       import("@/views/admin/settings/categories/AdminCategoryView.vue"),
   },
   {
+    path: "settings/units",
+    component: () => import("@/views/admin/settings/units/AdminUnitView.vue"),
+  },
+  {
     path: "settings/product-price",
     component: () =>
       import("@/views/admin/settings/product-price/AdminProductPriceView.vue"),

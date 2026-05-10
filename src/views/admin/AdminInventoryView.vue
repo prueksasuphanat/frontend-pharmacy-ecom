@@ -333,7 +333,7 @@ onMounted(async () => {
 
       <template #cell-default_price="{ value }">
         <span class="text-sm font-medium text-secondary-900">
-          ฿{{ formatPrice(value as string) }}
+          <!-- ฿{{ formatPrice(value as string) }} -->
         </span>
       </template>
 
