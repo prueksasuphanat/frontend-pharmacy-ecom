@@ -1,5 +1,7 @@
 // Product type definitions
 
+import type { ProductUnit } from "./unit";
+
 export type DrugType =
   | "otc"
   | "prescription"
@@ -30,14 +32,14 @@ export interface ProductAttachment {
 
 export interface Product {
   id: number;
-  pmc_product_id: number;
+  pmc_product_id: number | null;
   code: string;
   name: string;
   generic_name: string | null;
-  unit_name: string | null;
   using: string | null;
   warning: string | null;
-  default_price: string;
+  base_unit_id: number;
+  base_unit: { id: number; name: string } | null;
   is_special_pricing_enabled: boolean;
   quantity: number;
   is_active: boolean;
@@ -46,6 +48,8 @@ export interface Product {
   updated_at: string;
   categories: ProductCategory[];
   attachments?: ProductAttachment[];
+  // units พร้อม price ที่ resolve แล้ว (มี price + is_special_price)
+  units?: (ProductUnit & { price?: number; is_special_price?: boolean })[];
 }
 
 export interface ProductListParams {
@@ -53,7 +57,7 @@ export interface ProductListParams {
   limit?: number;
   search?: string;
   is_active?: boolean;
-  category_id?: number; // filter สินค้าที่มี category นั้น (ยังใช้ได้เหมือนเดิม)
+  category_id?: number;
   is_special_pricing_enabled?: boolean;
 }
 

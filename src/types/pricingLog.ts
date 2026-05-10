@@ -11,6 +11,17 @@ export interface PricingLogProduct {
   }[];
 }
 
+export interface PricingLogProductUnit {
+  id: number;
+  unit: { id: number; name: string };
+  product: PricingLogProduct;
+}
+
+export interface PricingLogProductUnitOnly {
+  id: number;
+  unit: { id: number; name: string };
+}
+
 export interface PricingLogUser {
   id: number;
   username: string;
@@ -21,67 +32,78 @@ export interface PricingLogUser {
   role: string;
 }
 
+// ==========================================
+// Default Price Logs (อ้างอิง product_unit_id)
+// ==========================================
 export interface DefaultPriceLogEntry {
   id: number;
-  product_id: number;
+  product_unit_id: number;
   old_price: string;
   new_price: string;
   changed_at: string;
-  changed_by: number;
-  product: PricingLogProduct;
-  user: PricingLogUser;
+  changed_by: number | null;
+  product_unit: PricingLogProductUnit;
+  user: PricingLogUser | null;
 }
 
 export interface DefaultPriceLogByProductEntry {
   id: number;
-  product_id: number;
+  product_unit_id: number;
   old_price: string;
   new_price: string;
   changed_at: string;
-  changed_by: number;
-  user: PricingLogUser;
+  changed_by: number | null;
+  product_unit: PricingLogProductUnitOnly;
+  user: PricingLogUser | null;
 }
 
+// ==========================================
+// Special Price Logs (อ้างอิง product_unit_id)
+// ==========================================
 export interface SpecialPriceLogEntry {
   id: number;
   product_price_id: number;
-  product_id: number;
+  product_unit_id: number;
   user_id: number;
   old_price: string;
   new_price: string;
   changed_at: string;
-  changed_by: number;
-  product: PricingLogProduct;
+  changed_by: number | null;
+  product_unit: PricingLogProductUnit;
   target_user: PricingLogUser;
-  changed_by_user: PricingLogUser;
+  changed_by_user: PricingLogUser | null;
 }
 
 export interface SpecialPriceLogByProductEntry {
   id: number;
   product_price_id: number;
-  product_id: number;
+  product_unit_id: number;
   user_id: number;
   old_price: string;
   new_price: string;
   changed_at: string;
-  changed_by: number;
+  changed_by: number | null;
+  product_unit: PricingLogProductUnitOnly;
   target_user: PricingLogUser;
-  changed_by_user: PricingLogUser;
+  changed_by_user: PricingLogUser | null;
 }
 
 export interface SpecialPriceLogByUserEntry {
   id: number;
   product_price_id: number;
-  product_id: number;
+  product_unit_id: number;
   user_id: number;
   old_price: string;
   new_price: string;
   changed_at: string;
-  changed_by: number;
-  product: PricingLogProduct;
-  changed_by_user: PricingLogUser;
+  changed_by: number | null;
+  product_unit: PricingLogProductUnit;
+  changed_by_user: PricingLogUser | null;
 }
 
+// ==========================================
+// Response types
+// ==========================================
 export interface DefaultPriceLogListResponse {
   success: boolean;
   data: DefaultPriceLogEntry[];
@@ -91,7 +113,7 @@ export interface DefaultPriceLogListResponse {
 export interface DefaultPriceLogByProductResponse {
   success: boolean;
   data: {
-    product: PricingLogProduct & { default_price: string };
+    product: PricingLogProduct;
     logs: DefaultPriceLogByProductEntry[];
   };
   pagination: PricingLogPagination;
@@ -106,7 +128,7 @@ export interface SpecialPriceLogListResponse {
 export interface SpecialPriceLogByProductResponse {
   success: boolean;
   data: {
-    product: PricingLogProduct & { default_price: string };
+    product: PricingLogProduct;
     logs: SpecialPriceLogByProductEntry[];
   };
   pagination: PricingLogPagination;

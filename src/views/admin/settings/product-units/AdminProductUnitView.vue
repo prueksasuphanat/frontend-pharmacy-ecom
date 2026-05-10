@@ -15,6 +15,7 @@ import { useToast } from "@/composables";
 const props = defineProps<{
   productId: number;
   productName?: string;
+  initialUnits?: Unit[];
 }>();
 
 const emit = defineEmits<{
@@ -96,12 +97,20 @@ const baseUnitOptions = computed(() =>
 async function fetchData() {
   isLoading.value = true;
   try {
-    const [unitsRes, allUnitsRes] = await Promise.all([
+    const promises: [Promise<any>, Promise<any>?] = [
       unitsApi.getProductUnits(props.productId),
-      unitsApi.getUnits({ limit: 1000, is_active: true }),
-    ]);
+    ];
+    // Only fetch all units if not provided by parent
+    if (!props.initialUnits || props.initialUnits.length === 0) {
+      promises.push(unitsApi.getUnits({ limit: 1000, is_active: true }));
+    }
+    const [unitsRes, allUnitsRes] = await Promise.all(promises);
     productUnits.value = unitsRes.data.units;
-    allUnits.value = allUnitsRes.data;
+    if (allUnitsRes) {
+      allUnits.value = allUnitsRes.data;
+    } else if (props.initialUnits) {
+      allUnits.value = props.initialUnits;
+    }
   } catch (err: any) {
     toast.error(err.response?.data?.message || "เกิดข้อผิดพลาดในการดึงข้อมูล");
   } finally {
@@ -345,15 +354,6 @@ onMounted(() => {
           type="number"
           placeholder="0.00"
         />
-
-        <!-- Multiplier Preview -->
-        <div
-          v-if="addForm.base_unit_id && addForm.base_unit_qty"
-          class="p-3 bg-blue-50 rounded-lg text-sm text-blue-700"
-        >
-          ตัวคูณสุทธิ (multiplier_to_base):
-          <strong>×{{ multiplierPreview }}</strong>
-        </div>
       </div>
       <template #footer>
         <button
@@ -405,15 +405,6 @@ onMounted(() => {
           type="number"
           placeholder="0.00"
         />
-
-        <!-- Multiplier Preview -->
-        <div
-          v-if="editForm.base_unit_id && editForm.base_unit_qty"
-          class="p-3 bg-blue-50 rounded-lg text-sm text-blue-700"
-        >
-          ตัวคูณสุทธิ (multiplier_to_base):
-          <strong>×{{ editMultiplierPreview }}</strong>
-        </div>
       </div>
       <template #footer>
         <button

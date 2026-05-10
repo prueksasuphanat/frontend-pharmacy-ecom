@@ -13,13 +13,20 @@ import {
   ImageUploader,
 } from "@/components/ui";
 import type { Column } from "@/components/ui/BaseTable.vue";
-import type { Product } from "@/types";
+import type { Product, Unit } from "@/types";
 import { useProductStore, useCategoryStore } from "@/stores";
+import { unitsApi } from "@/api";
 import { formatDate } from "@/utils";
+import AdminProductUnitView from "@/views/admin/settings/product-units/AdminProductUnitView.vue";
+import { useToast } from "@/composables";
 
 // Stores
 const productStore = useProductStore();
 const categoryStore = useCategoryStore();
+const toast = useToast();
+
+// Units state (for base_unit dropdown)
+const allUnits = ref<Unit[]>([]);
 
 // State
 const searchQuery = ref("");
@@ -37,13 +44,12 @@ const productForm = ref({
   code: "",
   name: "",
   generic_name: "",
-  unit_name: "",
   using: "",
   warning: "",
-  default_price: "",
   quantity: 0,
   category_ids: [] as number[],
   is_special_pricing_enabled: false,
+  base_unit_id: null as number | null,
 });
 
 // Computed
@@ -107,6 +113,20 @@ const categoryOptionsForForm = computed(() =>
   })),
 );
 
+const unitOptions = computed(() =>
+  allUnits.value.map((u) => ({ value: u.id, label: u.name })),
+);
+
+async function fetchUnits() {
+  if (allUnits.value.length > 0) return; // fetch once only
+  try {
+    const res = await unitsApi.getUnits({ limit: 1000, is_active: true });
+    allUnits.value = res.data;
+  } catch (e) {
+    toast.error("ไม่สามารถโหลดหน่วยนับได้");
+  }
+}
+
 async function fetchProducts() {
   await productStore.getProducts({
     page: pagination.value.page,
@@ -158,13 +178,12 @@ async function handleEditProduct(product: Product) {
       code: fresh.code,
       name: fresh.name,
       generic_name: fresh.generic_name ?? "",
-      unit_name: fresh.unit_name ?? "",
       using: fresh.using ?? "",
       warning: fresh.warning ?? "",
-      default_price: fresh.default_price,
       quantity: fresh.quantity,
       category_ids: fresh.categories.map((c) => c.category_id),
       is_special_pricing_enabled: fresh.is_special_pricing_enabled,
+      base_unit_id: fresh.base_unit_id ?? null,
     };
   }
 }
@@ -178,13 +197,12 @@ function closeEditModal() {
     code: "",
     name: "",
     generic_name: "",
-    unit_name: "",
     using: "",
     warning: "",
-    default_price: "",
     quantity: 0,
     category_ids: [],
     is_special_pricing_enabled: false,
+    base_unit_id: null,
   };
 }
 
@@ -201,14 +219,13 @@ async function updateProduct() {
     selectedProduct.value.id,
     {
       name: productForm.value.name.trim(),
-      default_price: productForm.value.default_price,
       quantity: productForm.value.quantity,
       category_ids: productForm.value.category_ids,
       is_special_pricing_enabled: productForm.value.is_special_pricing_enabled,
       generic_name: productForm.value.generic_name || undefined,
-      unit_name: productForm.value.unit_name || undefined,
       using: productForm.value.using || undefined,
       warning: productForm.value.warning || undefined,
+      base_unit_id: productForm.value.base_unit_id ?? undefined,
     },
     imageFile.value,
     removeImage.value,
@@ -228,9 +245,22 @@ function formatPrice(price: string | number): string {
   });
 }
 
+function getBaseUnitPrice(product: Product): string {
+  if (!product.base_unit_id || !product.units) return "-";
+  const baseUnit = product.units.find(
+    (pu) => pu.unit_id === product.base_unit_id,
+  );
+  return baseUnit ? String(baseUnit.default_price) : "-";
+}
+
+function handleProductUnitUpdated() {
+  fetchProducts();
+}
+
 onMounted(async () => {
   await categoryStore.getCategories({ limit: 100 });
   await fetchProducts();
+  await fetchUnits();
 });
 </script>
 
@@ -331,9 +361,13 @@ onMounted(async () => {
         </span>
       </template>
 
-      <template #cell-default_price="{ value }">
+      <template #cell-default_price="{ row }">
         <span class="text-sm font-medium text-secondary-900">
-          <!-- ฿{{ formatPrice(value as string) }} -->
+          {{
+            getBaseUnitPrice(row) !== "-"
+              ? `฿${formatPrice(getBaseUnitPrice(row))}`
+              : "-"
+          }}
         </span>
       </template>
 
@@ -424,12 +458,17 @@ onMounted(async () => {
               :disabled="modalLoading"
             />
 
-            <BaseInput
-              v-model="productForm.unit_name"
-              label="หน่วยนับ"
-              placeholder="เม็ด, ขวด, กล่อง"
-              :disabled="modalLoading"
-            />
+            <div>
+              <label class="block text-sm font-medium text-secondary-700 mb-1"
+                >หน่วยฐาน</label
+              >
+              <BaseAutocomplete
+                v-model="productForm.base_unit_id"
+                :options="unitOptions"
+                placeholder="ยังไม่ได้กำหนดหน่วยฐาน"
+                clearable
+              />
+            </div>
           </div>
 
           <BaseMultiSelect
@@ -441,14 +480,6 @@ onMounted(async () => {
           />
 
           <!-- ราคา + จำนวน + ราคาพิเศษ -->
-          <BaseInput
-            v-model="productForm.default_price"
-            label="ราคากลาง (บาท)"
-            type="number"
-            step="0.01"
-            placeholder="0.00"
-            :disabled="modalLoading"
-          />
           <BaseInput
             v-model.number="productForm.quantity"
             label="จำนวนคงเหลือ"
@@ -485,12 +516,20 @@ onMounted(async () => {
 
           <!-- Metadata -->
 
-          <div>
-            <p class="text-secondary-400 text-xs mb-0.5">PMC Product ID</p>
-            <p class="text-secondary-900 font-medium">
-              {{ selectedProduct.pmc_product_id ?? "-" }}
-            </p>
+          <!-- หน่วยขาย section -->
+          <div class="col-span-2">
+            <div class="border-t border-secondary-200 my-4"></div>
+            <AdminProductUnitView
+              :product-id="selectedProduct.id"
+              :product-name="selectedProduct.name"
+              :initial-units="allUnits"
+              @updated="handleProductUnitUpdated"
+            />
+            <div class="border-t border-secondary-200 my-4"></div>
           </div>
+
+          <!-- Metadata -->
+
           <div>
             <p class="text-secondary-400 text-xs mb-0.5">สถานะ</p>
             <span
