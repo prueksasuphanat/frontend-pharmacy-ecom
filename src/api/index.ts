@@ -17,3 +17,5 @@ export * from "./auth";
 export * from "./cart";
 export * from "./client";
 export * from "./notifications";
+export * from "./public/categories";
+export * from "./public/products";

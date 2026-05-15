@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch, onMounted } from "vue";
 import { useRouter } from "vue-router";
-import { MOCK_PRODUCTS } from "@/__mocks__/products";
-import { DrugTypeBadge } from "@/components/ui";
-import { ProductDetailModal } from "@/components/product";
+import { usePublicProductStore } from "@/stores/public/product.store";
+import { usePublicCategoryStore } from "@/stores/public/category.store";
+import { ProductDetailModal, ProductImage } from "@/components/product";
 import { useAuthStore } from "@/stores/auth.store";
 import {
   Search,
@@ -15,124 +15,90 @@ import {
   ChevronsRight,
 } from "lucide-vue-next";
 import { Navbar, Footer } from "@/components/layout";
-import { BaseInput, BaseSelect, BaseCheckbox } from "@/components/ui";
+import { BaseInput, BaseSelect } from "@/components/ui";
 
 const auth = useAuthStore();
 const router = useRouter();
+const productStore = usePublicProductStore();
+const categoryStore = usePublicCategoryStore();
 
 const search = ref("");
-const filterType = ref("");
-const filterStock = ref(false);
-const sortBy = ref("newest");
+const categoryId = ref<number | "">("");
 const page = ref(1);
 const PAGE_SIZE = 12;
 
-const selectedProductId = ref<string | null>(null);
+const selectedProductId = ref<number | null>(null);
 
-const drugTypes = [
-  { value: "", label: "ทุกประเภท" },
-  { value: "otc", label: "ยาสามัญประจำบ้าน" },
-  { value: "prescription", label: "ยาต้องใช้ใบสั่งแพทย์" },
-  { value: "controlled", label: "ยาควบคุมพิเศษ" },
-  { value: "supplement", label: "ผลิตภัณฑ์เสริมอาหาร" },
-  { value: "cosmetic", label: "เวชสำอาง" },
-];
+// debounce search
+let searchTimer: ReturnType<typeof setTimeout> | null = null;
+function onSearchInput() {
+  if (searchTimer) clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
+    page.value = 1;
+    fetchProducts();
+  }, 300);
+}
 
-// TODO: replace with GET /products?search=&drug_type=&sort=&page=
-const filtered = computed(() => {
-  let list = [...MOCK_PRODUCTS].filter((p) => !p.is_deleted);
-  if (search.value) {
-    const q = search.value.toLowerCase();
-    list = list.filter(
-      (p) =>
-        p.name.toLowerCase().includes(q) ||
-        p.generic_name.toLowerCase().includes(q) ||
-        p.manufacturer.toLowerCase().includes(q) ||
-        p.sku.toLowerCase().includes(q),
-    );
-  }
-  if (filterType.value)
-    list = list.filter((p) => p.drug_type === filterType.value);
-  if (filterStock.value) list = list.filter((p) => p.stock > 0);
-  if (sortBy.value === "az")
-    list.sort((a, b) => a.name.localeCompare(b.name, "th"));
-  if (sortBy.value === "newest")
-    list.sort((a, b) => b.created_at.localeCompare(a.created_at));
-  return list;
-});
+const categoryOptions = computed(() => [
+  { value: "", label: "ทุกหมวดหมู่" },
+  ...categoryStore.categories.map((c) => ({ value: c.id, label: c.name })),
+]);
 
-const paginated = computed(() =>
-  filtered.value.slice((page.value - 1) * PAGE_SIZE, page.value * PAGE_SIZE),
-);
-const totalPages = computed(() =>
-  Math.max(1, Math.ceil(filtered.value.length / PAGE_SIZE)),
-);
+const pagination = computed(() => productStore.pagination);
+const totalPages = computed(() => pagination.value?.totalPages ?? 1);
+const totalItems = computed(() => pagination.value?.total ?? 0);
 
-// Pagination helpers
+// Pagination page numbers
 const pageNumbers = computed(() => {
   const total = totalPages.value;
   const current = page.value;
-  const delta = 2; // จำนวนหน้าที่แสดงรอบๆ หน้าปัจจุบัน
+  const delta = 2;
   const pages: (number | string)[] = [];
 
   if (total <= 7) {
-    // แสดงทุกหน้าถ้าไม่เกิน 7 หน้า
-    for (let i = 1; i <= total; i++) {
-      pages.push(i);
-    }
+    for (let i = 1; i <= total; i++) pages.push(i);
   } else {
-    // แสดงหน้าแรก
     pages.push(1);
-
-    // คำนวณช่วงที่จะแสดง
     const start = Math.max(2, current - delta);
     const end = Math.min(total - 1, current + delta);
-
-    // เพิ่ม ... ถ้าห่างจากหน้าแรก
-    if (start > 2) {
-      pages.push("...");
-    }
-
-    // เพิ่มหน้าในช่วง
-    for (let i = start; i <= end; i++) {
-      pages.push(i);
-    }
-
-    // เพิ่ม ... ถ้าห่างจากหน้าสุดท้าย
-    if (end < total - 1) {
-      pages.push("...");
-    }
-
-    // แสดงหน้าสุดท้าย
+    if (start > 2) pages.push("...");
+    for (let i = start; i <= end; i++) pages.push(i);
+    if (end < total - 1) pages.push("...");
     pages.push(total);
   }
-
   return pages;
 });
+
+function fetchProducts() {
+  productStore.fetchProducts({
+    page: page.value,
+    limit: PAGE_SIZE,
+    search: search.value || undefined,
+    category_id:
+      categoryId.value !== "" ? (categoryId.value as number) : undefined,
+  });
+}
 
 function goToPage(p: number) {
   page.value = p;
   window.scrollTo({ top: 0, behavior: "smooth" });
+  fetchProducts();
 }
 
 function nextPage() {
-  if (page.value < totalPages.value) {
-    goToPage(page.value + 1);
-  }
+  if (page.value < totalPages.value) goToPage(page.value + 1);
 }
 
 function prevPage() {
-  if (page.value > 1) {
-    goToPage(page.value - 1);
-  }
+  if (page.value > 1) goToPage(page.value - 1);
 }
 
-// Reset page เมื่อเปลี่ยน filter
-watch([search, filterType, filterStock, sortBy], () => {
+watch(categoryId, () => {
   page.value = 1;
+  fetchProducts();
 });
 
-function goToProduct(id: string) {
+function goToProduct(id: number) {
   if (!auth.isLoggedIn) {
     router.push(`/login?redirect=/products/${id}`);
   } else {
@@ -140,9 +106,13 @@ function goToProduct(id: string) {
   }
 }
 
-function openProductModal(id: string) {
-  selectedProductId.value = id;
-}
+// ราคาเริ่มต้น (unit แรก) สำหรับแสดงใน card — ยังไม่มีราคาใน list
+// แสดงแค่ "ดูรายละเอียด" แทน
+
+onMounted(() => {
+  fetchProducts();
+  categoryStore.fetchCategories();
+});
 </script>
 
 <template>
@@ -157,14 +127,14 @@ function openProductModal(id: string) {
         <p class="text-primary-100 mb-6">
           สินค้าคุณภาพจากผู้ผลิตชั้นนำ พร้อมส่ง ราคาพิเศษตามกลุ่มลูกค้า
         </p>
-        <!-- Search bar in hero -->
         <div class="relative max-w-xl">
           <BaseInput
             v-model="search"
             type="text"
-            placeholder="ค้นหาชื่อยา, generic name, ผู้ผลิต, SKU..."
+            placeholder="ค้นหาชื่อยา, รหัสสินค้า..."
             :icon="Search"
             class="w-full"
+            @input="onSearchInput"
           />
         </div>
       </div>
@@ -173,89 +143,133 @@ function openProductModal(id: string) {
       <div
         class="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-6"
       >
-        <!-- Left: filter controls -->
         <div class="flex items-center gap-3 flex-1 flex-wrap w-full sm:w-auto">
           <div class="flex items-center gap-1.5 shrink-0">
             <SlidersHorizontal class="h-4 w-4 text-secondary-400" />
-            <span class="text-sm text-secondary-500">กรอง:</span>
+            <span class="text-sm text-secondary-500">หมวดหมู่:</span>
           </div>
           <BaseSelect
-            v-model="filterType"
-            :options="drugTypes"
-            class="w-full sm:w-48 shrink-0"
+            v-model="categoryId"
+            :options="categoryOptions"
+            class="w-full sm:w-56 shrink-0"
           />
         </div>
-
-        <!-- Right: sort control -->
-        <div class="flex items-center gap-2 shrink-0 w-full sm:w-auto">
-          <span class="text-sm text-secondary-500 whitespace-nowrap"
-            >เรียงโดย:</span
-          >
-          <BaseSelect
-            v-model="sortBy"
-            :options="[
-              { value: 'newest', label: 'ใหม่ล่าสุด' },
-              { value: 'az', label: 'ชื่อ A-Z' },
-            ]"
-            class="w-full sm:w-[150px]"
-          />
-        </div>
-      </div>
-
-      <div class="w-fit">
-        <BaseCheckbox v-model="filterStock" label="มีสินค้า" class="mb-4" />
       </div>
 
       <!-- Count -->
       <p class="text-sm text-secondary-500 mb-4">
-        พบ
-        <strong class="text-secondary-900">{{ filtered.length }}</strong> รายการ
+        พบ <strong class="text-secondary-900">{{ totalItems }}</strong> รายการ
       </p>
 
-      <!-- Product grid -->
-      <div v-if="paginated.length > 0" class="min-h-[1000px]">
+      <!-- Loading skeleton -->
+      <div v-if="productStore.isLoading" class="min-h-[600px]">
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
           <div
-            v-for="product in paginated"
+            v-for="n in PAGE_SIZE"
+            :key="n"
+            class="rounded-2xl overflow-hidden border border-secondary-100 bg-white animate-pulse"
+          >
+            <!-- Image area -->
+            <div
+              class="w-full h-40 bg-gradient-to-br from-secondary-100 to-secondary-50 relative"
+            >
+              <!-- category badge placeholder -->
+              <div
+                class="absolute top-2 left-2 h-5 w-16 bg-secondary-200 rounded-full"
+              />
+            </div>
+            <!-- Info area -->
+            <div class="p-3 space-y-2">
+              <!-- generic_name -->
+              <div class="h-3 bg-secondary-100 rounded w-2/5" />
+              <!-- name line 1 -->
+              <div class="h-4 bg-secondary-150 rounded w-full" />
+              <!-- name line 2 -->
+              <div class="h-4 bg-secondary-100 rounded w-3/4" />
+              <!-- unit badges -->
+              <div class="flex gap-1 pt-0.5">
+                <div class="h-5 w-10 bg-secondary-100 rounded" />
+                <div class="h-5 w-12 bg-secondary-100 rounded" />
+              </div>
+              <!-- bottom action -->
+              <div class="h-8 bg-secondary-100 rounded-lg w-full mt-1" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Error state -->
+      <div v-else-if="productStore.error" class="text-center py-20">
+        <Package class="w-14 h-14 text-secondary-200 mx-auto mb-4" />
+        <p class="text-secondary-400">{{ productStore.error }}</p>
+        <button @click="fetchProducts" class="btn-secondary mt-4 text-sm">
+          ลองใหม่
+        </button>
+      </div>
+
+      <!-- Product grid -->
+      <div v-else-if="productStore.products.length > 0" class="min-h-[600px]">
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div
+            v-for="product in productStore.products"
             :key="product.id"
             @click="goToProduct(product.id)"
             class="card-hover p-0 overflow-hidden group cursor-pointer"
           >
-            <!-- Image -->
+            <!-- Image / Placeholder -->
             <div class="relative">
-              <img
-                :src="product.image_url"
-                :alt="product.name"
-                class="w-full h-40 object-cover group-hover:scale-105 transition-transform duration-300"
+              <ProductImage
+                :attachments="product.attachments"
+                :name="product.name"
+                img-class="w-full h-40 object-cover group-hover:scale-105 transition-transform duration-300"
+                class="w-full h-40 overflow-hidden"
               />
-              <DrugTypeBadge
-                :type="product.drug_type"
-                class="absolute top-2 left-2"
-              />
+              <!-- Category badge -->
               <div
-                v-if="product.stock === 0"
+                v-if="product.categories?.[0]"
+                class="absolute top-2 left-2 bg-white/90 text-primary-700 text-xs font-medium px-2 py-0.5 rounded-full shadow-sm"
+              >
+                {{ product.categories[0].category.name }}
+              </div>
+              <!-- สินค้าหมด overlay -->
+              <div
+                v-if="product.quantity === 0"
                 class="absolute inset-0 bg-black/40 flex items-center justify-center rounded-t-2xl"
               >
                 <span
                   class="bg-white text-secondary-700 text-xs font-bold px-3 py-1 rounded-full"
-                  >สินค้าหมด</span
                 >
+                  สินค้าหมด
+                </span>
               </div>
             </div>
+
             <!-- Info -->
             <div class="p-3">
-              <p class="text-xs text-secondary-400 mb-0.5">
-                {{ product.generic_name }}
+              <p class="text-xs text-secondary-400 mb-0.5 truncate">
+                {{ product.generic_name || "—" }}
               </p>
               <h3
                 class="font-semibold text-sm text-secondary-900 line-clamp-2 leading-snug mb-2"
               >
                 {{ product.name }}
               </h3>
-              <p class="text-xs text-secondary-400 mb-3">
-                {{ product.manufacturer }}
-              </p>
-              <!-- Price locked -->
+
+              <!-- unit badges -->
+              <div
+                v-if="product.units?.length"
+                class="flex flex-wrap gap-1 mb-2"
+              >
+                <span
+                  v-for="u in product.units"
+                  :key="u.id"
+                  class="text-xs bg-secondary-100 text-secondary-500 px-1.5 py-0.5 rounded"
+                >
+                  {{ (u as any).unit_label ?? u.unit?.name }}
+                </span>
+              </div>
+
+              <!-- ไม่ login -->
               <div
                 v-if="!auth.isLoggedIn"
                 class="bg-secondary-50 border border-secondary-200 rounded-lg px-3 py-2 text-center"
@@ -264,15 +278,17 @@ function openProductModal(id: string) {
                   🔒 เข้าสู่ระบบเพื่อดูราคา
                 </p>
               </div>
+              <!-- สินค้าหมด -->
               <div
-                v-else-if="product.stock === 0"
+                v-else-if="product.quantity === 0"
                 class="text-sm font-medium text-secondary-400"
               >
                 สินค้าหมด
               </div>
+              <!-- login แล้ว + มีสินค้า -->
               <div v-else class="flex items-center justify-between">
-                <p class="text-xs font-medium text-secondary-500">
-                  ดูรายละเอียด
+                <p class="text-xs font-medium text-primary-600">
+                  ดูรายละเอียดและราคา
                 </p>
                 <ChevronRight class="w-4 h-4 text-primary-600" />
               </div>
@@ -288,8 +304,9 @@ function openProductModal(id: string) {
         <button
           @click="
             search = '';
-            filterType = '';
-            filterStock = false;
+            categoryId = '';
+            page = 1;
+            fetchProducts();
           "
           class="btn-secondary mt-4 text-sm"
         >
@@ -298,20 +315,17 @@ function openProductModal(id: string) {
       </div>
 
       <!-- Pagination -->
-      <div v-if="totalPages > 1" class="mt-8">
+      <div v-if="totalPages > 1 && !productStore.isLoading" class="mt-8">
         <div
           class="flex flex-col sm:flex-row items-center justify-between gap-4"
         >
-          <!-- Page info -->
           <p class="text-sm text-secondary-500">
             แสดงหน้า <strong class="text-secondary-900">{{ page }}</strong> จาก
             <strong class="text-secondary-900">{{ totalPages }}</strong> หน้า
-            ({{ filtered.length }} รายการ)
+            ({{ totalItems }} รายการ)
           </p>
 
-          <!-- Pagination controls -->
           <div class="flex items-center gap-2">
-            <!-- First page -->
             <button
               @click="goToPage(1)"
               :disabled="page === 1"
@@ -325,8 +339,6 @@ function openProductModal(id: string) {
             >
               <ChevronsLeft class="w-4 h-4" />
             </button>
-
-            <!-- Previous page -->
             <button
               @click="prevPage"
               :disabled="page === 1"
@@ -341,7 +353,6 @@ function openProductModal(id: string) {
               <ChevronLeft class="w-4 h-4" />
             </button>
 
-            <!-- Page numbers -->
             <template v-for="(p, index) in pageNumbers" :key="index">
               <button
                 v-if="typeof p === 'number'"
@@ -363,7 +374,6 @@ function openProductModal(id: string) {
               </span>
             </template>
 
-            <!-- Next page -->
             <button
               @click="nextPage"
               :disabled="page === totalPages"
@@ -377,8 +387,6 @@ function openProductModal(id: string) {
             >
               <ChevronRight class="w-4 h-4" />
             </button>
-
-            <!-- Last page -->
             <button
               @click="goToPage(totalPages)"
               :disabled="page === totalPages"

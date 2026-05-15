@@ -424,7 +424,7 @@ onMounted(async () => {
                   <th
                     v-else
                     :colspan="group.units.length"
-                    class="px-4 py-3 text-left text-sm font-semibold text-secondary-900 border-r border-secondary-200 last:border-r-0 border-b border-secondary-100"
+                    class="px-4 py-3 text-left text-sm font-semibold text-secondary-900 border-r border-r-secondary-200 last:border-r-0 border-b border-b-secondary-100"
                   >
                     <div class="flex items-start justify-between gap-2">
                       <div class="flex-1 min-w-0">
