@@ -130,9 +130,13 @@ function priceDiff(oldPrice: string, newPrice: string): number {
 function productWithUnit(
   log: DefaultPriceLogEntry | SpecialPriceLogEntry | any,
 ): string {
-  const productName = log.product_unit?.product?.name ?? "";
-  const unitName = log.product_unit?.unit?.name ?? "";
-  if (!unitName) return productName;
+  const productName =
+    log.product_unit?.product?.name ?? log.product_name_snapshot ?? "";
+  const unitName =
+    log.product_unit?.unit?.name ??
+    log.unit_name_snapshot ??
+    "(หน่วยถูกลบแล้ว)";
+  if (!productName) return unitName;
   return `${productName} — ${unitName}`;
 }
 
