@@ -52,9 +52,11 @@ const user = computed(() => auth.currentUser);
 const fullName = computed(() => {
   const u = user.value;
   if (!u) return "ผู้ใช้งาน";
-  return (
-    [u.title, u.first_name, u.last_name].filter(Boolean).join(" ") || u.username
-  );
+  const parts = [u.title, u.first_name, u.last_name]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+  return parts || u.pmc_name || u.username || "ผู้ใช้งาน";
 });
 
 const memberSince = computed(() =>

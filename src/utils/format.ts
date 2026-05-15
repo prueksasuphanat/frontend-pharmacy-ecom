@@ -30,6 +30,23 @@ export function formatDate(date: string | Date): string {
 }
 
 /**
+ * Get display name for a user — ใช้ first_name+last_name ถ้ามี, fallback pmc_name, fallback username
+ */
+export function formatUserName(user: {
+  title?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
+  pmc_name?: string | null;
+  username?: string | null;
+}): string {
+  const parts = [user.title, user.first_name, user.last_name]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+  return parts || user.pmc_name || user.username || "";
+}
+
+/**
  * Truncate text with ellipsis if it exceeds max length
  * @param text - The text to truncate
  * @param maxLength - Maximum length before truncation

@@ -26,9 +26,10 @@ export interface PricingLogUser {
   id: number;
   username: string;
   title: string | null;
-  first_name: string;
-  last_name: string;
-  email: string;
+  first_name: string | null;
+  last_name: string | null;
+  pmc_name: string | null;
+  email: string | null;
   role: string;
 }
 

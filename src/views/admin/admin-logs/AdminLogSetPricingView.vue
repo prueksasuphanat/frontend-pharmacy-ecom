@@ -46,7 +46,11 @@ const pricingTypeOptions = [
 const userOptions = computed(() =>
   users.value.map((u) => ({
     value: u.id,
-    label: `${u.first_name || ""} ${u.last_name || ""} (${u.username})`.trim(),
+    label:
+      [u.title, u.first_name, u.last_name].filter(Boolean).join(" ").trim() ||
+      u.pmc_name ||
+      u.username ||
+      "",
   })),
 );
 
@@ -141,13 +145,17 @@ function formatPrice(price: string | number): string {
 }
 
 function fullName(user: {
-  title: string | null;
-  first_name: string;
-  last_name: string;
+  title?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
+  pmc_name?: string | null;
+  username?: string | null;
 }): string {
-  return [user?.title, user?.first_name, user?.last_name]
+  const parts = [user?.title, user?.first_name, user?.last_name]
     .filter(Boolean)
-    .join(" ");
+    .join(" ")
+    .trim();
+  return parts || user?.pmc_name || user?.username || "";
 }
 
 async function fetchLogs() {
