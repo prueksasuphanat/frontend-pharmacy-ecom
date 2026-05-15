@@ -5,6 +5,7 @@ import { ChevronLeft, Plus, X, Save, ArrowLeftRight } from "lucide-vue-next";
 import { BaseInput, BaseAutocomplete } from "@/components/ui";
 import type { User, Product, UpdateProductPricePayload } from "@/types";
 import { useToast } from "@/composables";
+import { formatUserName } from "@/utils/format";
 import { useProductPriceStore, useUsersStore, useProductStore } from "@/stores";
 
 const router = useRouter();
@@ -179,10 +180,7 @@ function updatePrice(
 }
 
 function getUserFullName(user: User): string {
-  const title = user.title || "";
-  const firstName = user.first_name || "";
-  const lastName = user.last_name || "";
-  return `${title}${firstName} ${lastName}`.trim() || user.username;
+  return formatUserName(user);
 }
 
 // Task 1.5: read from storePriceMatrix[product_unit_id][user_id] and populate both priceMatrix and specialMatrix
@@ -517,13 +515,7 @@ onMounted(async () => {
                   :key="unit.product_unit_id"
                   class="px-4 py-3 border-r border-secondary-200 last:border-r-0"
                 >
-                  <div
-                    :class="
-                      specialMatrix[unit.product_unit_id]?.[user.id]
-                        ? 'rounded ring-1 ring-blue-300 bg-blue-50'
-                        : ''
-                    "
-                  >
+                  <div>
                     <BaseInput
                       :model-value="
                         priceMatrix[unit.product_unit_id]?.[user.id] ?? ''

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, computed, watch } from "vue";
 import { Search, Edit } from "lucide-vue-next";
 import {
   BaseInput,
@@ -225,7 +225,7 @@ async function updateProduct() {
       generic_name: productForm.value.generic_name || undefined,
       using: productForm.value.using || undefined,
       warning: productForm.value.warning || undefined,
-      base_unit_id: productForm.value.base_unit_id ?? undefined,
+      base_unit_id: productForm.value.base_unit_id ?? null, // ส่ง null เพื่อ clear
     },
     imageFile.value,
     removeImage.value,
@@ -256,6 +256,48 @@ function getBaseUnitPrice(product: Product): string {
 function handleProductUnitUpdated() {
   fetchProducts();
 }
+
+// เมื่อ AdminProductUnitView ขอให้ save product ก่อน (เพื่อสร้าง base unit ใน DB)
+async function handleSaveProductFirst() {
+  if (!selectedProduct.value) return;
+  if (!productForm.value.name.trim()) return;
+
+  modalLoading.value = true;
+  const updated = await productStore.updateProduct(
+    selectedProduct.value.id,
+    {
+      name: productForm.value.name.trim(),
+      quantity: productForm.value.quantity,
+      category_ids: productForm.value.category_ids,
+      is_special_pricing_enabled: productForm.value.is_special_pricing_enabled,
+      generic_name: productForm.value.generic_name || undefined,
+      using: productForm.value.using || undefined,
+      warning: productForm.value.warning || undefined,
+      base_unit_id: productForm.value.base_unit_id ?? null,
+    },
+    imageFile.value,
+    removeImage.value,
+  );
+  modalLoading.value = false;
+
+  if (updated) {
+    // reload selectedProduct เพื่อให้ pendingBaseUnit computed รู้ว่า unit นั้นมีใน DB แล้ว
+    const fresh = await productStore.getProductById(selectedProduct.value.id);
+    if (fresh) selectedProduct.value = fresh;
+  }
+}
+
+// computed หา Unit object จาก base_unit_id ที่เลือก (สำหรับ pending display)
+const pendingBaseUnit = computed(() => {
+  const id = productForm.value.base_unit_id;
+  if (id == null) return null;
+  // ถ้า unit นี้ยังไม่มีใน DB (ไม่มีใน selectedProduct.units) → pending
+  const existsInDB = selectedProduct.value?.units?.some(
+    (pu) => pu.unit_id === id,
+  );
+  if (existsInDB) return null;
+  return allUnits.value.find((u) => u.id === id) ?? null;
+});
 
 onMounted(async () => {
   await categoryStore.getCategories({ limit: 100 });
@@ -523,7 +565,11 @@ onMounted(async () => {
               :product-id="selectedProduct.id"
               :product-name="selectedProduct.name"
               :initial-units="allUnits"
+              :base-unit-id="productForm.base_unit_id"
+              :original-base-unit-id="selectedProduct.base_unit_id ?? null"
+              :pending-base-unit="pendingBaseUnit"
               @updated="handleProductUnitUpdated"
+              @save-product-first="handleSaveProductFirst"
             />
             <div class="border-t border-secondary-200 my-4"></div>
           </div>

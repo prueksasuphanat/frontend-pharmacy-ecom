@@ -7,7 +7,10 @@ export interface UserUnitPrice {
   user_id: number;
   first_name: string | null;
   last_name: string | null;
+  pmc_name: string | null;
   email: string | null;
+  username: string | null;
+  code: string | null;
   price: number;
   special_price_id: number | null;
   is_special: boolean;

@@ -48,6 +48,7 @@ export interface ProductUnit {
   updated_at: string;
   unit: { id: number; name: string };
   base_unit: { id: number; name: string } | null;
+  _count?: { special_prices: number };
 }
 
 export interface ProductUnitListResponse {

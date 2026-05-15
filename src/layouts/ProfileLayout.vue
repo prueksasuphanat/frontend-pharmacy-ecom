@@ -36,9 +36,11 @@ const roleLabel = computed(() => {
 const fullName = computed(() => {
   const u = auth.currentUser;
   if (!u) return "ผู้ใช้งาน";
-  return (
-    [u.title, u.first_name, u.last_name].filter(Boolean).join(" ") || u.username
-  );
+  const parts = [u.title, u.first_name, u.last_name]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
+  return parts || u.pmc_name || u.username || "ผู้ใช้งาน";
 });
 </script>
 

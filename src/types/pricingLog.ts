@@ -26,9 +26,10 @@ export interface PricingLogUser {
   id: number;
   username: string;
   title: string | null;
-  first_name: string;
-  last_name: string;
-  email: string;
+  first_name: string | null;
+  last_name: string | null;
+  pmc_name: string | null;
+  email: string | null;
   role: string;
 }
 
@@ -37,23 +38,27 @@ export interface PricingLogUser {
 // ==========================================
 export interface DefaultPriceLogEntry {
   id: number;
-  product_unit_id: number;
+  product_unit_id: number | null;
+  unit_name_snapshot: string | null;
+  product_name_snapshot: string | null;
   old_price: string;
   new_price: string;
   changed_at: string;
   changed_by: number | null;
-  product_unit: PricingLogProductUnit;
+  product_unit: PricingLogProductUnit | null;
   user: PricingLogUser | null;
 }
 
 export interface DefaultPriceLogByProductEntry {
   id: number;
-  product_unit_id: number;
+  product_unit_id: number | null;
+  unit_name_snapshot: string | null;
+  product_name_snapshot: string | null;
   old_price: string;
   new_price: string;
   changed_at: string;
   changed_by: number | null;
-  product_unit: PricingLogProductUnitOnly;
+  product_unit: PricingLogProductUnitOnly | null;
   user: PricingLogUser | null;
 }
 
@@ -62,42 +67,48 @@ export interface DefaultPriceLogByProductEntry {
 // ==========================================
 export interface SpecialPriceLogEntry {
   id: number;
-  product_price_id: number;
-  product_unit_id: number;
+  product_price_id: number | null;
+  product_unit_id: number | null;
+  unit_name_snapshot: string | null;
+  product_name_snapshot: string | null;
   user_id: number;
   old_price: string;
   new_price: string;
   changed_at: string;
   changed_by: number | null;
-  product_unit: PricingLogProductUnit;
+  product_unit: PricingLogProductUnit | null;
   target_user: PricingLogUser;
   changed_by_user: PricingLogUser | null;
 }
 
 export interface SpecialPriceLogByProductEntry {
   id: number;
-  product_price_id: number;
-  product_unit_id: number;
+  product_price_id: number | null;
+  product_unit_id: number | null;
+  unit_name_snapshot: string | null;
+  product_name_snapshot: string | null;
   user_id: number;
   old_price: string;
   new_price: string;
   changed_at: string;
   changed_by: number | null;
-  product_unit: PricingLogProductUnitOnly;
+  product_unit: PricingLogProductUnitOnly | null;
   target_user: PricingLogUser;
   changed_by_user: PricingLogUser | null;
 }
 
 export interface SpecialPriceLogByUserEntry {
   id: number;
-  product_price_id: number;
-  product_unit_id: number;
+  product_price_id: number | null;
+  product_unit_id: number | null;
+  unit_name_snapshot: string | null;
+  product_name_snapshot: string | null;
   user_id: number;
   old_price: string;
   new_price: string;
   changed_at: string;
   changed_by: number | null;
-  product_unit: PricingLogProductUnit;
+  product_unit: PricingLogProductUnit | null;
   changed_by_user: PricingLogUser | null;
 }
 

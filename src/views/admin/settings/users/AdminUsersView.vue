@@ -359,7 +359,12 @@ onMounted(() => fetchUsers());
         <template #cell-full_name="{ row }">
           <span class="text-sm text-secondary-600 block truncate">
             {{
-              [row.first_name, row.last_name].filter(Boolean).join(" ") || "-"
+              [row.title, row.first_name, row.last_name]
+                .filter(Boolean)
+                .join(" ")
+                .trim() ||
+              row.pmc_name ||
+              "-"
             }}
           </span>
         </template>
@@ -428,15 +433,29 @@ onMounted(() => fetchUsers());
             <img
               v-if="selectedUser.profile_image?.url"
               :src="selectedUser.profile_image.url"
-              :alt="`${selectedUser.first_name} ${selectedUser.last_name}`"
+              :alt="
+                [selectedUser.first_name, selectedUser.last_name]
+                  .filter(Boolean)
+                  .join(' ') ||
+                selectedUser.pmc_name ||
+                selectedUser.username
+              "
               class="w-full h-full object-cover"
             />
             <span
               v-else
               class="text-primary-600 font-bold text-2xl select-none"
             >
-              {{ selectedUser.first_name?.charAt(0).toUpperCase()
-              }}{{ selectedUser.last_name?.charAt(0).toUpperCase() }}
+              {{
+                (
+                  selectedUser.first_name ||
+                  selectedUser.pmc_name ||
+                  selectedUser.username ||
+                  ""
+                )
+                  .charAt(0)
+                  .toUpperCase()
+              }}
             </span>
           </div>
 
@@ -452,7 +471,11 @@ onMounted(() => fetchUsers());
                   selectedUser.last_name,
                 ]
                   .filter(Boolean)
-                  .join(" ") || "-"
+                  .join(" ")
+                  .trim() ||
+                selectedUser.pmc_name ||
+                selectedUser.username.join(" ") ||
+                "-"
               }}
             </p>
             <p class="text-sm text-secondary-400 truncate mb-2">

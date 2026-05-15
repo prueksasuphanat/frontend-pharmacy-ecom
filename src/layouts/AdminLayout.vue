@@ -30,13 +30,13 @@ const mobileLinks = [
 ];
 
 const fullName = computed(() => {
-  return [
-    auth.currentUser.title,
-    auth.currentUser.first_name,
-    auth.currentUser.last_name,
-  ]
+  const u = auth.currentUser;
+  if (!u) return "";
+  const parts = [u.title, u.first_name, u.last_name]
     .filter(Boolean)
-    .join(" ");
+    .join(" ")
+    .trim();
+  return parts || u.pmc_name || u.username || "";
 });
 
 onMounted(() => {

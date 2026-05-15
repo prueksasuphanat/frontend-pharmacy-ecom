@@ -16,10 +16,14 @@ const props = defineProps<{
   productId: number;
   productName?: string;
   initialUnits?: Unit[];
+  baseUnitId?: number | null; // base unit ที่เลือกอยู่ใน form (อาจยังไม่ได้ save)
+  originalBaseUnitId?: number | null; // base unit ที่บันทึกอยู่ใน DB จริงๆ
+  pendingBaseUnit?: Unit | null;
 }>();
 
 const emit = defineEmits<{
   (e: "updated"): void;
+  (e: "save-product-first"): void; // ขอให้ parent save product ก่อน
 }>();
 
 const toast = useToast();
@@ -79,20 +83,63 @@ const editMultiplierPreview = computed(() => {
   return editForm.value.base_unit_qty * parentUnit.multiplier_to_base;
 });
 
-// Unit options for add form (exclude already added units)
+// Unit options for add form (exclude already added units + pending base unit)
 const addedUnitIds = computed(() => productUnits.value.map((pu) => pu.unit_id));
 const availableUnitOptions = computed(() =>
   allUnits.value
-    .filter((u) => u.is_active && !addedUnitIds.value.includes(u.id))
+    .filter((u) => {
+      if (!u.is_active) return false;
+      if (addedUnitIds.value.includes(u.id)) return false;
+      // exclude pending base unit ถ้ายังไม่มีใน DB
+      if (
+        props.pendingBaseUnit &&
+        u.id === props.pendingBaseUnit.id &&
+        !addedUnitIds.value.includes(u.id)
+      )
+        return false;
+      return true;
+    })
     .map((u) => ({ value: u.id, label: u.name })),
 );
 
-// Base unit options (units already added to product)
-const baseUnitOptions = computed(() =>
-  productUnits.value
+// แสดง pending base unit เป็น row พิเศษถ้ายังไม่มีใน productUnits
+const showPendingBaseUnit = computed(() => {
+  if (!props.pendingBaseUnit) return false;
+  return !productUnits.value.some(
+    (pu) => pu.unit_id === props.pendingBaseUnit!.id,
+  );
+});
+// Base unit options (units already added to product + pending base unit)
+const baseUnitOptions = computed(() => {
+  const fromDB = productUnits.value
     .filter((pu) => pu.id !== selectedUnit.value?.id)
-    .map((pu) => ({ value: pu.unit_id, label: pu.unit.name })),
-);
+    .map((pu) => ({ value: pu.unit_id, label: pu.unit.name }));
+
+  // เพิ่ม pending base unit ถ้ายังไม่มีใน DB
+  if (
+    props.pendingBaseUnit &&
+    !fromDB.some((o) => o.value === props.pendingBaseUnit!.id)
+  ) {
+    fromDB.unshift({
+      value: props.pendingBaseUnit.id,
+      label: props.pendingBaseUnit.name,
+    });
+  }
+
+  return fromDB;
+});
+
+// ถ้า baseUnitId ถูก clear หรือเปลี่ยนจาก DB → ซ่อนหน่วยขายทั้งหมดใน UI (รอ save จริง)
+const visibleUnits = computed(() => {
+  const baseChanged = props.baseUnitId !== props.originalBaseUnitId;
+  if (baseChanged) return [];
+  return productUnits.value;
+});
+
+// ตรวจสอบว่า unit นี้คือ base unit ของ product หรือไม่ (ลบไม่ได้)
+function isBaseUnit(unit: ProductUnit): boolean {
+  return props.baseUnitId != null && unit.unit_id === props.baseUnitId;
+}
 
 async function fetchData() {
   isLoading.value = true;
@@ -118,6 +165,31 @@ async function fetchData() {
   }
 }
 
+// Add form errors
+const addFormErrors = ref<{
+  base_unit_id: string;
+  base_unit_qty: string;
+}>({
+  base_unit_id: "",
+  base_unit_qty: "",
+});
+
+function validateAddForm(): boolean {
+  addFormErrors.value = { base_unit_id: "", base_unit_qty: "" };
+  let valid = true;
+
+  if (!addForm.value.base_unit_id) {
+    addFormErrors.value.base_unit_id = "กรุณาเลือกหน่วยฐาน";
+    valid = false;
+  }
+  if (!addForm.value.base_unit_qty || addForm.value.base_unit_qty <= 0) {
+    addFormErrors.value.base_unit_qty = "กรุณากรอกจำนวนที่เทียบ";
+    valid = false;
+  }
+
+  return valid;
+}
+
 // Add
 function openAddModal() {
   addForm.value = {
@@ -126,6 +198,7 @@ function openAddModal() {
     base_unit_qty: null,
     default_price: 0,
   };
+  addFormErrors.value = { base_unit_id: "", base_unit_qty: "" };
   addModalOpen.value = true;
 }
 
@@ -135,8 +208,23 @@ function closeAddModal() {
 
 async function saveProductUnit() {
   if (!addForm.value.unit_id) return;
+  if (!validateAddForm()) return;
   modalLoading.value = true;
   try {
+    // ถ้า base_unit_id ที่เลือกเป็น pending (ยังไม่มีใน DB) → ให้ parent save product ก่อน
+    const baseIsPending =
+      addForm.value.base_unit_id != null &&
+      props.pendingBaseUnit?.id === addForm.value.base_unit_id;
+
+    if (baseIsPending) {
+      // emit ให้ parent save product (จะสร้าง base unit ใน DB)
+      emit("save-product-first");
+      // รอให้ fetchData ดึงข้อมูลใหม่ (parent จะ trigger re-mount หรือ fetch)
+      // retry หลัง 800ms เพื่อให้ backend มีเวลา commit
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      await fetchData();
+    }
+
     const payload: CreateProductUnitPayload = {
       unit_id: addForm.value.unit_id,
       default_price: addForm.value.default_price,
@@ -210,6 +298,11 @@ function openDeleteModal(unit: ProductUnit) {
   deleteModalOpen.value = true;
 }
 
+// นับ special prices ของ unit ที่จะลบ
+const deletingSpecialPriceCount = computed(() => {
+  return selectedUnit.value?._count?.special_prices ?? 0;
+});
+
 function closeDeleteModal() {
   deleteModalOpen.value = false;
   selectedUnit.value = null;
@@ -253,24 +346,77 @@ onMounted(() => {
 
     <!-- Empty -->
     <div
-      v-else-if="productUnits.length === 0"
+      v-else-if="visibleUnits.length === 0 && !showPendingBaseUnit"
       class="text-center py-8 text-secondary-400 text-sm border border-dashed border-secondary-200 rounded-lg"
     >
       ยังไม่มีหน่วยขาย กดเพิ่มหน่วยเพื่อเริ่มต้น
     </div>
 
     <!-- Unit List -->
-    <div v-else class="space-y-2">
+    <div
+      v-if="visibleUnits.length > 0 || showPendingBaseUnit"
+      class="space-y-2"
+    >
+      <!-- Pending base unit row (ยังไม่ได้ save) -->
       <div
-        v-for="unit in productUnits"
-        :key="unit.id"
-        class="flex items-center justify-between p-3 bg-secondary-50 rounded-lg border border-secondary-100"
+        v-if="showPendingBaseUnit && pendingBaseUnit"
+        class="flex items-center justify-between p-3 bg-primary-50 rounded-lg border border-primary-200 border-dashed"
       >
         <div class="flex items-center gap-3">
           <div>
-            <p class="text-sm font-medium text-secondary-900">
-              {{ unit.unit.name }}
-            </p>
+            <div class="flex items-center gap-2">
+              <p class="text-sm font-medium text-secondary-900">
+                {{ pendingBaseUnit.name }}
+              </p>
+              <span
+                class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-primary-100 text-primary-700"
+              >
+                หน่วยฐาน
+              </span>
+            </div>
+            <p class="text-xs text-secondary-400 mt-0.5">(×1 หน่วยฐาน)</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-4">
+          <div class="text-right">
+            <p class="text-xs text-secondary-400">ราคากลาง</p>
+            <p class="text-sm font-semibold text-secondary-900">฿0.00</p>
+          </div>
+          <div class="flex items-center gap-1">
+            <div
+              class="p-1.5 text-secondary-300"
+              title="บันทึกสินค้าก่อนแก้ไขราคา"
+            >
+              <Edit class="w-4 h-4" />
+            </div>
+            <div
+              class="p-1.5 text-secondary-300 cursor-not-allowed"
+              title="หน่วยฐานไม่สามารถลบได้"
+            >
+              <Trash2 class="w-4 h-4" />
+            </div>
+          </div>
+        </div>
+      </div>
+      <div
+        v-for="unit in visibleUnits"
+        :key="unit.id"
+        class="flex items-center justify-between p-3 bg-secondary-50 rounded-lg border border-secondary-100"
+        :class="isBaseUnit(unit) ? 'border-primary-200 bg-primary-50' : ''"
+      >
+        <div class="flex items-center gap-3">
+          <div>
+            <div class="flex items-center gap-2">
+              <p class="text-sm font-medium text-secondary-900">
+                {{ unit.unit.name }}
+              </p>
+              <span
+                v-if="isBaseUnit(unit)"
+                class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-primary-100 text-primary-700"
+              >
+                หน่วยฐาน
+              </span>
+            </div>
             <div class="flex items-center gap-2 mt-0.5">
               <span v-if="unit.base_unit" class="text-xs text-secondary-500">
                 1 {{ unit.unit.name }} = {{ unit.base_unit_qty }}
@@ -302,12 +448,20 @@ onMounted(() => {
               <Edit class="w-4 h-4" />
             </button>
             <button
+              v-if="!isBaseUnit(unit)"
               @click="openDeleteModal(unit)"
               class="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
               title="ลบ"
             >
               <Trash2 class="w-4 h-4" />
             </button>
+            <div
+              v-else
+              class="p-1.5 text-secondary-300 cursor-not-allowed"
+              title="หน่วยฐานไม่สามารถลบได้"
+            >
+              <Trash2 class="w-4 h-4" />
+            </div>
           </div>
         </div>
       </div>
@@ -331,13 +485,18 @@ onMounted(() => {
         </div>
 
         <div>
-          <label class="label">หน่วยฐาน (สำหรับแสดงผล)</label>
+          <label class="label"
+            >หน่วยฐาน <span class="text-red-500">*</span></label
+          >
           <BaseAutocomplete
             v-model="addForm.base_unit_id"
             :options="baseUnitOptions"
-            placeholder="เลือกหน่วยฐาน (ถ้ามี)"
+            placeholder="เลือกหน่วยฐาน"
             clearable
           />
+          <p v-if="addFormErrors.base_unit_id" class="error-msg mt-1.5">
+            {{ addFormErrors.base_unit_id }}
+          </p>
         </div>
 
         <BaseInput
@@ -345,7 +504,8 @@ onMounted(() => {
           label="จำนวนที่เทียบ"
           type="number"
           placeholder="เช่น 12"
-          :disabled="!addForm.base_unit_id"
+          required
+          :error="addFormErrors.base_unit_qty"
         />
 
         <BaseInput
@@ -381,23 +541,25 @@ onMounted(() => {
       @close="closeEditModal"
     >
       <div class="flex flex-col gap-4 py-2">
-        <div>
-          <label class="label">หน่วยฐาน (สำหรับแสดงผล)</label>
-          <BaseAutocomplete
-            v-model="editForm.base_unit_id"
-            :options="baseUnitOptions"
-            placeholder="เลือกหน่วยฐาน (ถ้ามี)"
-            clearable
-          />
-        </div>
+        <!-- ซ่อน field หน่วยฐาน + จำนวนที่เทียบ ถ้าเป็น base unit (หน่วยเล็กสุด) -->
+        <template v-if="!isBaseUnit(selectedUnit)">
+          <div>
+            <label class="label">หน่วยฐาน</label>
+            <BaseAutocomplete
+              v-model="editForm.base_unit_id"
+              :options="baseUnitOptions"
+              placeholder="เลือกหน่วยฐาน (ถ้ามี)"
+              clearable
+            />
+          </div>
 
-        <BaseInput
-          v-model.number="editForm.base_unit_qty"
-          label="จำนวนที่เทียบ"
-          type="number"
-          placeholder="เช่น 12"
-          :disabled="!editForm.base_unit_id"
-        />
+          <BaseInput
+            v-model.number="editForm.base_unit_qty"
+            label="จำนวนที่เทียบ"
+            type="number"
+            placeholder="เช่น 12"
+          />
+        </template>
 
         <BaseInput
           v-model.number="editForm.default_price"
@@ -440,8 +602,20 @@ onMounted(() => {
         <p class="text-secondary-900 font-medium mb-2">
           ลบหน่วยขาย "{{ selectedUnit.unit.name }}" ?
         </p>
-        <p class="text-xs text-red-600 mt-3">
-          จะลบราคาพิเศษของลูกค้าที่ผูกกับหน่วยนี้ทั้งหมดด้วย
+        <template v-if="deletingSpecialPriceCount > 0">
+          <p class="text-sm text-red-600 mt-3">
+            ⚠️ หน่วยนี้มีราคาพิเศษของลูกค้า
+            <span class="font-semibold"
+              >{{ deletingSpecialPriceCount }} ราย</span
+            >
+            ที่จะถูกลบออกด้วย
+          </p>
+          <p class="text-xs text-secondary-400 mt-1">
+            ประวัติการเปลี่ยนแปลงราคายังคงอยู่
+          </p>
+        </template>
+        <p v-else class="text-xs text-secondary-400 mt-3">
+          การดำเนินการนี้ไม่สามารถย้อนกลับได้
         </p>
       </div>
       <template #footer>

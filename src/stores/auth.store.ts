@@ -46,7 +46,17 @@ export const useAuthStore = defineStore("auth", {
     userRole: (state) => state.currentUser?.role ?? "CUSTOMER",
     fullName: (state) => {
       if (!state.currentUser) return "";
-      return `${state.currentUser.first_name} ${state.currentUser.last_name}`.trim();
+      const parts = [
+        state.currentUser.title,
+        state.currentUser.first_name,
+        state.currentUser.last_name,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .trim();
+      return (
+        parts || state.currentUser.pmc_name || state.currentUser.username || ""
+      );
     },
   },
 
