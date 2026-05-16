@@ -30,6 +30,12 @@ export interface ProductAttachment {
   updated_at: string;
 }
 
+export interface ProductVendor {
+  id: number;
+  name: string;
+  seller_code: string | null;
+}
+
 export interface Product {
   id: number;
   pmc_product_id: number | null;
@@ -40,6 +46,8 @@ export interface Product {
   warning: string | null;
   base_unit_id: number;
   base_unit: { id: number; name: string } | null;
+  vendor_id: number | null;
+  vendor: ProductVendor | null;
   is_special_pricing_enabled: boolean;
   quantity: number;
   is_active: boolean;

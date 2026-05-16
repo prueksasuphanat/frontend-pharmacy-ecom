@@ -590,6 +590,16 @@ onMounted(async () => {
             </span>
           </div>
           <div>
+            <p class="text-secondary-400 text-xs mb-0.5">ผู้จำหน่าย (Vendor)</p>
+            <p class="text-secondary-900 font-medium">
+              {{
+                selectedProduct.vendor
+                  ? `${selectedProduct.vendor.name}${selectedProduct.vendor.seller_code ? ` (${selectedProduct.vendor.seller_code})` : ""}`
+                  : "-"
+              }}
+            </p>
+          </div>
+          <div>
             <p class="text-secondary-400 text-xs mb-0.5">สร้างเมื่อ</p>
             <p class="text-secondary-900 font-medium">
               {{ formatDate(selectedProduct.created_at, "DD MMM BBBB") }}
