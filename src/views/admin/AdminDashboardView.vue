@@ -29,7 +29,7 @@ const recentOrders = ref<RecentOrder[]>([]);
 const chartSeries = ref([{ name: "ยอดขาย (฿)", data: [] as number[] }]);
 const chartOptions = ref({
   chart: {
-    type: "bar",
+    type: "bar" as const,
     toolbar: { show: false },
     fontFamily: "Noto Sans Thai, Inter, sans-serif",
   },

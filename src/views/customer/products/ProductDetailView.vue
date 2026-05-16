@@ -105,7 +105,7 @@ function formatPrice(n: number) {
             <div
               v-if="product.attachments && product.attachments.length > 0"
               class="w-full h-80 bg-cover bg-center"
-              :style="{ backgroundImage: `url(${product.attachments[0].file_url})` }"
+              :style="{ backgroundImage: `url(${product.attachments[0].url})` }"
             />
             <div
               v-else
@@ -126,7 +126,7 @@ function formatPrice(n: number) {
               :key="att.id"
               class="w-16 h-16 rounded-lg overflow-hidden border-2 border-secondary-100 cursor-pointer"
             >
-              <img :src="att.file_url" :alt="att.file_name" class="w-full h-full object-cover" />
+              <img :src="att.url" :alt="att.name" class="w-full h-full object-cover" />
             </div>
           </div>
         </div>
@@ -208,7 +208,7 @@ function formatPrice(n: number) {
                   { label: 'รหัสสินค้า', value: product.code },
                   { label: 'ชื่อสามัญ', value: product.generic_name },
                   { label: 'ผู้จำหน่าย', value: product.vendor?.name },
-                  { label: 'หมวดหมู่', value: product.categories?.map((c) => c.name).join(', ') },
+                  { label: 'หมวดหมู่', value: product.categories?.map((c) => c.category.name).join(', ') },
                 ].filter((r) => r.value)"
                 :key="row.label"
                 class="flex gap-3"

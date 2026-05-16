@@ -41,9 +41,19 @@ export const useAuthStore = defineStore("auth", {
 
   getters: {
     isLoggedIn: (state) => !!state.accessToken && !!state.currentUser,
-    isAdmin: (state) => state.currentUser?.role === "ADMIN",
+    isAdmin: (state) =>
+      ["ADMIN", "PHARMACIST", "DEMO"].includes(state.currentUser?.role ?? ""),
     isVerified: (state) => state.currentUser?.is_verified ?? false,
     userRole: (state) => state.currentUser?.role ?? "CUSTOMER",
+    roleName: (state) => {
+      const map: Record<string, string> = {
+        ADMIN: "ผู้ดูแลระบบ",
+        PHARMACIST: "เภสัชกร",
+        CUSTOMER: "ลูกค้า",
+        DEMO: "Demo",
+      };
+      return map[state.currentUser?.role ?? ""] ?? state.currentUser?.role ?? "";
+    },
     fullName: (state) => {
       if (!state.currentUser) return "";
       const parts = [
