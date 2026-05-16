@@ -1,4 +1,5 @@
 export { usePricingLogStore } from "./admin/logs.store";
+export { useProvinceStore } from "./province.store";
 export { useProductStore } from "./admin/product.store";
 export { useProductPriceStore } from "./admin/productPrice.store";
 export { useCategoryStore } from "./admin/settings/category.store";

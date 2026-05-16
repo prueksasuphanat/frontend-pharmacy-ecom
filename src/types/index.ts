@@ -1,6 +1,7 @@
 // Barrel export file for type definitions
 // This file will export all type modules once they are created
 
+export * from "./address";
 export * from "./cart";
 export * from "./category";
 export * from "./notification";
