@@ -5,6 +5,7 @@ import Navbar from "@/components/layout/Navbar.vue";
 import { useCartStore } from "@/stores/customer/cart.store";
 import { useAuthStore } from "@/stores/auth.store";
 import { useOrderStore } from "@/stores/customer/order.store";
+import { useAddressStore } from "@/stores/customer/address.store";
 import {
   CheckCircle,
   MapPin,
@@ -12,25 +13,58 @@ import {
   ArrowRight,
   ArrowLeft,
 } from "lucide-vue-next";
-import { BaseInput, BaseTextarea } from "@/components/ui";
+import { BaseInput, BaseTextarea, BaseSelect } from "@/components/ui";
 
 const router = useRouter();
 const cart = useCartStore();
 const auth = useAuthStore();
 const orderStore = useOrderStore();
+const addressStore = useAddressStore();
 
-onMounted(() => cart.fetchCart());
+const selectedAddressId = ref<number | "new">("new");
+
+onMounted(async () => {
+  await cart.fetchCart();
+  await addressStore.fetchAddresses();
+  
+  if (addressStore.addresses.length > 0) {
+    const defaultAddr = addressStore.addresses.find(a => a.is_default) || addressStore.addresses[0];
+    if (defaultAddr) {
+      selectedAddressId.value = defaultAddr.id;
+      setAddressFromStore(defaultAddr);
+    }
+  }
+});
 
 const step = ref(1);
 
 // Address form
 const address = ref({
-  recipient: auth.currentUser?.full_name ?? "",
+  recipient: auth.currentUser ? `${auth.currentUser.first_name || ''} ${auth.currentUser.last_name || ''}`.trim() : "",
   phone: auth.currentUser?.phone ?? "",
   address: "",
   district: "",
   province: "",
   postal_code: "",
+});
+
+function setAddressFromStore(addr: any) {
+  address.value = {
+    recipient: addr.recipient,
+    phone: addr.phone,
+    address: addr.address,
+    district: addr.district || "",
+    province: addr.province,
+    postal_code: addr.postal_code,
+  };
+}
+
+const addressOptions = computed(() => {
+  const opts = addressStore.addresses.map(a => ({
+    value: a.id,
+    label: `${a.label || 'ที่อยู่'} - ${a.recipient} (${a.province})`
+  }));
+  return [...opts, { value: "new", label: "+ พิมพ์ที่อยู่ใหม่" }];
 });
 
 const note = ref("");
@@ -119,7 +153,29 @@ const statusLabel: Record<string, string> = {
             <MapPin class="w-5 h-5 text-primary-600" />
             <h2 class="font-bold text-secondary-900">ที่อยู่จัดส่ง</h2>
           </div>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          
+          <div v-if="addressStore.addresses.length > 0" class="mb-6">
+            <BaseSelect
+              v-model="selectedAddressId"
+              label="เลือกที่อยู่จากสมุดที่อยู่"
+              :options="addressOptions"
+              @change="(val: any) => {
+                if (val === 'new') {
+                  address.recipient = auth.currentUser ? `${auth.currentUser.first_name || ''} ${auth.currentUser.last_name || ''}`.trim() : '';
+                  address.phone = auth.currentUser?.phone ?? '';
+                  address.address = '';
+                  address.district = '';
+                  address.province = '';
+                  address.postal_code = '';
+                } else {
+                  const addr = addressStore.addresses.find(a => a.id === val);
+                  if (addr) setAddressFromStore(addr);
+                }
+              }"
+            />
+          </div>
+
+          <div v-if="selectedAddressId === 'new'" class="grid grid-cols-1 sm:grid-cols-2 gap-3 border-t border-secondary-100 pt-5 mt-2">
             <BaseInput
               v-model="address.recipient"
               label="ชื่อผู้รับ *"
@@ -153,6 +209,14 @@ const statusLabel: Record<string, string> = {
               placeholder="10xxx"
             />
           </div>
+
+          <div v-else class="bg-secondary-50 p-4 rounded-xl border border-secondary-200 mt-2">
+            <p class="font-medium text-secondary-900 mb-1">{{ address.recipient }} · {{ address.phone }}</p>
+            <p class="text-sm text-secondary-600">
+              {{ address.address }} {{ address.district }} {{ address.province }} {{ address.postal_code }}
+            </p>
+          </div>
+
           <div class="mt-4">
             <BaseTextarea
               v-model="note"
