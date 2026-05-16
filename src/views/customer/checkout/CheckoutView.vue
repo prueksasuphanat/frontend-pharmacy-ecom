@@ -6,13 +6,7 @@ import { useCartStore } from "@/stores/customer/cart.store";
 import { useAuthStore } from "@/stores/auth.store";
 import { useOrderStore } from "@/stores/customer/order.store";
 import { useAddressStore } from "@/stores/customer/address.store";
-import {
-  CheckCircle,
-  MapPin,
-  CreditCard,
-  ArrowRight,
-  ArrowLeft,
-} from "lucide-vue-next";
+import { CheckCircle, MapPin, ArrowRight, ArrowLeft } from "lucide-vue-next";
 import { BaseInput, BaseTextarea, BaseSelect } from "@/components/ui";
 
 const router = useRouter();
@@ -26,9 +20,11 @@ const selectedAddressId = ref<number | "new">("new");
 onMounted(async () => {
   await cart.fetchCart();
   await addressStore.fetchAddresses();
-  
+
   if (addressStore.addresses.length > 0) {
-    const defaultAddr = addressStore.addresses.find(a => a.is_default) || addressStore.addresses[0];
+    const defaultAddr =
+      addressStore.addresses.find((a) => a.is_default) ||
+      addressStore.addresses[0];
     if (defaultAddr) {
       selectedAddressId.value = defaultAddr.id;
       setAddressFromStore(defaultAddr);
@@ -36,11 +32,20 @@ onMounted(async () => {
   }
 });
 
+// T-05: ลด steps จาก 3 เหลือ 2 — ตัด step ชำระเงิน (mock) ออก
+// flow ของร้านคือ ส่งของก่อน → ลูกค้าชำระเงินโดยตรงกับเจ้าของร้าน
 const step = ref(1);
+
+const steps = [
+  { label: "ที่อยู่", icon: MapPin },
+  { label: "ยืนยันคำสั่งซื้อ", icon: CheckCircle },
+];
 
 // Address form
 const address = ref({
-  recipient: auth.currentUser ? `${auth.currentUser.first_name || ''} ${auth.currentUser.last_name || ''}`.trim() : "",
+  recipient: auth.currentUser
+    ? `${auth.currentUser.first_name || ""} ${auth.currentUser.last_name || ""}`.trim()
+    : "",
   phone: auth.currentUser?.phone ?? "",
   address: "",
   district: "",
@@ -60,9 +65,9 @@ function setAddressFromStore(addr: any) {
 }
 
 const addressOptions = computed(() => {
-  const opts = addressStore.addresses.map(a => ({
+  const opts = addressStore.addresses.map((a) => ({
     value: a.id,
-    label: `${a.label || 'ที่อยู่'} - ${a.recipient} (${a.province})`
+    label: `${a.label || "ที่อยู่"} - ${a.recipient} (${a.province})`,
   }));
   return [...opts, { value: "new", label: "+ พิมพ์ที่อยู่ใหม่" }];
 });
@@ -77,18 +82,12 @@ const isAddressValid = computed(
     address.value.province.trim(),
 );
 
-const steps = [
-  { label: "ที่อยู่", icon: MapPin },
-  { label: "สรุป", icon: CheckCircle },
-  { label: "ชำระเงิน", icon: CreditCard },
-];
-
 function fmt(n: number) {
   return n.toLocaleString("th-TH", { minimumFractionDigits: 2 });
 }
 
 // ==========================================
-// Place order
+// Place order — เรียกตรงจาก Step 2
 // ==========================================
 async function placeOrder() {
   try {
@@ -97,26 +96,17 @@ async function placeOrder() {
       note: note.value || undefined,
     });
     router.push(`/orders/${order.id}/success`);
-  } catch (err: any) {
+  } catch {
     // error แสดงผ่าน orderStore.error
   }
 }
-
-// Status badge label
-const statusLabel: Record<string, string> = {
-  PENDING: "รอดำเนินการ",
-  CONFIRMED: "ยืนยันแล้ว",
-  SHIPPED: "กำลังจัดส่ง",
-  COMPLETED: "เสร็จสิ้น",
-  CANCELLED: "ยกเลิกแล้ว",
-};
 </script>
 
 <template>
   <div>
     <Navbar />
     <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <h1 class="page-title mb-6">ชำระเงิน</h1>
+      <h1 class="page-title mb-6">สั่งซื้อสินค้า</h1>
 
       <!-- Stepper -->
       <div class="flex items-center mb-8">
@@ -132,7 +122,10 @@ const statusLabel: Record<string, string> = {
                     : 'bg-secondary-200 text-secondary-500',
               ]"
             >
-              <component :is="step > i + 1 ? CheckCircle : s.icon" class="w-4 h-4" />
+              <component
+                :is="step > i + 1 ? CheckCircle : s.icon"
+                class="w-4 h-4"
+              />
             </div>
             <span class="text-xs mt-1 text-secondary-500">{{ s.label }}</span>
           </div>
@@ -153,29 +146,38 @@ const statusLabel: Record<string, string> = {
             <MapPin class="w-5 h-5 text-primary-600" />
             <h2 class="font-bold text-secondary-900">ที่อยู่จัดส่ง</h2>
           </div>
-          
+
           <div v-if="addressStore.addresses.length > 0" class="mb-6">
             <BaseSelect
               v-model="selectedAddressId"
               label="เลือกที่อยู่จากสมุดที่อยู่"
               :options="addressOptions"
-              @change="(val: any) => {
-                if (val === 'new') {
-                  address.recipient = auth.currentUser ? `${auth.currentUser.first_name || ''} ${auth.currentUser.last_name || ''}`.trim() : '';
-                  address.phone = auth.currentUser?.phone ?? '';
-                  address.address = '';
-                  address.district = '';
-                  address.province = '';
-                  address.postal_code = '';
-                } else {
-                  const addr = addressStore.addresses.find(a => a.id === val);
-                  if (addr) setAddressFromStore(addr);
+              @change="
+                (val: any) => {
+                  if (val === 'new') {
+                    address.recipient = auth.currentUser
+                      ? `${auth.currentUser.first_name || ''} ${auth.currentUser.last_name || ''}`.trim()
+                      : '';
+                    address.phone = auth.currentUser?.phone ?? '';
+                    address.address = '';
+                    address.district = '';
+                    address.province = '';
+                    address.postal_code = '';
+                  } else {
+                    const addr = addressStore.addresses.find(
+                      (a) => a.id === val,
+                    );
+                    if (addr) setAddressFromStore(addr);
+                  }
                 }
-              }"
+              "
             />
           </div>
 
-          <div v-if="selectedAddressId === 'new'" class="grid grid-cols-1 sm:grid-cols-2 gap-3 border-t border-secondary-100 pt-5 mt-2">
+          <div
+            v-if="selectedAddressId === 'new'"
+            class="grid grid-cols-1 sm:grid-cols-2 gap-3 border-t border-secondary-100 pt-5 mt-2"
+          >
             <BaseInput
               v-model="address.recipient"
               label="ชื่อผู้รับ *"
@@ -210,10 +212,16 @@ const statusLabel: Record<string, string> = {
             />
           </div>
 
-          <div v-else class="bg-secondary-50 p-4 rounded-xl border border-secondary-200 mt-2">
-            <p class="font-medium text-secondary-900 mb-1">{{ address.recipient }} · {{ address.phone }}</p>
+          <div
+            v-else
+            class="bg-secondary-50 p-4 rounded-xl border border-secondary-200 mt-2"
+          >
+            <p class="font-medium text-secondary-900 mb-1">
+              {{ address.recipient }} · {{ address.phone }}
+            </p>
             <p class="text-sm text-secondary-600">
-              {{ address.address }} {{ address.district }} {{ address.province }} {{ address.postal_code }}
+              {{ address.address }} {{ address.district }}
+              {{ address.province }} {{ address.postal_code }}
             </p>
           </div>
 
@@ -237,7 +245,7 @@ const statusLabel: Record<string, string> = {
         </div>
       </div>
 
-      <!-- Step 2: Order Summary -->
+      <!-- Step 2: Order Summary + Confirm -->
       <div v-if="step === 2" class="space-y-4">
         <div class="card">
           <div class="flex items-center gap-2 mb-4">
@@ -247,7 +255,11 @@ const statusLabel: Record<string, string> = {
 
           <!-- Items -->
           <div class="divide-y divide-secondary-50">
-            <div v-for="item in cart.items" :key="item.id" class="flex gap-3 py-3">
+            <div
+              v-for="item in cart.items"
+              :key="item.id"
+              class="flex gap-3 py-3"
+            >
               <img
                 v-if="item.product.image_url"
                 :src="item.product.image_url"
@@ -261,11 +273,22 @@ const statusLabel: Record<string, string> = {
                 {{ item.product.name }}
               </div>
               <div class="flex-1">
-                <p class="text-sm font-medium text-secondary-900">{{ item.product.name }}</p>
-                <p class="text-xs text-secondary-400">x{{ item.quantity }} {{ item.unit.name }}</p>
-                <p v-if="item.is_special_price" class="text-xs text-primary-600 font-medium">★ ราคาพิเศษ</p>
+                <p class="text-sm font-medium text-secondary-900">
+                  {{ item.product.name }}
+                </p>
+                <p class="text-xs text-secondary-400">
+                  x{{ item.quantity }} {{ item.unit.name }}
+                </p>
+                <p
+                  v-if="item.is_special_price"
+                  class="text-xs text-primary-600 font-medium"
+                >
+                  ★ ราคาพิเศษ
+                </p>
               </div>
-              <p class="text-sm font-semibold text-secondary-900">฿{{ fmt(item.subtotal) }}</p>
+              <p class="text-sm font-semibold text-secondary-900">
+                ฿{{ fmt(item.subtotal) }}
+              </p>
             </div>
           </div>
 
@@ -276,8 +299,14 @@ const statusLabel: Record<string, string> = {
             </div>
             <div class="flex justify-between text-secondary-600">
               <span>ค่าจัดส่ง</span>
-              <span :class="cart.shippingFee === 0 ? 'text-success font-medium' : ''">
-                {{ cart.shippingFee === 0 ? "ฟรี" : `฿${fmt(cart.shippingFee)}` }}
+              <span
+                :class="
+                  cart.shippingFee === 0 ? 'text-success font-medium' : ''
+                "
+              >
+                {{
+                  cart.shippingFee === 0 ? "ฟรี" : `฿${fmt(cart.shippingFee)}`
+                }}
               </span>
             </div>
             <div class="flex justify-between font-bold text-base border-t pt-2">
@@ -287,80 +316,41 @@ const statusLabel: Record<string, string> = {
           </div>
 
           <!-- Address recap -->
-          <div class="mt-4 p-3 bg-secondary-50 rounded-xl text-sm text-secondary-600">
+          <div
+            class="mt-4 p-3 bg-secondary-50 rounded-xl text-sm text-secondary-600"
+          >
             <p class="font-medium text-secondary-800 mb-0.5">📍 จัดส่งไปที่:</p>
             <p>{{ address.recipient }} · {{ address.phone }}</p>
-            <p>{{ address.address }}, {{ address.province }} {{ address.postal_code }}</p>
-            <p v-if="note" class="mt-1 text-secondary-400 italic">หมายเหตุ: {{ note }}</p>
-          </div>
-        </div>
-
-        <div class="flex justify-between">
-          <button @click="step = 1" class="btn-secondary flex items-center gap-2">
-            <ArrowLeft class="w-4 h-4" /> ย้อนกลับ
-          </button>
-          <button @click="step = 3" class="btn-primary flex items-center gap-2">
-            ดำเนินการชำระเงิน <ArrowRight class="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-
-      <!-- Step 3: Payment (Mock) -->
-      <div v-if="step === 3" class="space-y-4">
-        <div class="card">
-          <div class="flex items-center gap-2 mb-4">
-            <CreditCard class="w-5 h-5 text-primary-600" />
-            <h2 class="font-bold text-secondary-900">ชำระเงิน</h2>
+            <p>
+              {{ address.address }}, {{ address.province }}
+              {{ address.postal_code }}
+            </p>
+            <p v-if="note" class="mt-1 text-secondary-400 italic">
+              หมายเหตุ: {{ note }}
+            </p>
           </div>
 
-          <!-- Mock card UI -->
-          <div class="bg-gradient-to-br from-secondary-800 to-secondary-900 rounded-2xl p-5 text-white mb-5">
-            <div class="flex justify-between mb-8">
-              <div class="space-y-0.5">
-                <p class="text-xs text-secondary-400">CARD NUMBER</p>
-                <p class="font-mono tracking-wider">4242 4242 4242 4242</p>
-              </div>
-              <span class="text-xl font-bold text-primary-400">VISA</span>
-            </div>
-            <div class="flex justify-between">
-              <div>
-                <p class="text-xs text-secondary-400">CARD HOLDER</p>
-                <p class="font-medium">{{ auth.currentUser?.email?.split("@")[0]?.toUpperCase() }}</p>
-              </div>
-              <div>
-                <p class="text-xs text-secondary-400">EXPIRES</p>
-                <p class="font-medium">12/28</p>
-              </div>
-            </div>
-          </div>
-
-          <div class="grid grid-cols-2 gap-3">
-            <BaseInput type="text" label="หมายเลขบัตร" model-value="4242 4242 4242 4242" class="font-mono" readonly />
-            <BaseInput type="text" label="วันหมดอายุ" model-value="12/28" readonly />
-            <BaseInput type="text" label="ชื่อบนบัตร" model-value="MOCK USER" readonly />
-            <BaseInput type="text" label="CVV" model-value="123" readonly />
-          </div>
-
-          <div class="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-xl">
-            <p class="text-xs text-amber-700">⚠️ นี่คือ mockup เท่านั้น — ไม่มีการชำระเงินจริง</p>
-          </div>
-        </div>
-
-        <!-- Total -->
-        <div class="card">
-          <div class="flex justify-between font-bold text-lg">
-            <span>ยอดที่ต้องชำระ</span>
-            <span class="text-primary-700">฿{{ fmt(cart.total) }}</span>
+          <!-- Payment info -->
+          <div class="mt-4 p-3 bg-blue-50 border border-blue-100 rounded-xl">
+            <p class="text-sm text-blue-700">
+              💳 ชำระเงินโดยตรงกับทางร้านหลังได้รับสินค้า
+            </p>
           </div>
         </div>
 
         <!-- Error -->
-        <div v-if="orderStore.error" class="p-3 bg-red-50 border border-red-200 rounded-xl">
+        <div
+          v-if="orderStore.error"
+          class="p-3 bg-red-50 border border-red-200 rounded-xl"
+        >
           <p class="text-sm text-red-700">❌ {{ orderStore.error }}</p>
         </div>
 
         <div class="flex justify-between">
-          <button @click="step = 2" class="btn-secondary flex items-center gap-2">
+          <button
+            @click="step = 1"
+            class="btn-secondary flex items-center gap-2"
+          >
             <ArrowLeft class="w-4 h-4" /> ย้อนกลับ
           </button>
           <button
@@ -372,7 +362,9 @@ const statusLabel: Record<string, string> = {
               v-if="orderStore.isLoading"
               class="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"
             />
-            {{ orderStore.isLoading ? "กำลังดำเนินการ..." : "✓ ยืนยันการชำระเงิน" }}
+            {{
+              orderStore.isLoading ? "กำลังดำเนินการ..." : "✓ ยืนยันคำสั่งซื้อ"
+            }}
           </button>
         </div>
       </div>

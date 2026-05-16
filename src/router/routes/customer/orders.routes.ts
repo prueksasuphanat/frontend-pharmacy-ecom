@@ -11,9 +11,12 @@ export const orderRoutes: RouteRecordRaw[] = [
     component: () => import("@/views/customer/orders/OrderSuccessView.vue"),
     meta: { requiresAuth: true },
   },
+  // T-04: แก้ route /orders/:id ให้ชี้ไป OrderDetailView ที่ถูกต้อง
+  // (เดิมชี้ไป OrderSuccessView ซึ่งผิด)
   {
     path: "/orders/:id",
-    component: () => import("@/views/customer/orders/OrderSuccessView.vue"),
+    component: () =>
+      import("@/views/customer/profile/orders/OrderDetailView.vue"),
     meta: { requiresAuth: true },
   },
 ];

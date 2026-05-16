@@ -1,6 +1,12 @@
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
-import { ordersApi, type Order, type OrderStatus, type CreateOrderRequest } from "@/api/customer/orders";
+import {
+  ordersApi,
+  type Order,
+  type OrderStatus,
+  type CreateOrderRequest,
+} from "@/api/customer/orders";
+import { useCartStore } from "@/stores/customer/cart.store";
 
 export const useOrderStore = defineStore("order", () => {
   const orders = ref<Order[]>([]);
@@ -14,7 +20,10 @@ export const useOrderStore = defineStore("order", () => {
   // ==========================================
   // Fetch all orders
   // ==========================================
-  async function fetchOrders(params?: { page?: number; status?: OrderStatus }): Promise<void> {
+  async function fetchOrders(params?: {
+    page?: number;
+    status?: OrderStatus;
+  }): Promise<void> {
     isLoading.value = true;
     error.value = null;
     try {
@@ -56,6 +65,10 @@ export const useOrderStore = defineStore("order", () => {
       const order = res.data.data;
       orders.value.unshift(order);
       currentOrder.value = order;
+      // T-01: clear cart state ทันทีหลัง order สำเร็จ
+      // (backend clear cart ใน transaction แล้ว แต่ frontend state ยังค้างอยู่)
+      const cartStore = useCartStore();
+      cartStore.reset();
       return order;
     } catch (err: any) {
       error.value = err.response?.data?.message ?? "สร้างคำสั่งซื้อไม่ได้";
