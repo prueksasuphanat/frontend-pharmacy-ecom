@@ -11,6 +11,7 @@ import {
   Package,
   Loader2,
 } from "lucide-vue-next";
+import { formatPrice, formatDateTime } from "@/utils/format";
 
 const route = useRoute();
 const toast = useToast();
@@ -53,16 +54,10 @@ async function updateStatus(status: string) {
 }
 
 function fmt(n: number) {
-  return n.toLocaleString("th-TH", { minimumFractionDigits: 2 });
+  return formatPrice(n);
 }
 function fmtDate(d: string) {
-  return new Date(d).toLocaleString("th-TH", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return formatDateTime(d);
 }
 
 const statusCls: Record<string, string> = {
@@ -99,7 +94,9 @@ function customerName(o: AdminOrder) {
     <div v-else-if="!order" class="text-center py-20">
       <Package class="w-14 h-14 text-secondary-200 mx-auto mb-4" />
       <p class="text-secondary-400 mb-4">ไม่พบคำสั่งซื้อ</p>
-      <RouterLink to="/admin/orders" class="btn-outline text-sm">กลับรายการ</RouterLink>
+      <RouterLink to="/admin/orders" class="btn-outline text-sm"
+        >กลับรายการ</RouterLink
+      >
     </div>
 
     <div v-else>
@@ -124,7 +121,9 @@ function customerName(o: AdminOrder) {
         <div class="lg:col-span-2 space-y-5">
           <!-- Status management card -->
           <div class="card">
-            <h3 class="font-bold text-secondary-900 mb-4 flex items-center gap-2">
+            <h3
+              class="font-bold text-secondary-900 mb-4 flex items-center gap-2"
+            >
               <Package class="w-4 h-4 text-primary-600" /> จัดการสถานะ
             </h3>
             <div class="flex flex-wrap gap-2">
@@ -196,7 +195,10 @@ function customerName(o: AdminOrder) {
                   </p>
                   <p class="text-xs text-secondary-400">
                     หน่วย: {{ item.unit_name }}
-                    <span v-if="item.is_special_price" class="text-primary-600 ml-1">
+                    <span
+                      v-if="item.is_special_price"
+                      class="text-primary-600 ml-1"
+                    >
                       (ราคาพิเศษ)
                     </span>
                   </p>
@@ -290,13 +292,14 @@ function customerName(o: AdminOrder) {
             </h3>
             <div class="space-y-1.5 text-sm">
               <div class="flex justify-between text-secondary-600">
-                <span>สินค้า</span
-                ><span>฿{{ fmt(order.subtotal) }}</span>
+                <span>สินค้า</span><span>฿{{ fmt(order.subtotal) }}</span>
               </div>
               <div class="flex justify-between text-secondary-600">
                 <span>ค่าจัดส่ง</span
                 ><span>{{
-                  order.shipping_fee === 0 ? "ฟรี" : "฿" + fmt(order.shipping_fee)
+                  order.shipping_fee === 0
+                    ? "ฟรี"
+                    : "฿" + fmt(order.shipping_fee)
                 }}</span>
               </div>
               <div class="flex justify-between font-bold border-t pt-2">

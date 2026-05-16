@@ -5,6 +5,7 @@ import Navbar from "@/components/layout/Navbar.vue";
 import Footer from "@/components/layout/Footer.vue";
 import { useOrderStore } from "@/stores/customer/order.store";
 import { CheckCircle, Package, MapPin, Clock } from "lucide-vue-next";
+import { formatPrice, formatDateTime } from "@/utils/format";
 
 const route = useRoute();
 const router = useRouter();
@@ -21,7 +22,7 @@ onMounted(async () => {
 });
 
 function fmt(n: number) {
-  return n.toLocaleString("th-TH", { minimumFractionDigits: 2 });
+  return formatPrice(n);
 }
 </script>
 
@@ -29,26 +30,35 @@ function fmt(n: number) {
   <div class="flex flex-col min-h-screen">
     <Navbar />
     <div class="flex-1 max-w-2xl mx-auto px-4 sm:px-6 py-12 w-full">
-
       <!-- Loading -->
       <div v-if="orderStore.isLoading" class="text-center py-20">
-        <div class="animate-spin w-10 h-10 border-4 border-primary-200 border-t-primary-600 rounded-full mx-auto" />
+        <div
+          class="animate-spin w-10 h-10 border-4 border-primary-200 border-t-primary-600 rounded-full mx-auto"
+        />
       </div>
 
       <!-- Error -->
       <div v-else-if="orderStore.error" class="text-center py-20">
         <p class="text-secondary-400">{{ orderStore.error }}</p>
-        <RouterLink to="/products" class="btn-primary mt-4 inline-block">กลับหน้าสินค้า</RouterLink>
+        <RouterLink to="/products" class="btn-primary mt-4 inline-block"
+          >กลับหน้าสินค้า</RouterLink
+        >
       </div>
 
       <template v-else-if="orderStore.currentOrder">
         <!-- Success header -->
         <div class="text-center mb-8">
-          <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div
+            class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4"
+          >
             <CheckCircle class="w-10 h-10 text-green-600" />
           </div>
-          <h1 class="text-2xl font-bold text-secondary-900 mb-2">สั่งซื้อสำเร็จ! 🎉</h1>
-          <p class="text-secondary-500 text-sm">คำสั่งซื้อ #{{ orderStore.currentOrder.id }} ได้รับการบันทึกแล้ว</p>
+          <h1 class="text-2xl font-bold text-secondary-900 mb-2">
+            สั่งซื้อสำเร็จ! 🎉
+          </h1>
+          <p class="text-secondary-500 text-sm">
+            คำสั่งซื้อ #{{ orderStore.currentOrder.id }} ได้รับการบันทึกแล้ว
+          </p>
         </div>
 
         <!-- Order detail card -->
@@ -65,10 +75,16 @@ function fmt(n: number) {
               class="flex justify-between items-center py-2.5 text-sm"
             >
               <div>
-                <p class="font-medium text-secondary-800">{{ item.product_name }}</p>
-                <p class="text-xs text-secondary-400">{{ item.unit_name }} × {{ item.quantity }}</p>
+                <p class="font-medium text-secondary-800">
+                  {{ item.product_name }}
+                </p>
+                <p class="text-xs text-secondary-400">
+                  {{ item.unit_name }} × {{ item.quantity }}
+                </p>
               </div>
-              <p class="font-semibold text-secondary-900">฿{{ fmt(item.unit_price * item.quantity) }}</p>
+              <p class="font-semibold text-secondary-900">
+                ฿{{ fmt(item.unit_price * item.quantity) }}
+              </p>
             </div>
           </div>
 
@@ -80,13 +96,25 @@ function fmt(n: number) {
             </div>
             <div class="flex justify-between text-secondary-600">
               <span>ค่าจัดส่ง</span>
-              <span :class="orderStore.currentOrder.shipping_fee === 0 ? 'text-success font-medium' : ''">
-                {{ orderStore.currentOrder.shipping_fee === 0 ? "ฟรี" : `฿${fmt(orderStore.currentOrder.shipping_fee)}` }}
+              <span
+                :class="
+                  orderStore.currentOrder.shipping_fee === 0
+                    ? 'text-success font-medium'
+                    : ''
+                "
+              >
+                {{
+                  orderStore.currentOrder.shipping_fee === 0
+                    ? "ฟรี"
+                    : `฿${fmt(orderStore.currentOrder.shipping_fee)}`
+                }}
               </span>
             </div>
             <div class="flex justify-between font-bold text-base border-t pt-2">
               <span>รวมทั้งหมด</span>
-              <span class="text-primary-700">฿{{ fmt(orderStore.currentOrder.total_amount) }}</span>
+              <span class="text-primary-700"
+                >฿{{ fmt(orderStore.currentOrder.total_amount) }}</span
+              >
             </div>
           </div>
         </div>
@@ -98,10 +126,15 @@ function fmt(n: number) {
             <h2 class="font-bold text-secondary-900">ที่อยู่จัดส่ง</h2>
           </div>
           <div class="text-sm text-secondary-600 space-y-0.5">
-            <p class="font-medium text-secondary-800">{{ orderStore.currentOrder.shipping_address.recipient }}</p>
+            <p class="font-medium text-secondary-800">
+              {{ orderStore.currentOrder.shipping_address.recipient }}
+            </p>
             <p>{{ orderStore.currentOrder.shipping_address.phone }}</p>
             <p>{{ orderStore.currentOrder.shipping_address.address }}</p>
-            <p>{{ orderStore.currentOrder.shipping_address.province }} {{ orderStore.currentOrder.shipping_address.postal_code }}</p>
+            <p>
+              {{ orderStore.currentOrder.shipping_address.province }}
+              {{ orderStore.currentOrder.shipping_address.postal_code }}
+            </p>
           </div>
         </div>
 
@@ -117,11 +150,15 @@ function fmt(n: number) {
               :key="log.id"
               class="flex items-start gap-3"
             >
-              <div class="w-2 h-2 rounded-full bg-primary-500 mt-1.5 shrink-0" />
+              <div
+                class="w-2 h-2 rounded-full bg-primary-500 mt-1.5 shrink-0"
+              />
               <div>
-                <p class="text-sm font-medium text-secondary-800">{{ log.note }}</p>
+                <p class="text-sm font-medium text-secondary-800">
+                  {{ log.note }}
+                </p>
                 <p class="text-xs text-secondary-400">
-                  {{ new Date(log.created_at).toLocaleString("th-TH") }}
+                  {{ formatDateTime(log.created_at) }}
                 </p>
               </div>
             </div>

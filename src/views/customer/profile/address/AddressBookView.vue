@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from "vue";
-import { BaseInput, BaseSelect, BaseModal } from "@/components/ui";
+import { BaseSelect, BaseModal } from "@/components/ui";
 import {
   Plus,
   Trash2,
@@ -12,6 +12,7 @@ import {
   Loader2,
 } from "lucide-vue-next";
 import { useAddressStore } from "@/stores/customer/address.store";
+import { AddressForm } from "@/components/address";
 import type { AddressBody, Address } from "@/api/customer/addresses";
 
 const addressStore = useAddressStore();
@@ -27,28 +28,34 @@ const labelOptions = [
   { value: "อื่นๆ", label: "📍 อื่นๆ" },
 ];
 
-const provinceOptions = [
-  { value: "กรุงเทพมหานคร", label: "กรุงเทพมหานคร" },
-  { value: "นนทบุรี", label: "นนทบุรี" },
-  { value: "ปทุมธานี", label: "ปทุมธานี" },
-  { value: "สมุทรปราการ", label: "สมุทรปราการ" },
-  { value: "เชียงใหม่", label: "เชียงใหม่" },
-  { value: "ขอนแก่น", label: "ขอนแก่น" },
-  { value: "สงขลา", label: "สงขลา" },
-  { value: "ชลบุรี", label: "ชลบุรี" },
-];
-
 const emptyForm: AddressBody = {
   label: "บ้าน",
   recipient: "",
   phone: "",
   address: "",
   district: "",
-  province: "กรุงเทพมหานคร",
+  province: "",
   postal_code: "",
   is_default: false,
 };
 const form = reactive<AddressBody>({ ...emptyForm });
+
+// computed bridge สำหรับ AddressForm component
+const addressFormValue = computed({
+  get: () => ({
+    address: form.address,
+    subDistrict: "", // UI only — backend ไม่มี field นี้
+    district: form.district,
+    province: form.province,
+    postalCode: form.postal_code,
+  }),
+  set: (val) => {
+    form.address = val.address;
+    form.district = val.district;
+    form.province = val.province;
+    form.postal_code = val.postalCode;
+  },
+});
 
 onMounted(() => {
   addressStore.fetchAddresses();
@@ -84,7 +91,7 @@ async function saveAddress() {
   } else {
     success = await addressStore.createAddress(form);
   }
-  
+
   if (success) {
     showModal.value = false;
   }
@@ -233,34 +240,8 @@ function getLabelIcon(label: string | null) {
             required
           />
         </div>
-        <BaseInput
-          v-model="form.address"
-          label="ที่อยู่"
-          placeholder="บ้านเลขที่ ซอย ถนน"
-          required
-        />
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <BaseInput
-            v-model="form.district"
-            label="เขต/อำเภอ/แขวง/ตำบล"
-            placeholder="เขต/อำเภอ/แขวง/ตำบล"
-            required
-          />
-          <BaseSelect
-            v-model="form.province"
-            :options="provinceOptions"
-            label="จังหวัด"
-            placeholder="เลือกจังหวัด"
-            required
-          />
-        </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <BaseInput
-            v-model="form.postal_code"
-            label="รหัสไปรษณีย์"
-            placeholder="xxxxx"
-            required
-          />
+        <!-- AddressForm: cascade จังหวัด → อำเภอ → ตำบล → รหัสไปรษณีย์ auto-fill -->
+        <AddressForm v-model="addressFormValue" />
         </div>
       </form>
       <template #footer>

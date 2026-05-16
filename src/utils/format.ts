@@ -17,7 +17,49 @@ export function formatCurrency(amount: number): string {
 }
 
 /**
- * Format a date in Thai locale
+ * Format number with Thai locale + comma separator (no decimal)
+ * @example formatNumber(1234567) → "1,234,567"
+ */
+export function formatNumber(value: number): string {
+  return new Intl.NumberFormat("th-TH").format(value);
+}
+
+/**
+ * Format price with 2 decimal places + comma separator (no currency symbol)
+ * ใช้แทน inline fmt(n) ที่กระจายอยู่ทุกหน้า
+ * @example formatPrice(1234.5) → "1,234.50"
+ */
+export function formatPrice(value: number): string {
+  return new Intl.NumberFormat("th-TH", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
+}
+
+/**
+ * Format price with ฿ prefix
+ * @example formatPriceWithSymbol(1234.5) → "฿1,234.50"
+ */
+export function formatPriceWithSymbol(value: number): string {
+  return `฿${formatPrice(value)}`;
+}
+
+/**
+ * Format datetime in Thai locale (short) — ใช้แทน inline fmtDate/fmtTime
+ * @example formatDateTime("2026-05-17T10:30:00") → "17 พ.ค. 2569 10:30"
+ */
+export function formatDateTime(date: string | Date): string {
+  return new Intl.DateTimeFormat("th-TH", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(date));
+}
+
+/**
+ * Format a date in Thai locale (long, no time)
  * @param date - The date to format (string or Date object)
  * @returns Formatted date string (e.g., "15 มกราคม 2567")
  */

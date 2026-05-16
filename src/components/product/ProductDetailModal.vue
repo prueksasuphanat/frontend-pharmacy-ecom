@@ -14,6 +14,7 @@ import {
   Pill,
   Tag,
 } from "lucide-vue-next";
+import { formatPrice as _formatPrice } from "@/utils/format";
 
 const props = defineProps<{
   productId: number | null;
@@ -43,11 +44,9 @@ const selectedUnit = computed(() => {
 });
 
 function formatPrice(n: number) {
-  // T-03: แสดงราคา default_price เสมอ แม้ไม่มี special price
-  // backend resolve ราคาถูกต้องแล้ว (special → fallback default)
-  // ไม่ควร block การ addToCart เมื่อ price = 0 (อาจเป็นสินค้าที่ยังไม่ได้ตั้งราคา)
+  // business logic เฉพาะ: ราคา 0 = ยังไม่ได้ตั้งราคา
   if (n === 0) return "ติดต่อสอบถาม";
-  return n.toLocaleString("th-TH", { minimumFractionDigits: 2 });
+  return _formatPrice(n);
 }
 
 function addToCart() {

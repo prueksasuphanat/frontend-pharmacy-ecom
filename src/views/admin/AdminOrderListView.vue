@@ -10,6 +10,7 @@ import {
   Loader2,
 } from "lucide-vue-next";
 import { adminOrdersApi, type AdminOrder } from "@/api/admin/orders";
+import { formatPrice, formatDateTime } from "@/utils/format";
 
 const orders = ref<AdminOrder[]>([]);
 const loading = ref(false);
@@ -93,16 +94,10 @@ function nextPage() {
 }
 
 function fmt(n: number) {
-  return n.toLocaleString("th-TH", { minimumFractionDigits: 2 });
+  return formatPrice(n);
 }
 function fmtDate(d: string) {
-  return new Date(d).toLocaleString("th-TH", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return formatDateTime(d);
 }
 
 function customerName(order: AdminOrder) {
@@ -134,8 +129,15 @@ function customerName(order: AdminOrder) {
             class="input pl-9 w-full"
           />
         </div>
-        <select v-model="statusFilter" class="input w-full sm:w-auto min-w-[160px]">
-          <option v-for="opt in statusOptions" :key="opt.value" :value="opt.value">
+        <select
+          v-model="statusFilter"
+          class="input w-full sm:w-auto min-w-[160px]"
+        >
+          <option
+            v-for="opt in statusOptions"
+            :key="opt.value"
+            :value="opt.value"
+          >
             {{ opt.label }}
           </option>
         </select>
@@ -157,7 +159,9 @@ function customerName(order: AdminOrder) {
     <div v-else class="card overflow-hidden !p-0">
       <div class="overflow-x-auto">
         <table class="w-full text-sm">
-          <thead class="bg-secondary-50 text-secondary-600 text-xs uppercase tracking-wider">
+          <thead
+            class="bg-secondary-50 text-secondary-600 text-xs uppercase tracking-wider"
+          >
             <tr>
               <th class="px-4 py-3 text-left">#</th>
               <th class="px-4 py-3 text-left">ลูกค้า</th>

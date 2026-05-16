@@ -261,7 +261,7 @@ onMounted(() => fetchUsers());
       <span class="text-sm font-medium">กลับไปตั้งค่าระบบ</span>
     </button>
 
-    <div class="flex items-center justify-between mb-6">
+    <div class="page-header mb-6">
       <div>
         <h1 class="page-title">จัดการผู้ใช้งาน</h1>
         <p class="text-sm text-secondary-500 mt-1">

@@ -6,6 +6,7 @@ import Footer from "@/components/layout/Footer.vue";
 import { useOrderStore } from "@/stores/customer/order.store";
 import { type OrderStatus } from "@/api/customer/orders";
 import { Package, ChevronRight } from "lucide-vue-next";
+import { formatPrice, formatDateTime } from "@/utils/format";
 
 const orderStore = useOrderStore();
 
@@ -37,22 +38,18 @@ const statusLabel: Record<string, string> = {
 };
 
 function fmt(n: number) {
-  return n.toLocaleString("th-TH", { minimumFractionDigits: 2 });
+  return formatPrice(n);
 }
 
 function fmtDate(d: string) {
-  return new Date(d).toLocaleDateString("th-TH", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return formatDateTime(d);
 }
 
 async function loadOrders() {
   await orderStore.fetchOrders({
-    status: statusFilter.value ? (statusFilter.value as OrderStatus) : undefined,
+    status: statusFilter.value
+      ? (statusFilter.value as OrderStatus)
+      : undefined,
   });
 }
 
@@ -70,7 +67,10 @@ onMounted(loadOrders);
         <button
           v-for="opt in statusOptions"
           :key="opt.value"
-          @click="statusFilter = opt.value as any; loadOrders()"
+          @click="
+            statusFilter = opt.value as any;
+            loadOrders();
+          "
           :class="[
             'px-3 py-1.5 rounded-full text-sm font-medium transition-colors',
             statusFilter === opt.value
@@ -84,14 +84,20 @@ onMounted(loadOrders);
 
       <!-- Loading -->
       <div v-if="orderStore.isLoading" class="text-center py-20">
-        <div class="animate-spin w-8 h-8 border-4 border-primary-200 border-t-primary-600 rounded-full mx-auto" />
+        <div
+          class="animate-spin w-8 h-8 border-4 border-primary-200 border-t-primary-600 rounded-full mx-auto"
+        />
       </div>
 
       <!-- Empty -->
       <div v-else-if="!orderStore.hasOrders" class="text-center py-20">
         <Package class="w-16 h-16 text-secondary-200 mx-auto mb-4" />
-        <p class="text-secondary-400 text-lg font-medium mb-2">ยังไม่มีคำสั่งซื้อ</p>
-        <RouterLink to="/products" class="btn-primary mt-2 inline-block">เลือกสินค้า</RouterLink>
+        <p class="text-secondary-400 text-lg font-medium mb-2">
+          ยังไม่มีคำสั่งซื้อ
+        </p>
+        <RouterLink to="/products" class="btn-primary mt-2 inline-block"
+          >เลือกสินค้า</RouterLink
+        >
       </div>
 
       <!-- Order list -->
@@ -104,10 +110,19 @@ onMounted(loadOrders);
         >
           <div class="flex items-start justify-between gap-3 mb-3">
             <div>
-              <p class="font-semibold text-secondary-900">คำสั่งซื้อ #{{ order.id }}</p>
-              <p class="text-xs text-secondary-400 mt-0.5">{{ fmtDate(order.created_at) }}</p>
+              <p class="font-semibold text-secondary-900">
+                คำสั่งซื้อ #{{ order.id }}
+              </p>
+              <p class="text-xs text-secondary-400 mt-0.5">
+                {{ fmtDate(order.created_at) }}
+              </p>
             </div>
-            <span :class="['text-xs font-medium px-2.5 py-1 rounded-full', statusBadge[order.status]]">
+            <span
+              :class="[
+                'text-xs font-medium px-2.5 py-1 rounded-full',
+                statusBadge[order.status],
+              ]"
+            >
               {{ statusLabel[order.status] }}
             </span>
           </div>
@@ -127,7 +142,9 @@ onMounted(loadOrders);
           </div>
 
           <div class="flex items-center justify-between">
-            <p class="font-bold text-primary-700">฿{{ fmt(order.total_amount) }}</p>
+            <p class="font-bold text-primary-700">
+              ฿{{ fmt(order.total_amount) }}
+            </p>
             <ChevronRight class="w-4 h-4 text-secondary-300" />
           </div>
         </RouterLink>

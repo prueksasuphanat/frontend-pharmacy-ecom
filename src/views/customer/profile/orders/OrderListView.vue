@@ -12,6 +12,7 @@ import {
   Loader2,
 } from "lucide-vue-next";
 import { ordersApi, type Order, type OrderStatus } from "@/api/customer/orders";
+import { formatPrice, formatDateTime } from "@/utils/format";
 
 // ── Data ──────────────────────────────────────────────────
 const orders = ref<Order[]>([]);
@@ -120,20 +121,13 @@ const stats = computed(() => {
 });
 
 function fmt(n: number) {
-  return n.toLocaleString("th-TH", { minimumFractionDigits: 2 });
+  return formatPrice(n);
 }
 function fmtDate(d: string) {
-  return new Date(d).toLocaleDateString("th-TH", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
+  return formatDateTime(d);
 }
 function fmtTime(d: string) {
-  return new Date(d).toLocaleTimeString("th-TH", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return formatDateTime(d);
 }
 </script>
 
@@ -203,8 +197,7 @@ function fmtTime(d: string) {
           <div class="flex items-start justify-between gap-3 mb-3">
             <div class="min-w-0">
               <div class="flex items-center gap-2 flex-wrap">
-                <span
-                  class="font-mono font-semibold text-secondary-900 text-sm"
+                <span class="font-mono font-semibold text-secondary-900 text-sm"
                   >#{{ order.id }}</span
                 >
                 <span
@@ -235,7 +228,9 @@ function fmtTime(d: string) {
               :key="item.id"
               class="w-10 h-10 rounded-lg overflow-hidden border border-secondary-100 shrink-0 bg-gradient-to-br from-primary-50 to-teal-50 flex items-center justify-center"
             >
-              <span class="text-[8px] text-primary-500 font-medium leading-tight text-center p-0.5">
+              <span
+                class="text-[8px] text-primary-500 font-medium leading-tight text-center p-0.5"
+              >
                 {{ item.product_name.slice(0, 10) }}
               </span>
             </div>

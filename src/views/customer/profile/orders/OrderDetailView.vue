@@ -13,6 +13,7 @@ import {
   Loader2,
 } from "lucide-vue-next";
 import { BaseTextarea } from "@/components/ui";
+import { formatPrice, formatDateTime } from "@/utils/format";
 
 const route = useRoute();
 const toast = useToast();
@@ -36,16 +37,10 @@ onMounted(async () => {
 });
 
 function fmt(n: number) {
-  return n.toLocaleString("th-TH", { minimumFractionDigits: 2 });
+  return formatPrice(n);
 }
 function fmtDate(d: string) {
-  return new Date(d).toLocaleString("th-TH", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return formatDateTime(d);
 }
 
 const statusSteps = ["PENDING", "CONFIRMED", "SHIPPED", "COMPLETED"];
@@ -86,7 +81,10 @@ const currentStepIndex = computed(() => {
 async function cancelOrder() {
   isCancelling.value = true;
   try {
-    const res = await ordersApi.cancel(orderId, cancelReason.value || undefined);
+    const res = await ordersApi.cancel(
+      orderId,
+      cancelReason.value || undefined,
+    );
     order.value = res.data.data;
     showCancelModal.value = false;
     toast.success("ยกเลิกคำสั่งซื้อสำเร็จ");
@@ -109,7 +107,9 @@ async function cancelOrder() {
     <div v-else-if="!order" class="text-center py-20">
       <Package class="w-14 h-14 text-secondary-200 mx-auto mb-4" />
       <p class="text-secondary-400 mb-4">ไม่พบคำสั่งซื้อ</p>
-      <RouterLink to="/profile/orders" class="btn-outline text-sm">กลับรายการ</RouterLink>
+      <RouterLink to="/profile/orders" class="btn-outline text-sm"
+        >กลับรายการ</RouterLink
+      >
     </div>
 
     <div v-else class="max-w-4xl mx-auto">
@@ -208,8 +208,13 @@ async function cancelOrder() {
           </div>
 
           <!-- Cancelled notice -->
-          <div v-if="order.status === 'CANCELLED'" class="card border-red-200 bg-red-50">
-            <h3 class="font-semibold text-red-800 mb-2 text-sm">คำสั่งซื้อถูกยกเลิก</h3>
+          <div
+            v-if="order.status === 'CANCELLED'"
+            class="card border-red-200 bg-red-50"
+          >
+            <h3 class="font-semibold text-red-800 mb-2 text-sm">
+              คำสั่งซื้อถูกยกเลิก
+            </h3>
             <p v-if="order.cancelled_reason" class="text-sm text-red-600">
               เหตุผล: {{ order.cancelled_reason }}
             </p>
@@ -237,7 +242,11 @@ async function cancelOrder() {
                   </p>
                   <p class="text-xs text-secondary-400 mt-0.5">
                     หน่วย: {{ item.unit_name }}
-                    <span v-if="item.is_special_price" class="text-primary-600 ml-1">(ราคาพิเศษ)</span>
+                    <span
+                      v-if="item.is_special_price"
+                      class="text-primary-600 ml-1"
+                      >(ราคาพิเศษ)</span
+                    >
                   </p>
                   <p class="text-xs text-secondary-500 mt-0.5">
                     x{{ item.quantity }}
@@ -276,7 +285,9 @@ async function cancelOrder() {
             </div>
           </div>
           <div v-if="order.note" class="card">
-            <h3 class="font-semibold text-secondary-900 mb-3 text-sm">หมายเหตุ</h3>
+            <h3 class="font-semibold text-secondary-900 mb-3 text-sm">
+              หมายเหตุ
+            </h3>
             <p class="text-sm text-secondary-600">{{ order.note }}</p>
           </div>
           <div class="card">
@@ -285,8 +296,7 @@ async function cancelOrder() {
             </h3>
             <div class="space-y-1.5 text-sm">
               <div class="flex justify-between text-secondary-600">
-                <span>ยอดสินค้า</span
-                ><span>฿{{ fmt(order.subtotal) }}</span>
+                <span>ยอดสินค้า</span><span>฿{{ fmt(order.subtotal) }}</span>
               </div>
               <div class="flex justify-between text-secondary-600">
                 <span>ค่าจัดส่ง</span>
@@ -329,7 +339,11 @@ async function cancelOrder() {
           <button @click="showCancelModal = false" class="btn-secondary flex-1">
             ปิด
           </button>
-          <button @click="cancelOrder" :disabled="isCancelling" class="btn-danger flex-1">
+          <button
+            @click="cancelOrder"
+            :disabled="isCancelling"
+            class="btn-danger flex-1"
+          >
             <Loader2 v-if="isCancelling" class="w-4 h-4 animate-spin mr-1" />
             ยืนยันยกเลิก
           </button>

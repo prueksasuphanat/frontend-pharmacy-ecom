@@ -8,6 +8,8 @@ import { useOrderStore } from "@/stores/customer/order.store";
 import { useAddressStore } from "@/stores/customer/address.store";
 import { CheckCircle, MapPin, ArrowRight, ArrowLeft } from "lucide-vue-next";
 import { BaseInput, BaseTextarea, BaseSelect } from "@/components/ui";
+import { formatPrice } from "@/utils/format";
+import { AddressForm } from "@/components/address";
 
 const router = useRouter();
 const cart = useCartStore();
@@ -48,9 +50,34 @@ const address = ref({
     : "",
   phone: auth.currentUser?.phone ?? "",
   address: "",
+  subDistrict: "", // UI only — ไม่ส่ง backend
   district: "",
   province: "",
   postal_code: "",
+});
+
+// computed bridge สำหรับ AddressForm component
+const addressFormValue = computed({
+  get: () => ({
+    address: address.value.address,
+    subDistrict: address.value.subDistrict,
+    district: address.value.district,
+    province: address.value.province,
+    postalCode: address.value.postal_code,
+  }),
+  set: (val: {
+    address: string;
+    subDistrict: string;
+    district: string;
+    province: string;
+    postalCode: string;
+  }) => {
+    address.value.address = val.address;
+    address.value.subDistrict = val.subDistrict;
+    address.value.district = val.district;
+    address.value.province = val.province;
+    address.value.postal_code = val.postalCode;
+  },
 });
 
 function setAddressFromStore(addr: any) {
@@ -58,6 +85,7 @@ function setAddressFromStore(addr: any) {
     recipient: addr.recipient,
     phone: addr.phone,
     address: addr.address,
+    subDistrict: "",
     district: addr.district || "",
     province: addr.province,
     postal_code: addr.postal_code,
@@ -79,11 +107,13 @@ const isAddressValid = computed(
     address.value.recipient.trim() &&
     address.value.phone.trim() &&
     address.value.address.trim() &&
-    address.value.province.trim(),
+    address.value.province.trim() &&
+    address.value.district.trim() &&
+    address.value.postal_code.trim(),
 );
 
 function fmt(n: number) {
-  return n.toLocaleString("th-TH", { minimumFractionDigits: 2 });
+  return formatPrice(n);
 }
 
 // ==========================================
@@ -160,6 +190,7 @@ async function placeOrder() {
                       : '';
                     address.phone = auth.currentUser?.phone ?? '';
                     address.address = '';
+                    address.subDistrict = '';
                     address.district = '';
                     address.province = '';
                     address.postal_code = '';
@@ -176,40 +207,23 @@ async function placeOrder() {
 
           <div
             v-if="selectedAddressId === 'new'"
-            class="grid grid-cols-1 sm:grid-cols-2 gap-3 border-t border-secondary-100 pt-5 mt-2"
+            class="border-t border-secondary-100 pt-5 mt-2"
           >
-            <BaseInput
-              v-model="address.recipient"
-              label="ชื่อผู้รับ *"
-              placeholder="ชื่อ-นามสกุล"
-            />
-            <BaseInput
-              v-model="address.phone"
-              label="เบอร์โทรศัพท์ *"
-              placeholder="08x-xxx-xxxx"
-              type="tel"
-            />
-            <BaseInput
-              v-model="address.address"
-              label="ที่อยู่ *"
-              placeholder="บ้านเลขที่ ถนน แขวง/ตำบล"
-              class="sm:col-span-2"
-            />
-            <BaseInput
-              v-model="address.district"
-              label="เขต/อำเภอ"
-              placeholder="เขต/อำเภอ"
-            />
-            <BaseInput
-              v-model="address.province"
-              label="จังหวัด *"
-              placeholder="จังหวัด"
-            />
-            <BaseInput
-              v-model="address.postal_code"
-              label="รหัสไปรษณีย์"
-              placeholder="10xxx"
-            />
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+              <BaseInput
+                v-model="address.recipient"
+                label="ชื่อผู้รับ *"
+                placeholder="ชื่อ-นามสกุล"
+              />
+              <BaseInput
+                v-model="address.phone"
+                label="เบอร์โทรศัพท์ *"
+                placeholder="08x-xxx-xxxx"
+                type="tel"
+              />
+            </div>
+            <!-- AddressForm: cascade จังหวัด → อำเภอ → ตำบล → รหัสไปรษณีย์ auto-fill -->
+            <AddressForm v-model="addressFormValue" />
           </div>
 
           <div

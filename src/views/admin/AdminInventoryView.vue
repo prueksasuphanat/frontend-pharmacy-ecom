@@ -16,7 +16,7 @@ import type { Column } from "@/components/ui/BaseTable.vue";
 import type { Product, Unit } from "@/types";
 import { useProductStore, useCategoryStore } from "@/stores";
 import { unitsApi } from "@/api";
-import { formatDate } from "@/utils";
+import { formatDate, formatPrice } from "@/utils";
 import AdminProductUnitView from "@/views/admin/settings/product-units/AdminProductUnitView.vue";
 import { useToast } from "@/composables";
 
@@ -237,13 +237,7 @@ async function updateProduct() {
   }
 }
 
-function formatPrice(price: string | number): string {
-  const numPrice = typeof price === "string" ? parseFloat(price) : price;
-  return numPrice.toLocaleString("th-TH", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-}
+// formatPrice imported from @/utils — ลบ inline function ออก
 
 function getBaseUnitPrice(product: Product): string {
   if (!product.base_unit_id || !product.units) return "-";

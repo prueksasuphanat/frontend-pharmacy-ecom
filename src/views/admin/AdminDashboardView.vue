@@ -15,6 +15,7 @@ import {
   type TopProduct,
   type RecentOrder,
 } from "@/api/admin/dashboard";
+import { formatPrice } from "@/utils/format";
 
 const loading = ref(true);
 const summary = ref<DashboardSummary>({
@@ -82,7 +83,7 @@ onMounted(async () => {
 });
 
 function fmt(n: number) {
-  return n.toLocaleString("th-TH", { minimumFractionDigits: 2 });
+  return formatPrice(n);
 }
 
 const statusCls: Record<string, string> = {
@@ -215,7 +216,11 @@ function orderUser(o: RecentOrder) {
                 <p class="text-xs text-secondary-400">{{ p.sold }} ชิ้น</p>
               </div>
               <p class="text-xs font-semibold text-primary-700 shrink-0">
-                ฿{{ p.revenue > 1000 ? (p.revenue / 1000).toFixed(0) + "k" : fmt(p.revenue) }}
+                ฿{{
+                  p.revenue > 1000
+                    ? (p.revenue / 1000).toFixed(0) + "k"
+                    : fmt(p.revenue)
+                }}
               </p>
             </div>
           </div>
