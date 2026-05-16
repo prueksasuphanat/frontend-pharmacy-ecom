@@ -1,28 +1,39 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useRoute, RouterLink } from "vue-router";
-import { Navbar } from "@/components/layout";
-import { MOCK_ORDERS } from "@/__mocks__/orders";
+import { useToast } from "vue-toastification";
+import { ordersApi, type Order } from "@/api/customer/orders";
 import {
   ArrowLeft,
-  Download,
   X,
   CheckCircle,
   Clock,
   Truck,
   Package,
+  Loader2,
 } from "lucide-vue-next";
 import { BaseTextarea } from "@/components/ui";
 
 const route = useRoute();
-const orderId = route.params.id as string;
-// TODO: replace with GET /orders/:id
-const order = computed(
-  () => MOCK_ORDERS.find((o) => o.id === orderId) || MOCK_ORDERS[0],
-);
+const toast = useToast();
+const orderId = parseInt(route.params.id as string, 10);
 
+const order = ref<Order | null>(null);
+const loading = ref(true);
 const cancelReason = ref("");
 const showCancelModal = ref(false);
+const isCancelling = ref(false);
+
+onMounted(async () => {
+  try {
+    const res = await ordersApi.getById(orderId);
+    order.value = res.data.data;
+  } catch {
+    toast.error("ไม่สามารถโหลดข้อมูลคำสั่งซื้อได้");
+  } finally {
+    loading.value = false;
+  }
+});
 
 function fmt(n: number) {
   return n.toLocaleString("th-TH", { minimumFractionDigits: 2 });
@@ -37,58 +48,78 @@ function fmtDate(d: string) {
   });
 }
 
-const statusSteps = ["pending", "confirmed", "shipped", "completed"];
+const statusSteps = ["PENDING", "CONFIRMED", "SHIPPED", "COMPLETED"];
 const statusConfig: Record<
   string,
   { label: string; icon: any; color: string }
 > = {
-  pending: {
+  PENDING: {
     label: "รอดำเนินการ",
     icon: Clock,
     color: "text-yellow-600 bg-yellow-100",
   },
-  confirmed: {
+  CONFIRMED: {
     label: "ยืนยันแล้ว",
     icon: CheckCircle,
     color: "text-blue-600 bg-blue-100",
   },
-  shipped: {
+  SHIPPED: {
     label: "จัดส่งแล้ว",
     icon: Truck,
     color: "text-teal-600 bg-teal-100",
   },
-  completed: {
+  COMPLETED: {
     label: "สำเร็จ",
     icon: Package,
     color: "text-green-600 bg-green-100",
   },
-  cancelled: { label: "ยกเลิก", icon: X, color: "text-red-600 bg-red-100" },
+  CANCELLED: { label: "ยกเลิก", icon: X, color: "text-red-600 bg-red-100" },
 };
 
-const currentStepIndex = computed(() =>
-  order.value.status === "cancelled"
+const currentStepIndex = computed(() => {
+  if (!order.value) return -1;
+  return order.value.status === "CANCELLED"
     ? -1
-    : statusSteps.indexOf(order.value.status),
-);
+    : statusSteps.indexOf(order.value.status);
+});
 
-function cancelOrder() {
-  // TODO: PATCH /orders/:id/cancel { reason: cancelReason.value }
-  showCancelModal.value = false;
-  alert("TODO: ยกเลิกคำสั่งซื้อ (จะเชื่อม API จริงทีหลัง)");
+async function cancelOrder() {
+  isCancelling.value = true;
+  try {
+    const res = await ordersApi.cancel(orderId, cancelReason.value || undefined);
+    order.value = res.data.data;
+    showCancelModal.value = false;
+    toast.success("ยกเลิกคำสั่งซื้อสำเร็จ");
+  } catch (err: any) {
+    toast.error(err.response?.data?.message || "ไม่สามารถยกเลิกได้");
+  } finally {
+    isCancelling.value = false;
+  }
 }
 </script>
 
 <template>
-  <div v-if="order">
-    <Navbar />
-    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <div>
+    <!-- Loading -->
+    <div v-if="loading" class="flex justify-center py-20">
+      <Loader2 class="w-8 h-8 text-primary-600 animate-spin" />
+    </div>
+
+    <!-- Not Found -->
+    <div v-else-if="!order" class="text-center py-20">
+      <Package class="w-14 h-14 text-secondary-200 mx-auto mb-4" />
+      <p class="text-secondary-400 mb-4">ไม่พบคำสั่งซื้อ</p>
+      <RouterLink to="/profile/orders" class="btn-outline text-sm">กลับรายการ</RouterLink>
+    </div>
+
+    <div v-else class="max-w-4xl mx-auto">
       <div class="flex items-center gap-3 mb-6">
         <RouterLink to="/profile/orders" class="btn-ghost p-2"
           ><ArrowLeft class="w-4 h-4"
         /></RouterLink>
         <div>
           <h1 class="text-xl font-bold text-secondary-900 font-mono">
-            {{ order.id }}
+            #{{ order.id }}
           </h1>
           <p class="text-sm text-secondary-400">
             {{
@@ -103,13 +134,13 @@ function cancelOrder() {
         <span
           :class="[
             'badge ml-2',
-            order.status === 'cancelled'
+            order.status === 'CANCELLED'
               ? 'badge-red'
-              : order.status === 'completed'
+              : order.status === 'COMPLETED'
                 ? 'badge-green'
-                : order.status === 'shipped'
+                : order.status === 'SHIPPED'
                   ? 'badge-teal'
-                  : order.status === 'confirmed'
+                  : order.status === 'CONFIRMED'
                     ? 'badge-blue'
                     : 'badge-yellow',
           ]"
@@ -117,12 +148,8 @@ function cancelOrder() {
           {{ statusConfig[order.status]?.label }}
         </span>
         <div class="ml-auto flex gap-2">
-          <!-- TODO: GET /orders/:id/invoice -->
-          <button class="btn-secondary text-sm gap-1.5">
-            <Download class="w-3.5 h-3.5" /> Invoice PDF
-          </button>
           <button
-            v-if="order.status === 'pending'"
+            v-if="order.status === 'PENDING'"
             @click="showCancelModal = true"
             class="btn-danger text-sm"
           >
@@ -134,7 +161,7 @@ function cancelOrder() {
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="lg:col-span-2 space-y-5">
           <!-- Status Stepper -->
-          <div v-if="order.status !== 'cancelled'" class="card">
+          <div v-if="order.status !== 'CANCELLED'" class="card">
             <h3 class="font-semibold text-secondary-900 mb-5 text-sm">
               สถานะการสั่งซื้อ
             </h3>
@@ -165,13 +192,13 @@ function cancelOrder() {
                     {{ statusConfig[step].label }}
                   </p>
                   <p
-                    v-if="order.status_logs.find((l) => l.to === step)"
+                    v-if="order.status_logs.find((l) => l.to_status === step)"
                     class="text-[10px] text-secondary-300 mt-0.5"
                   >
                     {{
                       fmtDate(
-                        order.status_logs.find((l) => l.to === step)!
-                          .changed_at,
+                        order.status_logs.find((l) => l.to_status === step)!
+                          .created_at,
                       )
                     }}
                   </p>
@@ -180,37 +207,12 @@ function cancelOrder() {
             </div>
           </div>
 
-          <!-- Prescription status -->
-          <div
-            v-if="order.prescription_status !== 'not_required'"
-            class="card"
-            :class="{
-              'border-yellow-200 bg-yellow-50':
-                order.prescription_status === 'pending',
-              'border-green-200 bg-green-50':
-                order.prescription_status === 'approved',
-              'border-red-200 bg-red-50':
-                order.prescription_status === 'rejected',
-            }"
-          >
-            <h3 class="font-semibold mb-2 text-sm">สถานะใบสั่งแพทย์</h3>
-            <div class="flex items-center gap-2">
-              <span
-                v-if="order.prescription_status === 'pending'"
-                class="badge badge-yellow"
-                >รอรีวิว</span
-              >
-              <span
-                v-if="order.prescription_status === 'approved'"
-                class="badge badge-green"
-                >อนุมัติแล้ว</span
-              >
-              <span
-                v-if="order.prescription_status === 'rejected'"
-                class="badge badge-red"
-                >ปฏิเสธ</span
-              >
-            </div>
+          <!-- Cancelled notice -->
+          <div v-if="order.status === 'CANCELLED'" class="card border-red-200 bg-red-50">
+            <h3 class="font-semibold text-red-800 mb-2 text-sm">คำสั่งซื้อถูกยกเลิก</h3>
+            <p v-if="order.cancelled_reason" class="text-sm text-red-600">
+              เหตุผล: {{ order.cancelled_reason }}
+            </p>
           </div>
 
           <!-- Order items -->
@@ -224,17 +226,18 @@ function cancelOrder() {
                 :key="item.id"
                 class="flex gap-3 py-3"
               >
-                <img
-                  :src="item.product_image"
-                  :alt="item.product_name"
-                  class="w-14 h-14 rounded-xl object-cover"
-                />
+                <div
+                  class="w-14 h-14 rounded-xl bg-gradient-to-br from-primary-100 to-teal-100 flex items-center justify-center text-xs text-primary-500 font-semibold p-1 leading-snug text-center shrink-0"
+                >
+                  {{ item.product_name.slice(0, 12) }}
+                </div>
                 <div class="flex-1">
                   <p class="font-medium text-secondary-900 text-sm">
                     {{ item.product_name }}
                   </p>
                   <p class="text-xs text-secondary-400 mt-0.5">
-                    {{ item.sku }}
+                    หน่วย: {{ item.unit_name }}
+                    <span v-if="item.is_special_price" class="text-primary-600 ml-1">(ราคาพิเศษ)</span>
                   </p>
                   <p class="text-xs text-secondary-500 mt-0.5">
                     x{{ item.quantity }}
@@ -266,11 +269,15 @@ function cancelOrder() {
               <p>{{ order.shipping_address.phone }}</p>
               <p>{{ order.shipping_address.address }}</p>
               <p>
-                {{ order.shipping_address.district }},
+                {{ order.shipping_address.district }}
                 {{ order.shipping_address.province }}
               </p>
               <p>{{ order.shipping_address.postal_code }}</p>
             </div>
+          </div>
+          <div v-if="order.note" class="card">
+            <h3 class="font-semibold text-secondary-900 mb-3 text-sm">หมายเหตุ</h3>
+            <p class="text-sm text-secondary-600">{{ order.note }}</p>
           </div>
           <div class="card">
             <h3 class="font-semibold text-secondary-900 mb-3 text-sm">
@@ -279,9 +286,7 @@ function cancelOrder() {
             <div class="space-y-1.5 text-sm">
               <div class="flex justify-between text-secondary-600">
                 <span>ยอดสินค้า</span
-                ><span
-                  >฿{{ fmt(order.total_amount - order.shipping_fee) }}</span
-                >
+                ><span>฿{{ fmt(order.subtotal) }}</span>
               </div>
               <div class="flex justify-between text-secondary-600">
                 <span>ค่าจัดส่ง</span>
@@ -322,9 +327,10 @@ function cancelOrder() {
         />
         <div class="flex gap-3 mt-4">
           <button @click="showCancelModal = false" class="btn-secondary flex-1">
-            ยกเลิก
+            ปิด
           </button>
-          <button @click="cancelOrder" class="btn-danger flex-1">
+          <button @click="cancelOrder" :disabled="isCancelling" class="btn-danger flex-1">
+            <Loader2 v-if="isCancelling" class="w-4 h-4 animate-spin mr-1" />
             ยืนยันยกเลิก
           </button>
         </div>

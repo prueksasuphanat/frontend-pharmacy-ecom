@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import { BaseSelect } from "@/components/ui";
-import { MOCK_ORDERS } from "@/__mocks__/orders";
 import { RouterLink } from "vue-router";
 import {
   ShoppingBag,
@@ -10,58 +9,82 @@ import {
   XCircle,
   Clock,
   FileText,
+  Loader2,
 } from "lucide-vue-next";
+import { ordersApi, type Order, type OrderStatus } from "@/api/customer/orders";
 
 // ── Data ──────────────────────────────────────────────────
-// TODO: GET /api/v1/orders?status=&page=
-const orders = computed(() => MOCK_ORDERS);
+const orders = ref<Order[]>([]);
+const loading = ref(true);
+const page = ref(1);
+const totalPages = ref(1);
+const total = ref(0);
 
 const statusFilter = ref("");
 const statusOpts = [
   { value: "", label: "ทุกสถานะ" },
-  { value: "pending", label: "รอดำเนินการ" },
-  { value: "confirmed", label: "ยืนยันแล้ว" },
-  { value: "shipped", label: "จัดส่งแล้ว" },
-  { value: "completed", label: "สำเร็จ" },
-  { value: "cancelled", label: "ยกเลิก" },
+  { value: "PENDING", label: "รอดำเนินการ" },
+  { value: "CONFIRMED", label: "ยืนยันแล้ว" },
+  { value: "SHIPPED", label: "จัดส่งแล้ว" },
+  { value: "COMPLETED", label: "สำเร็จ" },
+  { value: "CANCELLED", label: "ยกเลิก" },
 ];
 
-const filtered = computed(() =>
-  statusFilter.value
-    ? orders.value.filter((o) => o.status === statusFilter.value)
-    : orders.value,
-);
+async function fetchOrders() {
+  loading.value = true;
+  try {
+    const res = await ordersApi.getAll({
+      page: page.value,
+      limit: 20,
+      status: (statusFilter.value || undefined) as OrderStatus | undefined,
+    });
+    orders.value = res.data.data;
+    totalPages.value = res.data.pagination.totalPages;
+    total.value = res.data.pagination.total;
+  } catch {
+    orders.value = [];
+  } finally {
+    loading.value = false;
+  }
+}
+
+onMounted(fetchOrders);
+
+watch(statusFilter, () => {
+  page.value = 1;
+  fetchOrders();
+});
 
 // ── Status config ─────────────────────────────────────────
 const statusConfig: Record<
   string,
   { label: string; badge: string; icon: any; color: string }
 > = {
-  pending: {
+  PENDING: {
     label: "รอดำเนินการ",
     badge: "badge-yellow",
     icon: Clock,
     color: "text-yellow-600",
   },
-  confirmed: {
+  CONFIRMED: {
     label: "ยืนยันแล้ว",
     badge: "badge-blue",
     icon: FileText,
     color: "text-blue-600",
   },
-  shipped: {
+  SHIPPED: {
     label: "จัดส่งแล้ว",
     badge: "badge-teal",
     icon: Truck,
     color: "text-primary-600",
   },
-  completed: {
+  COMPLETED: {
     label: "สำเร็จ",
     badge: "badge-green",
     icon: CheckCircle,
     color: "text-green-600",
   },
-  cancelled: {
+  CANCELLED: {
     label: "ยกเลิก",
     badge: "badge-red",
     icon: XCircle,
@@ -75,22 +98,22 @@ const stats = computed(() => {
   return [
     {
       label: "ทั้งหมด",
-      count: all.length,
+      count: total.value,
       color: "bg-secondary-100 text-secondary-600",
     },
     {
       label: "รอดำเนินการ",
-      count: all.filter((o) => o.status === "pending").length,
+      count: all.filter((o) => o.status === "PENDING").length,
       color: "bg-yellow-100 text-yellow-700",
     },
     {
       label: "กำลังจัดส่ง",
-      count: all.filter((o) => o.status === "shipped").length,
+      count: all.filter((o) => o.status === "SHIPPED").length,
       color: "bg-primary-100 text-primary-700",
     },
     {
       label: "สำเร็จ",
-      count: all.filter((o) => o.status === "completed").length,
+      count: all.filter((o) => o.status === "COMPLETED").length,
       color: "bg-green-100 text-green-700",
     },
   ];
@@ -146,8 +169,13 @@ function fmtTime(d: string) {
         />
       </div>
 
+      <!-- Loading -->
+      <div v-if="loading" class="flex justify-center py-16">
+        <Loader2 class="w-8 h-8 text-primary-600 animate-spin" />
+      </div>
+
       <!-- Empty state -->
-      <div v-if="filtered.length === 0" class="text-center py-16">
+      <div v-else-if="orders.length === 0" class="text-center py-16">
         <div
           class="w-16 h-16 bg-secondary-100 rounded-full flex items-center justify-center mx-auto mb-4"
         >
@@ -167,7 +195,7 @@ function fmtTime(d: string) {
       <!-- Order list -->
       <div v-else class="space-y-3">
         <RouterLink
-          v-for="order in filtered"
+          v-for="order in orders"
           :key="order.id"
           :to="`/profile/orders/${order.id}`"
           class="block rounded-xl border border-secondary-200 hover:border-primary-300 hover:shadow-sm p-4 transition-all"
@@ -177,16 +205,13 @@ function fmtTime(d: string) {
               <div class="flex items-center gap-2 flex-wrap">
                 <span
                   class="font-mono font-semibold text-secondary-900 text-sm"
-                  >{{ order.id }}</span
+                  >#{{ order.id }}</span
                 >
-                <span :class="['badge', statusConfig[order.status].badge]">
-                  {{ statusConfig[order.status].label }}
-                </span>
                 <span
-                  v-if="order.prescription_status === 'pending'"
-                  class="badge badge-yellow"
+                  v-if="statusConfig[order.status]"
+                  :class="['badge', statusConfig[order.status].badge]"
                 >
-                  ใบสั่งยารอรีวิว
+                  {{ statusConfig[order.status].label }}
                 </span>
               </div>
               <p class="text-xs text-secondary-400 mt-1">
@@ -208,13 +233,11 @@ function fmtTime(d: string) {
             <div
               v-for="item in order.items.slice(0, 4)"
               :key="item.id"
-              class="w-10 h-10 rounded-lg overflow-hidden border border-secondary-100 shrink-0"
+              class="w-10 h-10 rounded-lg overflow-hidden border border-secondary-100 shrink-0 bg-gradient-to-br from-primary-50 to-teal-50 flex items-center justify-center"
             >
-              <img
-                :src="item.product_image"
-                :alt="item.product_name"
-                class="w-full h-full object-cover"
-              />
+              <span class="text-[8px] text-primary-500 font-medium leading-tight text-center p-0.5">
+                {{ item.product_name.slice(0, 10) }}
+              </span>
             </div>
             <span
               v-if="order.items.length > 4"
