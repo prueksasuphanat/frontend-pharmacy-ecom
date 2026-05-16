@@ -2,19 +2,25 @@
  * Notifications API service
  *
  * Provides methods for notification-related API operations.
- * **Validates: Requirements 2.6**
  */
 
 import { apiClient } from "./client";
-import type { Notification } from "@/types";
-import { API_ENDPOINTS } from "@/constants";
+import type { Notification } from "@/types/notification";
 
-/**
- * Notifications response interface
- */
 export interface NotificationsResponse {
-  notifications: Notification[];
-  unreadCount: number;
+  success: boolean;
+  data: Notification[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
+export interface UnreadCountResponse {
+  success: boolean;
+  data: { unread_count: number };
 }
 
 /**
@@ -22,32 +28,28 @@ export interface NotificationsResponse {
  */
 export const notificationsApi = {
   /**
-   * Get all notifications for current user
-   * @returns Promise with notifications data
+   * Get all notifications for current user (paginated)
    */
-  getAll: () =>
-    apiClient.get<NotificationsResponse>(API_ENDPOINTS.NOTIFICATIONS.BASE),
+  getAll: (page = 1, limit = 20) =>
+    apiClient.get<NotificationsResponse>(`/notifications`, {
+      params: { page, limit },
+    }),
 
   /**
-   * Get a single notification by ID
-   * @param id - Notification ID
-   * @returns Promise with notification data
+   * Get unread notification count
    */
-  getById: (id: string) =>
-    apiClient.get<Notification>(API_ENDPOINTS.NOTIFICATIONS.BY_ID(id)),
+  getUnreadCount: () =>
+    apiClient.get<UnreadCountResponse>("/notifications/unread-count"),
 
   /**
    * Mark a notification as read
-   * @param id - Notification ID
-   * @returns Promise with updated notification
    */
-  markAsRead: (id: string) =>
-    apiClient.patch<Notification>(API_ENDPOINTS.NOTIFICATIONS.MARK_READ(id)),
+  markAsRead: (id: number) =>
+    apiClient.patch(`/notifications/${id}/read`),
 
   /**
    * Mark all notifications as read
-   * @returns Promise with update confirmation
    */
   markAllAsRead: () =>
-    apiClient.post(API_ENDPOINTS.NOTIFICATIONS.MARK_ALL_READ),
+    apiClient.patch("/notifications/read-all"),
 };

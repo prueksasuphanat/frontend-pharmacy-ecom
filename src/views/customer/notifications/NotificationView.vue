@@ -62,7 +62,7 @@ function formatTime(iso: string) {
         <RouterLink
           v-for="n in notif.notifications"
           :key="n.id"
-          :to="n.link"
+          :to="n.link || '#'"
           @click="notif.markRead(n.id)"
           :class="[
             'card block hover:shadow-md transition-shadow',

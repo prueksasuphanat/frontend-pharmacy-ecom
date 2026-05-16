@@ -2,7 +2,6 @@
  * Notifications composable
  *
  * Wraps the notification store to provide a clean API for notification operations.
- * **Validates: Requirements 3.4**
  */
 
 import { useNotificationStore } from "@/stores/customer/notification.store";
@@ -22,11 +21,10 @@ export function useNotifications() {
   const isOpen = computed(() => notificationStore.isOpen);
 
   /**
-   * Load notifications (mock implementation)
-   * TODO: Replace with API call
+   * Load notifications from API
    */
   function loadNotifications(): void {
-    notificationStore.loadMockNotifications();
+    notificationStore.fetchNotifications();
   }
 
   /**
@@ -45,9 +43,8 @@ export function useNotifications() {
 
   /**
    * Mark a notification as read
-   * @param id - Notification ID
    */
-  function markAsRead(id: string): void {
+  function markAsRead(id: number): void {
     notificationStore.markRead(id);
   }
 

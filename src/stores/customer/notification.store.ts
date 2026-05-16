@@ -1,20 +1,12 @@
-import type { Notification } from "@/__mocks__/users";
-import {
-  MOCK_ADMIN_NOTIFICATIONS,
-  MOCK_NOTIFICATIONS,
-} from "@/__mocks__/users";
 import { defineStore } from "pinia";
 import { computed, ref } from "vue";
-import { useAuthStore } from "../auth.store";
-
-// TODO: replace polling with real GET /notifications/unread-count every 30s
-// TODO: replace with real PATCH /notifications/:id/read
+import { notificationsApi } from "@/api/notifications";
+import type { Notification } from "@/types/notification";
 
 export const useNotificationStore = defineStore("notification", () => {
-  const auth = useAuthStore();
-
   const notifications = ref<Notification[]>([]);
   const isOpen = ref(false);
+  const loading = ref(false);
   let pollInterval: ReturnType<typeof setInterval> | null = null;
 
   const unreadCount = computed(
@@ -22,19 +14,32 @@ export const useNotificationStore = defineStore("notification", () => {
   );
   const latest5 = computed(() => [...notifications.value].slice(0, 5));
 
-  function loadMockNotifications() {
-    // TODO: replace with GET /notifications
-    notifications.value = auth.isAdmin
-      ? [...MOCK_ADMIN_NOTIFICATIONS]
-      : [...MOCK_NOTIFICATIONS];
+  /**
+   * ดึง notifications จาก API
+   */
+  async function fetchNotifications() {
+    loading.value = true;
+    try {
+      const res = await notificationsApi.getAll(1, 30);
+      notifications.value = res.data.data;
+    } catch {
+      // ถ้าเรียก API ไม่ได้ ไม่ต้อง crash
+    } finally {
+      loading.value = false;
+    }
   }
 
+  /**
+   * เริ่ม polling ทุก 30 วินาที
+   */
   function startPolling() {
-    loadMockNotifications();
-    // TODO: replace with real polling to GET /notifications/unread-count
-    pollInterval = setInterval(loadMockNotifications, 30_000);
+    fetchNotifications();
+    pollInterval = setInterval(fetchNotifications, 30_000);
   }
 
+  /**
+   * หยุด polling
+   */
   function stopPolling() {
     if (pollInterval) {
       clearInterval(pollInterval);
@@ -42,15 +47,39 @@ export const useNotificationStore = defineStore("notification", () => {
     }
   }
 
-  // TODO: connect to PATCH /notifications/:id/read
-  function markRead(id: string) {
+  /**
+   * Mark single notification as read
+   */
+  async function markRead(id: number) {
+    // Optimistic update
     const n = notifications.value.find((n) => n.id === id);
     if (n) n.is_read = true;
+
+    try {
+      await notificationsApi.markAsRead(id);
+    } catch {
+      // revert on error
+      if (n) n.is_read = false;
+    }
   }
 
-  // TODO: connect to PATCH /notifications/read-all
-  function markAllRead() {
+  /**
+   * Mark all notifications as read
+   */
+  async function markAllRead() {
+    // Optimistic update
+    const prev = notifications.value.map((n) => ({ id: n.id, was: n.is_read }));
     notifications.value.forEach((n) => (n.is_read = true));
+
+    try {
+      await notificationsApi.markAllAsRead();
+    } catch {
+      // revert on error
+      prev.forEach((p) => {
+        const n = notifications.value.find((n) => n.id === p.id);
+        if (n) n.is_read = p.was;
+      });
+    }
   }
 
   function toggle() {
@@ -65,7 +94,8 @@ export const useNotificationStore = defineStore("notification", () => {
     unreadCount,
     latest5,
     isOpen,
-    loadMockNotifications,
+    loading,
+    fetchNotifications,
     startPolling,
     stopPolling,
     markRead,
