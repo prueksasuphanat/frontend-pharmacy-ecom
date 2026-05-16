@@ -80,47 +80,48 @@ function formatPrice(n: number) {
 
         <div
           v-for="item in cart.items"
-          :key="item.product_id"
+          :key="item.id"
           class="flex gap-3 p-3 bg-secondary-50 rounded-xl"
         >
           <img
-            :src="item.product_image"
-            :alt="item.product_name"
+            v-if="item.product.image_url"
+            :src="item.product.image_url"
+            :alt="item.product.name"
             class="w-14 h-14 rounded-lg object-cover shrink-0"
           />
+          <div
+            v-else
+            class="w-14 h-14 rounded-lg bg-gradient-to-br from-primary-100 to-teal-100 flex items-center justify-center shrink-0 text-xs text-primary-500 font-semibold text-center leading-snug p-1"
+          >
+            {{ item.product.name }}
+          </div>
           <div class="flex-1 min-w-0">
-            <p
-              class="text-sm font-medium text-secondary-800 line-clamp-2 leading-snug"
-            >
-              {{ item.product_name }}
+            <p class="text-sm font-medium text-secondary-800 line-clamp-2 leading-snug">
+              {{ item.product.name }}
             </p>
-            <p class="text-xs text-secondary-400 mt-0.5">{{ item.unit }}</p>
+            <p class="text-xs text-secondary-400 mt-0.5">{{ item.unit.name }}</p>
             <p class="text-primary-600 font-semibold text-sm mt-1">
               ฿{{ formatPrice(item.unit_price) }}
             </p>
           </div>
           <div class="flex flex-col items-end gap-2 shrink-0">
             <button
-              @click="cart.removeItem(item.product_id)"
+              @click="cart.removeItem(item.id)"
               class="p-1 text-secondary-300 hover:text-danger transition-colors"
             >
               <Trash2 class="w-3.5 h-3.5" />
             </button>
-            <div
-              class="flex items-center gap-1.5 border border-secondary-200 rounded-lg"
-            >
+            <div class="flex items-center gap-1.5 border border-secondary-200 rounded-lg">
               <button
-                @click="cart.updateQty(item.product_id, item.quantity - 1)"
+                @click="cart.updateQty(item.id, item.quantity - 1)"
                 class="w-6 h-6 flex items-center justify-center hover:bg-secondary-50 rounded-md transition-colors"
               >
                 <Minus class="w-3 h-3" />
               </button>
-              <span class="text-sm font-medium w-6 text-center">{{
-                item.quantity
-              }}</span>
+              <span class="text-sm font-medium w-6 text-center">{{ item.quantity }}</span>
               <button
-                @click="cart.updateQty(item.product_id, item.quantity + 1)"
-                :disabled="item.quantity >= item.stock"
+                @click="cart.updateQty(item.id, item.quantity + 1)"
+                :disabled="item.quantity >= item.product.stock"
                 class="w-6 h-6 flex items-center justify-center hover:bg-secondary-50 rounded-md transition-colors disabled:opacity-30"
               >
                 <Plus class="w-3 h-3" />

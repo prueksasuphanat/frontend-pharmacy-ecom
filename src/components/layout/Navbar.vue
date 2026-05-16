@@ -17,6 +17,7 @@ import {
 } from "lucide-vue-next";
 import { useAuthStore } from "@/stores/auth.store";
 import { useCartStore } from "@/stores/customer/cart.store";
+import { useOrderStore } from "@/stores/customer/order.store";
 import { useNotificationStore } from "@/stores/customer/notification.store";
 import MiniCart from "@/components/cart/MiniCart.vue";
 import NotificationBell from "@/components/notification/NotificationBell.vue";
@@ -24,6 +25,7 @@ import NotificationBell from "@/components/notification/NotificationBell.vue";
 const router = useRouter();
 const auth = useAuthStore();
 const cart = useCartStore();
+const orderStore = useOrderStore();
 const notif = useNotificationStore();
 
 const mobileOpen = ref(false);
@@ -45,7 +47,8 @@ onUnmounted(() => {
 
 async function logout() {
   await auth.logoutWithApi();
-  cart.clearCart();
+  cart.reset();
+  orderStore.reset();
   router.push("/login");
 }
 </script>
@@ -150,7 +153,7 @@ async function logout() {
                   <User class="w-4 h-4" /> โปรไฟล์
                 </RouterLink>
                 <RouterLink
-                  to="/profile/orders"
+                  to="/orders"
                   @click="userMenuOpen = false"
                   class="flex items-center gap-2.5 px-4 py-2 text-sm text-secondary-700 hover:bg-secondary-50"
                 >

@@ -1,17 +1,11 @@
 /**
  * Cart composable
- *
- * Wraps the cart store to provide a clean API for cart operations.
- * **Validates: Requirements 3.3**
+ * Thin wrapper around cart store for convenience in components.
  */
 
 import { useCartStore } from "@/stores/customer/cart.store";
 import { computed } from "vue";
 
-/**
- * Cart composable
- * Provides reactive cart state and methods
- */
 export function useCart() {
   const cartStore = useCartStore();
 
@@ -21,63 +15,38 @@ export function useCart() {
   const subtotal = computed(() => cartStore.subtotal);
   const shippingFee = computed(() => cartStore.shippingFee);
   const total = computed(() => cartStore.total);
-  const hasPrescriptionItem = computed(() => cartStore.hasPrescriptionItem);
+  const isLoading = computed(() => cartStore.isLoading);
 
-  /**
-   * Add a product to the cart
-   * @param productId - Product ID
-   * @param quantity - Quantity to add (default: 1)
-   */
-  function addToCart(productId: string, quantity = 1): void {
-    cartStore.addToCart(productId, quantity);
+  /** Add to cart by product_unit_id */
+  async function addToCart(productUnitId: number, quantity = 1): Promise<void> {
+    await cartStore.addToCart(productUnitId, quantity);
   }
 
-  /**
-   * Update the quantity of a cart item
-   * @param productId - Product ID
-   * @param quantity - New quantity
-   */
-  function updateQuantity(productId: string, quantity: number): void {
-    cartStore.updateQty(productId, quantity);
+  /** Update quantity by cart item id */
+  async function updateQuantity(cartItemId: number, quantity: number): Promise<void> {
+    await cartStore.updateQty(cartItemId, quantity);
   }
 
-  /**
-   * Remove an item from the cart
-   * @param productId - Product ID
-   */
-  function removeFromCart(productId: string): void {
-    cartStore.removeItem(productId);
+  /** Remove by cart item id */
+  async function removeFromCart(cartItemId: number): Promise<void> {
+    await cartStore.removeItem(cartItemId);
   }
 
-  /**
-   * Clear all items from the cart
-   */
-  function clearCart(): void {
-    cartStore.clearCart();
-  }
-
-  /**
-   * Move an item from cart to wishlist
-   * @param productId - Product ID
-   */
-  function moveToWishlist(productId: string): void {
-    cartStore.moveToWishlist(productId);
+  /** Clear all */
+  async function clearCart(): Promise<void> {
+    await cartStore.clearCart();
   }
 
   return {
-    // State
     items,
     totalItems,
     subtotal,
     shippingFee,
     total,
-    hasPrescriptionItem,
-
-    // Methods
+    isLoading,
     addToCart,
     updateQuantity,
     removeFromCart,
     clearCart,
-    moveToWishlist,
   };
 }

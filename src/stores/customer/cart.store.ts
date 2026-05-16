@@ -1,101 +1,132 @@
-import { MOCK_PRICES, MOCK_PRODUCTS } from "@/__mocks__/products";
-import { useAuthStore } from "@/stores/auth.store";
-import type { CartItem } from "@/types/cart";
 import { defineStore } from "pinia";
 import { computed, ref } from "vue";
+import { cartApi } from "@/api/cart";
+import type { CartItem, CartData } from "@/types/cart";
 
-// TODO: replace with server-side cart_items API calls
+const EMPTY_CART: CartData = {
+  items: [],
+  subtotal: 0,
+  shipping_fee: 0,
+  total: 0,
+  total_items: 0,
+};
 
 export const useCartStore = defineStore("cart", () => {
-  const items = ref<CartItem[]>(
-    JSON.parse(localStorage.getItem("mock_cart") || "[]"),
-  );
+  const cart = ref<CartData>({ ...EMPTY_CART });
+  const isLoading = ref(false);
+  const error = ref<string | null>(null);
 
-  const totalItems = computed(() =>
-    items.value.reduce((s, i) => s + i.quantity, 0),
-  );
-  const subtotal = computed(() =>
-    items.value.reduce((s, i) => s + i.quantity * i.unit_price, 0),
-  );
-  const shippingFee = computed(() => (subtotal.value >= 1000 ? 0 : 50));
-  const total = computed(() => subtotal.value + shippingFee.value);
-  const hasPrescriptionItem = computed(() =>
-    items.value.some((i) => i.requires_prescription),
-  );
+  // Computed shortcuts
+  const items = computed(() => cart.value.items);
+  const totalItems = computed(() => cart.value.total_items);
+  const subtotal = computed(() => cart.value.subtotal);
+  const shippingFee = computed(() => cart.value.shipping_fee);
+  const total = computed(() => cart.value.total);
 
-  function saveLocal() {
-    localStorage.setItem("mock_cart", JSON.stringify(items.value));
+  function setCart(data: CartData) {
+    cart.value = data;
   }
 
-  // TODO: connect to POST /cart/items
-  function addToCart(productId: string, qty = 1) {
-    const auth = useAuthStore();
-    const product = MOCK_PRODUCTS.find((p) => p.id === productId);
-    if (!product) return;
-
-    const roleName = "CUSTOMER";
-    const prices = MOCK_PRICES[productId];
-    const price = prices?.[roleName] ?? product.base_price;
-
-    const existing = items.value.find((i) => i.product_id === productId);
-    if (existing) {
-      existing.quantity = Math.min(existing.quantity + qty, product.stock);
-    } else {
-      items.value.push({
-        product_id: product.id,
-        product_name: product.name,
-        product_image: product.image_url,
-        sku: product.sku,
-        unit: product.unit,
-        quantity: qty,
-        unit_price: price,
-        stock: product.stock,
-        requires_prescription: product.drug_type === "prescription",
-      });
+  // ==========================================
+  // Fetch cart (on app load / after login)
+  // ==========================================
+  async function fetchCart(): Promise<void> {
+    isLoading.value = true;
+    error.value = null;
+    try {
+      const res = await cartApi.getCart();
+      setCart(res.data.data);
+    } catch (err: any) {
+      // 401 = not logged in → empty cart is ok
+      if (err.response?.status !== 401) {
+        error.value = err.response?.data?.message ?? "เกิดข้อผิดพลาด";
+      }
+      setCart({ ...EMPTY_CART });
+    } finally {
+      isLoading.value = false;
     }
-    saveLocal();
   }
 
-  // TODO: connect to PATCH /cart/items/:productId
-  function updateQty(productId: string, qty: number) {
-    const item = items.value.find((i) => i.product_id === productId);
-    if (!item) return;
-    if (qty <= 0) {
-      removeItem(productId);
+  // ==========================================
+  // Add item — called from ProductDetailModal
+  // ==========================================
+  async function addToCart(productUnitId: number, qty = 1): Promise<void> {
+    isLoading.value = true;
+    try {
+      const res = await cartApi.addItem({ product_unit_id: productUnitId, quantity: qty });
+      setCart(res.data.data);
+    } catch (err: any) {
+      error.value = err.response?.data?.message ?? "ไม่สามารถเพิ่มสินค้าได้";
+      throw err; // ให้ modal แสดง error เอง
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  // ==========================================
+  // Update qty
+  // ==========================================
+  async function updateQty(cartItemId: number, qty: number): Promise<void> {
+    if (qty < 1) {
+      await removeItem(cartItemId);
       return;
     }
-    item.quantity = Math.min(qty, item.stock);
-    saveLocal();
+    try {
+      const res = await cartApi.updateItem(cartItemId, { quantity: qty });
+      setCart(res.data.data);
+    } catch (err: any) {
+      error.value = err.response?.data?.message ?? "ไม่สามารถอัปเดตได้";
+    }
   }
 
-  // TODO: connect to DELETE /cart/items/:productId
-  function removeItem(productId: string) {
-    items.value = items.value.filter((i) => i.product_id !== productId);
-    saveLocal();
+  // ==========================================
+  // Remove item
+  // ==========================================
+  async function removeItem(cartItemId: number): Promise<void> {
+    try {
+      const res = await cartApi.removeItem(cartItemId);
+      setCart(res.data.data);
+    } catch (err: any) {
+      error.value = err.response?.data?.message ?? "ไม่สามารถลบได้";
+    }
   }
 
-  // TODO: connect to DELETE /cart
-  function clearCart() {
-    items.value = [];
-    saveLocal();
+  // ==========================================
+  // Clear cart
+  // ==========================================
+  async function clearCart(): Promise<void> {
+    try {
+      await cartApi.clearCart();
+      setCart({ ...EMPTY_CART });
+    } catch (err: any) {
+      error.value = err.response?.data?.message ?? "ไม่สามารถล้างตะกร้าได้";
+    }
   }
 
-  function moveToWishlist(productId: string) {
-    removeItem(productId);
-    // TODO: call wishlist store/api
+  // ==========================================
+  // Reset on logout
+  // ==========================================
+  function reset() {
+    setCart({ ...EMPTY_CART });
+    error.value = null;
   }
 
   return {
+    // state
+    cart,
     items,
     totalItems,
     subtotal,
     shippingFee,
     total,
-    hasPrescriptionItem,
+    isLoading,
+    error,
+    // actions
+    fetchCart,
     addToCart,
     updateQty,
     removeItem,
     clearCart,
-    moveToWishlist,
+    reset,
   };
 });

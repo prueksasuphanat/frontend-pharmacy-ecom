@@ -1,6 +1,6 @@
 # Frontend — Claude Code Context
 
-> Last updated: 2026-04-26
+> Last updated: 2026-05-16
 > For backend context, stack details, and DB schema → see `backend/CLAUDE.md`
 
 ## Tech Stack
@@ -8,7 +8,7 @@
 | Tech               | Version    | Notes                          |
 | ------------------ | ---------- | ------------------------------ |
 | Vue                | 3.5.32     | Composition API only           |
-| Vite               | 8.0.4      | Build tool                     |
+| Vite               | 8.0.13     | Build tool                     |
 | TypeScript         | 6.0.2      |                                |
 | Pinia              | 3.0.4      | State management               |
 | Vue Router         | 4.6.4      |                                |
@@ -17,7 +17,7 @@
 | VeeValidate        | 4.15.1     | Forms + Thai error messages    |
 | @vueuse/core       | 14.2.1     |                                |
 | ApexCharts         | 5.10.6     | via vue3-apexcharts            |
-| Lucide Vue         | 1.0.0      | Icons                          |
+| lucide-vue-next    | 1.0.0      | Icons                          |
 | vue-toastification | 2.0.0-rc.5 |                                |
 | dayjs              | 1.11.20    |                                |
 
@@ -44,15 +44,19 @@ frontend/src/
 ├── api/
 │   ├── client.ts              # Axios instance + JWT interceptors + auto token refresh
 │   ├── auth.ts
-│   ├── cart.ts                # placeholder
-│   ├── notifications.ts       # placeholder
+│   ├── cart.ts                # connected to backend Cart API
+│   ├── notifications.ts       # notifications API
 │   ├── index.ts               # barrel exports
+│   ├── customer/
+│   │   └── profile.ts         # PATCH /api/v1/customer/profile
+│   ├── public/                # public-facing API (products, categories)
 │   └── admin/
 │       ├── products.ts
 │       ├── logs.ts
 │       └── settings/
 │           ├── categories.ts
 │           ├── productPrices.ts
+│           ├── units.ts
 │           └── users.ts
 ├── components/
 │   ├── layout/                # Navbar, Footer, AdminSidebar
@@ -77,16 +81,19 @@ frontend/src/
 │   ├── guards/auth.guard.ts
 │   └── routes/                # public, customer, admin, error routes
 ├── stores/
+│   ├── index.ts               # barrel exports all stores
 │   ├── auth.store.ts
-│   ├── cart.store.ts          # ⚠️ mock data + localStorage — not connected to API
-│   ├── notification.store.ts  # ⚠️ mock data — not connected to API
-│   └── admin/
-│       ├── product.store.ts
-│       ├── productPrice.store.ts
-│       ├── logs.store.ts
-│       └── settings/
-│           ├── category.store.ts
-│           └── users.store.ts
+│   ├── admin/
+│   │   ├── logs.store.ts
+│   │   ├── product.store.ts
+│   │   ├── productPrice.store.ts
+│   │   └── settings/
+│   │       ├── category.store.ts
+│   │       ├── unit.store.ts          # ✅ fully connected
+│   │       └── users.store.ts
+│   └── customer/
+│       ├── cart.store.ts          # ⚠️ mock data — not connected to API
+│       └── notification.store.ts  # ⚠️ mock data — not connected to API
 ├── types/                     # user, product, cart, order, notification, category, productPrice, pricingLog
 ├── utils/
 │   ├── env.ts
@@ -98,6 +105,7 @@ frontend/src/
 │   ├── public/                # login, register, forgot/reset password, verify email, product list
 │   ├── customer/              # cart, checkout, orders, profile, security, addresses, wishlist, notifications
 │   ├── admin/                 # dashboard, inventory, orders, logs, settings/
+│   │   └── settings/          # categories, units, users, product-price, product-units
 │   └── errors/                # 403, 404
 ├── __mocks__/                 # Mock data (products, orders, inventory, users/notifications)
 ├── App.vue
@@ -108,16 +116,16 @@ frontend/src/
 
 ### Public (no auth required)
 
-| Path                 | View             | Meta                          |
-| -------------------- | ---------------- | ----------------------------- |
-| `/`                  | → `/products`    |                               |
-| `/login`             | LoginView        | guestOnly                     |
-| `/register`          | RegisterView     | guestOnly                     |
-| `/register/complete` | RegisterComplete | guestOnly + sessionStorage guard |
-| `/verify-email`      | VerifyEmailView  |                               |
-| `/forgot-password`   | ForgotPasswordView | guestOnly                   |
-| `/reset-password`    | ResetPasswordView |                              |
-| `/products`          | ProductListView  |                               |
+| Path                 | View              | Meta                              |
+| -------------------- | ----------------- | --------------------------------- |
+| `/`                  | → `/products`     |                                   |
+| `/login`             | LoginView         | guestOnly                         |
+| `/register`          | RegisterView      | guestOnly                         |
+| `/register/complete` | RegisterComplete  | guestOnly + sessionStorage guard  |
+| `/verify-email`      | VerifyEmailView   |                                   |
+| `/forgot-password`   | ForgotPasswordView| guestOnly                         |
+| `/reset-password`    | ResetPasswordView |                                   |
+| `/products`          | ProductListView   |                                   |
 
 ### Customer (requiresAuth)
 
@@ -125,7 +133,7 @@ frontend/src/
 
 ### Admin (requiresAuth + ADMIN/DEMO)
 
-`/admin/dashboard`, `/admin/orders`, `/admin/orders/:id`, `/admin/products`, `/admin/logs`, `/admin/settings` + sub-routes (categories, users, product-price)
+`/admin/dashboard`, `/admin/orders`, `/admin/orders/:id`, `/admin/products`, `/admin/logs`, `/admin/settings` + sub-routes (categories, units, users, product-price, product-units)
 
 ### Error
 
@@ -159,6 +167,11 @@ frontend/src/
 - Polling every 30s but calls no real API
 - TODO: connect to backend Notification API
 
+### unit.store.ts ✅ Fully connected
+
+- State: `units`, `isLoading`, `error`, `pagination`
+- Actions: `fetchUnits()`, `createUnit()`, `updateUnit()`, `deleteUnit()`, `toggleActive()`
+
 ## API Client
 
 - Base URL: `VITE_API_BASE_URL`
@@ -186,7 +199,7 @@ frontend/src/
 VITE_API_BASE_URL=http://localhost:3000/api/v1
 VITE_APP_NAME=Phanadrug
 VITE_APP_VERSION=1.0.0
-VITE_S3_BUCKET_URL=          # optional
+VITE_S3_BUCKET_URL=          # optional — Cloudflare R2 public URL
 ```
 
 ## Coding Conventions
@@ -197,6 +210,7 @@ VITE_S3_BUCKET_URL=          # optional
 - `import type { ... }` for types
 - `@/` alias — never relative paths with `../../../`
 - `useToast()` composable — never import vue-toastification directly
+- Error messages in Thai
 
 ### Store action pattern
 
@@ -223,8 +237,8 @@ async someAction(): Promise<boolean> {
 ### API module pattern
 
 ```typescript
-// src/api/admin/something.ts
-export const somethingApi = {
+// src/api/admin/settings/units.ts
+export const unitsApi = {
   getAll: (params?: Params) => apiClient.get<Response>('/endpoint', { params }),
   getById: (id: number) => apiClient.get<Response>(`/endpoint/${id}`),
   create: (data: CreatePayload) => apiClient.post<Response>('/endpoint', data),
@@ -235,21 +249,21 @@ export const somethingApi = {
 
 ### Naming
 
-| Thing        | Convention          | Example                        |
-| ------------ | ------------------- | ------------------------------ |
-| Vue files    | PascalCase          | `AdminInventoryView.vue`       |
-| TS files     | camelCase/kebab     | `auth.store.ts`, `product-price.routes.ts` |
-| Stores       | `use{Name}Store`    | `useAuthStore`                 |
-| Composables  | `use{Name}`         | `useAuth`, `useCart`           |
-| API modules  | `{name}Api`         | `authApi`, `productsApi`       |
-| Route consts | UPPER_CASE in ROUTES |                               |
+| Thing        | Convention           | Example                                 |
+| ------------ | -------------------- | --------------------------------------- |
+| Vue files    | PascalCase           | `AdminInventoryView.vue`                |
+| TS files     | camelCase/kebab      | `auth.store.ts`, `product-price.routes.ts` |
+| Stores       | `use{Name}Store`     | `useAuthStore`, `useUnitStore`          |
+| Composables  | `use{Name}`          | `useAuth`, `useCart`                    |
+| API modules  | `{name}Api`          | `authApi`, `unitsApi`                   |
+| Route consts | UPPER_CASE in ROUTES |                                         |
 
 ### Adding a new feature
 
 1. Create types in `src/types/`
 2. Create API functions in `src/api/`
 3. Export from `src/api/index.ts`
-4. Create/update store in `src/stores/`
+4. Create/update store in `src/stores/` (export from `src/stores/index.ts`)
 5. Create/update view in `src/views/`
 6. Add route in `src/router/routes/`
 
@@ -262,7 +276,7 @@ export const somethingApi = {
 ### New admin table
 
 - Use `BaseTable.vue`
-- Follow existing store pattern (see `category.store.ts`)
+- Follow existing store pattern (see `unit.store.ts` or `category.store.ts`)
 - Must include: pagination, search, loading state
 
 ## Business Logic
@@ -272,44 +286,38 @@ export const somethingApi = {
 - DEMO role counts as admin: `isAdmin = role === "ADMIN" || role === "DEMO"`
 - `/register/complete` requires `sessionStorage.fromRegister` (prevents direct access)
 
-### Pricing
+### Pricing (Multi-Unit)
 
-- `is_special_pricing_enabled = true` → show user's special price
-- Otherwise → show `default_price`
-- `productPricesApi.getProductPrices({ product_ids: [...] })` is **POST** not GET
-- Response is a matrix: `[{ product_id, data: [{ user_id, price }] }]`
-- Bulk update: `[{ product_id, user_id, price }]`
-
-## Known Issues & Gotchas
-
-| Issue | Detail |
-| ----- | ------ |
-| `isAdmin` getter bug | `auth.store.ts` only checks `role === "ADMIN"`, but auth guard checks ADMIN \| DEMO. DEMO users won't get `isAdmin = true` from store. |
-| `refreshAccessToken` bug | Tries to save `response.data.data.refreshToken` but backend only returns `accessToken`. The refresh token never gets updated in localStorage. |
-| tsconfig `ignoreDeprecations: "6.0"` | Shows TS errors in IDE but build succeeds |
-| cart.store uses `roleName` hardcoded | `const roleName = "CUSTOMER"` — hardcoded, doesn't use actual user role |
-| `ADMIN.SETTINGS.USERS.FULLNAME` | Missing leading `/` — `"admin/users/user-fullname"` should be `"/admin/users/user-fullname"` |
-| `ADMIN.PRODUCT_PRICES.BASE` | Uses POST for read — not GET |
-| `API_ENDPOINTS` missing entries | No admin units, product-units, categories endpoints in `constants/api.ts` |
-
-## Critical Files — Edit with Care
-
-| File | Why |
-| ---- | --- |
-| `src/api/client.ts` | Touches all auth/request flow |
-| `src/router/index.ts` + `auth.guard.ts` | Affects entire auth flow |
-| `src/stores/auth.store.ts` | Used by every authenticated component |
-| `src/constants/api.ts` | Must stay in sync with backend routes |
-
-## Pricing Model (Updated — Multi-Unit)
-
-Backend now uses `ProductUnit` — pricing is **per unit, not per product**:
+Backend uses `ProductUnit` — pricing is **per unit, not per product**:
 
 - Each product has multiple `ProductUnit` entries (ซอง, กล่อง, ลัง)
 - Each `ProductUnit` has its own `default_price` and `multiplier_to_base`
 - `ProductPrice` links `user_id + product_unit_id`
-- `getAllProductPrice` returns: `[{ product_id, units: [{ product_unit_id, unit_name, default_price, users: [...] }] }]`
-- Frontend `productPrice.store.ts` may need updating to match this structure
+- `productPricesApi.getProductPrices({ product_ids: [...] })` is **POST** not GET
+- Response: `[{ product_id, units: [{ product_unit_id, unit_name, default_price, users: [...] }] }]`
+- Bulk update: `[{ product_id, user_id, price }]`
+- `is_special_pricing_enabled = true` → show user's special price, otherwise → `default_price`
+
+## Known Issues & Gotchas
+
+| Issue                                           | Detail                                                                                                   |
+| ----------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `isAdmin` getter bug                            | `auth.store.ts` only checks `role === "ADMIN"`, but auth guard checks ADMIN \| DEMO. DEMO users won't get `isAdmin = true` from store. |
+| `refreshAccessToken` bug                        | Tries to save `response.data.data.refreshToken` but backend only returns `accessToken`. The refresh token never gets updated in localStorage. |
+| tsconfig `ignoreDeprecations: "6.0"`            | Shows TS errors in IDE but build succeeds                                                                |
+| cart.store uses `roleName` hardcoded            | `const roleName = "CUSTOMER"` — hardcoded, doesn't use actual user role                                  |
+| `ADMIN.SETTINGS.USERS.FULLNAME` missing `/`    | `"admin/users/user-fullname"` should be `"/admin/users/user-fullname"`                                   |
+| `ADMIN.PRODUCT_PRICES.BASE` uses POST for read  | Not GET — must pass product_ids in body                                                                  |
+| `API_ENDPOINTS` missing entries                 | No admin units, product-units, categories endpoints in `constants/api.ts`                                |
+
+## Critical Files — Edit with Care
+
+| File                             | Why                                          |
+| -------------------------------- | -------------------------------------------- |
+| `src/api/client.ts`              | Touches all auth/request flow                |
+| `src/router/index.ts` + `auth.guard.ts` | Affects entire auth flow              |
+| `src/stores/auth.store.ts`       | Used by every authenticated component        |
+| `src/constants/api.ts`           | Must stay in sync with backend routes        |
 
 ## Development Status
 
@@ -318,9 +326,10 @@ Backend now uses `ProductUnit` — pricing is **per unit, not per product**:
 - Full auth flow (login, register, forgot/reset password, verify email)
 - Route guards (auth, admin, guest-only)
 - Auto token refresh (Axios interceptor)
-- Admin: dashboard structure, inventory, categories, users, pricing matrix, audit logs
+- Admin: dashboard structure, inventory, categories, **units** (fully connected), users, pricing matrix, audit logs
+- Admin settings: product-units management view exists
 - Reusable UI components (Base + VeeValidate-wrapped)
-- Thai locale (validation messages, currency, dates)
+- Thai locale (validation messages, currency, dates) — i18n fully implemented
 - Toast notifications, responsive layouts
 
 ### TODO 🔲
@@ -337,3 +346,4 @@ Backend now uses `ProductUnit` — pricing is **per unit, not per product**:
 - Product list filter/search UI → incomplete
 - File upload (prescription, profile image) → component exists, no storage
 - Payment integration → not started
+- Admin: Vendor management page (no UI yet)

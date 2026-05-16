@@ -50,7 +50,7 @@ function formatPrice(n: number) {
 function addToCart() {
   if (!product.value || product.value.quantity === 0 || !selectedUnit.value)
     return;
-  cart.addToCart(String(product.value.id), qty.value);
+  cart.addToCart(selectedUnit.value.id, qty.value);
   addedToCart.value = true;
   setTimeout(() => (addedToCart.value = false), 2000);
 }

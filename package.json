@@ -16,7 +16,7 @@
     "postcss": "^8.5.9",
     "tailwindcss": "^3.4.19",
     "typescript": "~6.0.2",
-    "vite": "^8.0.4"
+    "vite": "^8.0.13"
   },
   "dependencies": {
     "@vee-validate/i18n": "^4.15.1",
