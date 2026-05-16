@@ -242,7 +242,6 @@ function getLabelIcon(label: string | null) {
         </div>
         <!-- AddressForm: cascade จังหวัด → อำเภอ → ตำบล → รหัสไปรษณีย์ auto-fill -->
         <AddressForm v-model="addressFormValue" />
-        </div>
       </form>
       <template #footer>
         <button @click="showModal = false" class="btn-ghost">ยกเลิก</button>
