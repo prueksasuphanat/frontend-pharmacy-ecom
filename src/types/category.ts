@@ -29,3 +29,8 @@ export interface CategoryListResponse {
     totalPages: number;
   };
 }
+
+export interface PublicCategory {
+  id: number;
+  name: string;
+}

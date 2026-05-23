@@ -1,9 +1,5 @@
 import { apiClient } from "../client";
-
-export interface PublicCategory {
-  id: number;
-  name: string;
-}
+import type { PublicCategory } from "@/types";
 
 export interface PublicCategoriesResponse {
   success: boolean;

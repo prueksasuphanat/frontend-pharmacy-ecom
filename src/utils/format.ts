@@ -1,42 +1,67 @@
+import dayjs from "./dayjs";
+import numeral from "numeral";
+
 export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat("th-TH", {
-    style: "currency",
-    currency: "THB",
-  }).format(amount);
+  if (amount === undefined || amount === null || isNaN(amount)) return "฿0.00";
+  return `฿${numeral(amount).format("0,0.00")}`;
 }
 
 export function formatNumber(value: number): string {
-  return new Intl.NumberFormat("th-TH").format(value);
+  if (value === undefined || value === null || isNaN(value)) return "0";
+  return numeral(value).format("0,0");
 }
 
 export function formatPrice(value: number): string {
-  return new Intl.NumberFormat("th-TH", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value);
+  if (value === undefined || value === null || isNaN(value)) return "0.00";
+  return numeral(value).format("0,0.00");
 }
 
 export function formatPriceWithSymbol(value: number): string {
-  return `฿${formatPrice(value)}`;
+  return formatCurrency(value);
 }
 
-export function formatDateTime(date: string | Date): string {
-  return new Intl.DateTimeFormat("th-TH", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(date));
-}
+export const formatDate = (
+  date: string | Date | null | undefined,
+  formatStr: string = "D MMMM BBBB",
+): string => {
+  if (!date) return "-";
+  return dayjs(date).format(formatStr);
+};
 
-export function formatDate(date: string | Date): string {
-  return new Intl.DateTimeFormat("th-TH", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  }).format(new Date(date));
-}
+export const formatDateTime = (
+  date: string | Date | null | undefined,
+): string => {
+  if (!date) return "-";
+  return dayjs(date).format("D MMM BBBB HH:mm");
+};
+
+export const formatTime = (date: string | Date | null | undefined): string => {
+  if (!date) return "-";
+  return dayjs(date).format("HH:mm");
+};
+
+export const formatDateShort = (
+  date: string | Date | null | undefined,
+): string => {
+  if (!date) return "-";
+  return dayjs(date).format("DD/MM/BBBB");
+};
+
+export const fromNow = (date: string | Date | null | undefined): string => {
+  if (!date) return "-";
+  return dayjs(date).fromNow();
+};
+
+export const toLocal = (date: string | Date) => dayjs.tz(date, "Asia/Bangkok");
+
+export const toIctDateRange = (
+  dateStr: string,
+): { gte: string; lte: string } => ({
+  gte: dayjs.tz(`${dateStr} 00:00:00`, "Asia/Bangkok").toISOString(),
+  lte: dayjs.tz(`${dateStr} 23:59:59`, "Asia/Bangkok").toISOString(),
+});
+
+export const toDateParam = (localDate: string): string => localDate;
 
 export function formatUserName(user: {
   title?: string | null;
@@ -53,6 +78,7 @@ export function formatUserName(user: {
 }
 
 export function truncateText(text: string, maxLength: number): string {
+  if (!text) return "";
   if (text.length <= maxLength) return text;
   return text.slice(0, maxLength) + "...";
 }

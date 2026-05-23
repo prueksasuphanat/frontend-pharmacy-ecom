@@ -1,6 +1,7 @@
 <script setup lang="ts" generic="T extends Record<string, any>">
 import { computed } from "vue";
 import { ChevronLeft, ChevronRight } from "lucide-vue-next";
+import type { Pagination } from "@/types";
 
 export interface Column<T> {
   key: keyof T | string;
@@ -12,19 +13,12 @@ export interface Column<T> {
   fixed?: "left" | "right" | boolean;
 }
 
-export interface PaginationConfig {
-  page: number;
-  totalPages: number;
-  total: number;
-  limit?: number;
-}
-
 interface Props {
   columns: Column<T>[];
   data: T[];
   loading?: boolean;
   emptyText?: string;
-  pagination?: PaginationConfig;
+  pagination?: Pagination;
   hoverable?: boolean;
   striped?: boolean;
 }
@@ -264,6 +258,7 @@ function isFixed(column: Column<T>) {
           :class="{
             'opacity-50 cursor-not-allowed': pagination.page === 1,
           }"
+          aria-label="ย้อนกลับไปหน้าก่อนหน้า"
         >
           <ChevronLeft class="w-4 h-4" />
         </button>
@@ -280,6 +275,8 @@ function isFixed(column: Column<T>) {
               'cursor-default': page === '...',
             },
           ]"
+          :aria-label="typeof page === 'number' ? `ไปที่หน้า ${page}` : undefined"
+          :aria-current="page === pagination.page ? 'page' : undefined"
         >
           {{ page }}
         </button>
@@ -291,6 +288,7 @@ function isFixed(column: Column<T>) {
           :class="{
             'opacity-50 cursor-not-allowed': pagination.page === totalPages,
           }"
+          aria-label="ไปที่หน้าถัดไป"
         >
           <ChevronRight class="w-4 h-4" />
         </button>

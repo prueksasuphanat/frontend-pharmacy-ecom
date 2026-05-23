@@ -8,22 +8,22 @@ import type {
 } from "@/types/address";
 
 async function loadGeographies(): Promise<Geography[]> {
-  const mod = await import("@/data/provices/geographies.json");
+  const mod = await import("@/data/provinces/geographies.json");
   return mod.default as Geography[];
 }
 
 async function loadProvinces(): Promise<Province[]> {
-  const mod = await import("@/data/provices/provices.json");
+  const mod = await import("@/data/provinces/provinces.json");
   return mod.default as Province[];
 }
 
 async function loadDistricts(): Promise<District[]> {
-  const mod = await import("@/data/provices/districts.json");
+  const mod = await import("@/data/provinces/districts.json");
   return mod.default as District[];
 }
 
 async function loadSubDistricts(): Promise<SubDistrict[]> {
-  const mod = await import("@/data/provices/subdisticts.json");
+  const mod = await import("@/data/provinces/subdistricts.json");
   return mod.default as SubDistrict[];
 }
 

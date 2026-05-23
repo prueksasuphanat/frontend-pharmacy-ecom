@@ -5,21 +5,21 @@
 
 ## Tech Stack
 
-| Tech               | Version    | Notes                          |
-| ------------------ | ---------- | ------------------------------ |
-| Vue                | 3.5.32     | Composition API only           |
-| Vite               | 8.0.13     | Build tool                     |
-| TypeScript         | 6.0.2      |                                |
-| Pinia              | 3.0.4      | State management               |
-| Vue Router         | 4.6.4      |                                |
-| Axios              | 1.15.0     | + JWT interceptors             |
-| Tailwind CSS       | 3.4.19     |                                |
-| VeeValidate        | 4.15.1     | Forms + Thai error messages    |
-| @vueuse/core       | 14.2.1     |                                |
-| ApexCharts         | 5.10.6     | via vue3-apexcharts            |
-| lucide-vue-next    | 1.0.0      | Icons                          |
-| vue-toastification | 2.0.0-rc.5 |                                |
-| dayjs              | 1.11.20    |                                |
+| Tech               | Version    | Notes                       |
+| ------------------ | ---------- | --------------------------- |
+| Vue                | 3.5.32     | Composition API only        |
+| Vite               | 8.0.13     | Build tool                  |
+| TypeScript         | 6.0.2      |                             |
+| Pinia              | 3.0.4      | State management            |
+| Vue Router         | 4.6.4      |                             |
+| Axios              | 1.15.0     | + JWT interceptors          |
+| Tailwind CSS       | 3.4.19     |                             |
+| VeeValidate        | 4.15.1     | Forms + Thai error messages |
+| @vueuse/core       | 14.2.1     |                             |
+| ApexCharts         | 5.10.6     | via vue3-apexcharts         |
+| lucide-vue-next    | 1.0.0      | Icons                       |
+| vue-toastification | 2.0.0-rc.5 |                             |
+| dayjs              | 1.11.20    |                             |
 
 ## Quick Start
 
@@ -65,16 +65,16 @@ frontend/src/
 
 ### Public (no auth)
 
-| Path                 | View              | Meta                              |
-| -------------------- | ----------------- | --------------------------------- |
-| `/`                  | → `/products`     |                                   |
-| `/login`             | LoginView         | guestOnly                         |
-| `/register`          | RegisterView      | guestOnly                         |
-| `/register/complete` | RegisterComplete  | guestOnly + sessionStorage guard  |
-| `/verify-email`      | VerifyEmailView   |                                   |
-| `/forgot-password`   | ForgotPasswordView| guestOnly                         |
-| `/reset-password`    | ResetPasswordView |                                   |
-| `/products`          | ProductListView   |                                   |
+| Path                 | View               | Meta                             |
+| -------------------- | ------------------ | -------------------------------- |
+| `/`                  | → `/products`      |                                  |
+| `/login`             | LoginView          | guestOnly                        |
+| `/register`          | RegisterView       | guestOnly                        |
+| `/register/complete` | RegisterComplete   | guestOnly + sessionStorage guard |
+| `/verify-email`      | VerifyEmailView    |                                  |
+| `/forgot-password`   | ForgotPasswordView | guestOnly                        |
+| `/reset-password`    | ResetPasswordView  |                                  |
+| `/products`          | ProductListView    |                                  |
 
 ### Customer (requiresAuth)
 
@@ -99,16 +99,6 @@ frontend/src/
 - Getters: `isLoggedIn`, `isAdmin` (ADMIN or DEMO), `isVerified`, `userRole`, `fullName`
 - Actions: `login()`, `fetchProfile()`, `refreshAccessToken()`, `register()`, `logout()`
 - Persistence: localStorage (`access_token`, `refresh_token`)
-
-### cart.store.ts ⚠️ Mock only
-
-- Uses `MOCK_PRODUCTS` + `MOCK_PRICES` from `__mocks__/products.ts`
-- TODO: connect to backend Cart API
-
-### notification.store.ts ⚠️ Mock only
-
-- Polling every 30s but calls no real API
-- TODO: connect to backend Notification API
 
 ## API Client
 
@@ -170,23 +160,24 @@ async someAction(): Promise<boolean> {
 
 ```typescript
 export const unitsApi = {
-  getAll: (params?) => apiClient.get<Response>('/endpoint', { params }),
+  getAll: (params?) => apiClient.get<Response>("/endpoint", { params }),
   getById: (id: number) => apiClient.get<Response>(`/endpoint/${id}`),
-  create: (data) => apiClient.post<Response>('/endpoint', data),
-  update: (id: number, data) => apiClient.put<Response>(`/endpoint/${id}`, data),
+  create: (data) => apiClient.post<Response>("/endpoint", data),
+  update: (id: number, data) =>
+    apiClient.put<Response>(`/endpoint/${id}`, data),
   delete: (id: number) => apiClient.delete(`/endpoint/${id}`),
-}
+};
 ```
 
 ### Naming
 
-| Thing        | Convention           | Example                                 |
-| ------------ | -------------------- | --------------------------------------- |
-| Vue files    | PascalCase           | `AdminInventoryView.vue`                |
-| TS files     | camelCase/kebab      | `auth.store.ts`, `product-price.routes.ts` |
-| Stores       | `use{Name}Store`     | `useAuthStore`, `useUnitStore`          |
-| Composables  | `use{Name}`          | `useAuth`, `useCart`                    |
-| API modules  | `{name}Api`          | `authApi`, `unitsApi`                   |
+| Thing       | Convention       | Example                                    |
+| ----------- | ---------------- | ------------------------------------------ |
+| Vue files   | PascalCase       | `AdminInventoryView.vue`                   |
+| TS files    | camelCase/kebab  | `auth.store.ts`, `product-price.routes.ts` |
+| Stores      | `use{Name}Store` | `useAuthStore`, `useUnitStore`             |
+| Composables | `use{Name}`      | `useAuth`, `useCart`                       |
+| API modules | `{name}Api`      | `authApi`, `unitsApi`                      |
 
 ### Adding a New Feature
 
@@ -198,19 +189,19 @@ export const unitsApi = {
 
 ## Known Issues
 
-| Issue                                           | Detail                                                    |
-| ----------------------------------------------- | --------------------------------------------------------- |
-| `isAdmin` getter bug                            | Store only checks ADMIN, guard checks ADMIN\|DEMO         |
-| `refreshAccessToken` bug                        | Refresh token never gets updated in localStorage          |
-| tsconfig `ignoreDeprecations: "6.0"`            | Shows TS errors in IDE but build succeeds                 |
-| cart.store uses hardcoded `roleName`             | `"CUSTOMER"` — doesn't use actual user role               |
-| `ProductPrice` read is POST not GET             | Must pass product_ids in body                             |
+| Issue                                | Detail                                            |
+| ------------------------------------ | ------------------------------------------------- |
+| `isAdmin` getter bug                 | Store only checks ADMIN, guard checks ADMIN\|DEMO |
+| `refreshAccessToken` bug             | Refresh token never gets updated in localStorage  |
+| tsconfig `ignoreDeprecations: "6.0"` | Shows TS errors in IDE but build succeeds         |
+| cart.store uses hardcoded `roleName` | `"CUSTOMER"` — doesn't use actual user role       |
+| `ProductPrice` read is POST not GET  | Must pass product_ids in body                     |
 
 ## Critical Files — Edit with Care
 
-| File                             | Why                                          |
-| -------------------------------- | -------------------------------------------- |
-| `src/api/client.ts`              | Touches all auth/request flow                |
-| `src/router/index.ts`           | Affects entire auth flow                     |
-| `src/stores/auth.store.ts`       | Used by every authenticated component        |
-| `src/constants/api.ts`           | Must stay in sync with backend routes        |
+| File                       | Why                                   |
+| -------------------------- | ------------------------------------- |
+| `src/api/client.ts`        | Touches all auth/request flow         |
+| `src/router/index.ts`      | Affects entire auth flow              |
+| `src/stores/auth.store.ts` | Used by every authenticated component |
+| `src/constants/api.ts`     | Must stay in sync with backend routes |

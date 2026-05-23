@@ -1,15 +1,11 @@
 import { apiClient } from "./client";
 import type { Notification } from "@/types/notification";
+import type { Pagination } from "@/types";
 
 export interface NotificationsResponse {
   success: boolean;
   data: Notification[];
-  pagination: {
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-  };
+  pagination: Pagination;
 }
 
 export interface UnreadCountResponse {

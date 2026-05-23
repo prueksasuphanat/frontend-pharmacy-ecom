@@ -9,6 +9,7 @@ export { default as BaseMultiSelect } from "./BaseMultiSelect.vue";
 export type { MultiSelectOption } from "./BaseMultiSelect.vue";
 export { default as BaseSelect } from "./BaseSelect.vue";
 export { default as BaseTable } from "./BaseTable.vue";
+export type { Column } from "./BaseTable.vue";
 export { default as BaseTextarea } from "./BaseTextarea.vue";
 export { default as BaseToggle } from "./BaseToggle.vue";
 export { default as DrugTypeBadge } from "./DrugTypeBadge.vue";

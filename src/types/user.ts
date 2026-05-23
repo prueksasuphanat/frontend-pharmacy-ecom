@@ -51,7 +51,7 @@ export interface RegisterData {
   title: string;
   first_name: string;
   last_name: string;
-  birthdata: string;
+  birthdate: string;
   phone?: string;
   address?: string;
   files?: File[] | null;
