@@ -1,7 +1,16 @@
 # Frontend — Claude Code Context
 
-> Last updated: 2026-05-16
+> Last updated: 2026-05-23
 > For backend context, stack details, and DB schema → see `backend/CLAUDE.md`
+
+## Git Commit Style
+
+> See root `CLAUDE.md` for full rules, format, types & emojis, and examples.
+
+- Commit freely during active development — batch related changes into logical commits
+- After every commit, push immediately (`git push`)
+- **NEVER touch the `main` branch**
+
 
 ## Tech Stack
 
@@ -319,31 +328,4 @@ Backend uses `ProductUnit` — pricing is **per unit, not per product**:
 | `src/stores/auth.store.ts`       | Used by every authenticated component        |
 | `src/constants/api.ts`           | Must stay in sync with backend routes        |
 
-## Development Status
 
-### Done ✅
-
-- Full auth flow (login, register, forgot/reset password, verify email)
-- Route guards (auth, admin, guest-only)
-- Auto token refresh (Axios interceptor)
-- Admin: dashboard structure, inventory, categories, **units** (fully connected), users, pricing matrix, audit logs
-- Admin settings: product-units management view exists
-- Reusable UI components (Base + VeeValidate-wrapped)
-- Thai locale (validation messages, currency, dates) — i18n fully implemented
-- Toast notifications, responsive layouts
-
-### TODO 🔲
-
-- Cart → connect to API (currently mock)
-- Notifications → connect to API (currently mock + polling)
-- Checkout flow → view exists, no real logic
-- Orders → view exists, mock data only
-- Product detail (customer) → incomplete
-- Profile/security/addresses → views exist, not connected to API
-- Wishlist → view exists, no logic
-- Admin dashboard charts → ApexCharts installed, no real data
-- Admin order management → mock data
-- Product list filter/search UI → incomplete
-- File upload (prescription, profile image) → component exists, no storage
-- Payment integration → not started
-- Admin: Vendor management page (no UI yet)
