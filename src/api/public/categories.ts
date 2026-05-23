@@ -1,0 +1,15 @@
+import { apiClient } from "../client";
+
+export interface PublicCategory {
+  id: number;
+  name: string;
+}
+
+export interface PublicCategoriesResponse {
+  success: boolean;
+  data: PublicCategory[];
+}
+
+export const publicCategoriesApi = {
+  getAll: () => apiClient.get<PublicCategoriesResponse>("/categories"),
+};

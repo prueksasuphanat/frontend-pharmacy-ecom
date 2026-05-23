@@ -1,0 +1,124 @@
+import axios from "axios";
+import { env } from "@/utils/env";
+
+export const apiClient = axios.create({
+  baseURL: env.apiBaseUrl,
+  timeout: 10000,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
+apiClient.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("access_token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error),
+);
+
+let isRefreshing = false;
+let failedQueue: Array<{
+  resolve: (token: string) => void;
+  reject: (err: unknown) => void;
+}> = [];
+
+function processQueue(error: unknown, token: string | null) {
+  failedQueue.forEach((p) => {
+    if (error) p.reject(error);
+    else p.resolve(token!);
+  });
+  failedQueue = [];
+}
+
+apiClient.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      const refreshToken = localStorage.getItem("refresh_token");
+
+      if (!refreshToken) {
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("refresh_token");
+        if (window.location.pathname !== "/login") {
+          window.location.href = "/login";
+        }
+        return Promise.reject(error);
+      }
+
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        }).then((token) => {
+          originalRequest.headers.Authorization = `Bearer ${token}`;
+          return apiClient(originalRequest);
+        });
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      try {
+        const { data } = await axios.post(`${env.apiBaseUrl}/auth/refresh`, {
+          refreshToken,
+        });
+
+        const newAccessToken = data.data.accessToken;
+        const newRefreshToken = data.data.refreshToken;
+
+        localStorage.setItem("access_token", newAccessToken);
+        if (newRefreshToken) {
+          localStorage.setItem("refresh_token", newRefreshToken);
+        }
+
+        apiClient.defaults.headers.common.Authorization = `Bearer ${newAccessToken}`;
+        processQueue(null, newAccessToken);
+
+        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+        return apiClient(originalRequest);
+      } catch (refreshError) {
+        processQueue(refreshError, null);
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("refresh_token");
+        if (window.location.pathname !== "/login") {
+          window.location.href = "/login";
+        }
+        return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
+      }
+    }
+
+    if (error.response) {
+      const { status, data } = error.response;
+      switch (status) {
+        case 403:
+          console.error(
+            "Access forbidden:",
+            data.message || "Insufficient permissions",
+          );
+          break;
+        case 404:
+          console.error("Resource not found:", data.message || "Not found");
+          break;
+        case 500:
+          console.error(
+            "Server error:",
+            data.message || "Internal server error",
+          );
+          break;
+        default:
+          console.error(`HTTP ${status}:`, data.message || "An error occurred");
+      }
+    } else if (error.request) {
+      console.error("Network error: No response from server.");
+    }
+
+    return Promise.reject(error);
+  },
+);
