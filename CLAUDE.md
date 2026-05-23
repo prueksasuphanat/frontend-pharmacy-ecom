@@ -8,7 +8,7 @@
 > See root `CLAUDE.md` for full rules, format, types & emojis, and examples.
 
 - Commit freely during active development — batch related changes into logical commits
-- After every commit, push immediately (`git push`)
+- **NEVER `git push` automatically** — only push when explicitly asked/instructed by the user
 - **NEVER touch the `main` branch**
 
 
