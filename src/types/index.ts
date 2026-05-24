@@ -12,3 +12,5 @@ export * from "./productPrice";
 export * from "./unit";
 export * from "./user";
 export * from "./wishlist";
+export * from "./auditLog";
+

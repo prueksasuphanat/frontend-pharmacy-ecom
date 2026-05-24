@@ -35,13 +35,13 @@ const logsMenu = {
       icon: BarChart2,
     },
     {
-      to: "/admin/logs/user",
-      label: "ผู้ใช้งาน",
+      to: "/admin/logs/user-sessions",
+      label: "ประวัติการเข้าใช้งาน",
       icon: Users,
     },
     {
-      to: "/admin/logs/order",
-      label: "คำสั่งซื้อ",
+      to: "/admin/logs/product-views",
+      label: "ประวัติการชมสินค้า",
       icon: ShoppingBag,
     },
   ],

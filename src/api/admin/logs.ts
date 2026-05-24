@@ -6,6 +6,10 @@ import type {
   SpecialPriceLogByProductResponse,
   SpecialPriceLogByUserResponse,
   PricingLogParams,
+  UserSessionLogResponse,
+  UserSessionLogParams,
+  ProductViewLogResponse,
+  ProductViewLogParams,
 } from "@/types";
 
 export const pricingLogsApi = {
@@ -100,3 +104,31 @@ export const pricingLogsApi = {
     );
   },
 };
+
+export const auditLogsApi = {
+  getUserSessionLogs: (params: UserSessionLogParams = {}) => {
+    const { page = 1, limit = 10, search, login_at, role } = params;
+    return apiClient.get<UserSessionLogResponse>("/admin/logs/user-sessions", {
+      params: {
+        page,
+        limit,
+        ...(search && { search }),
+        ...(login_at && { login_at }),
+        ...(role && { role }),
+      },
+    });
+  },
+
+  getProductViewLogs: (params: ProductViewLogParams = {}) => {
+    const { page = 1, limit = 10, search, viewed_at } = params;
+    return apiClient.get<ProductViewLogResponse>("/admin/logs/product-views", {
+      params: {
+        page,
+        limit,
+        ...(search && { search }),
+        ...(viewed_at && { viewed_at }),
+      },
+    });
+  },
+};
+
