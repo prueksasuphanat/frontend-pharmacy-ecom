@@ -160,12 +160,12 @@ function removeProductColumn(productId: number) {
 function updatePrice(
   userId: number,
   productUnitId: number,
-  value: string | number,
+  value: string | number | null,
 ) {
   if (!priceMatrix.value[productUnitId]) {
     priceMatrix.value[productUnitId] = {};
   }
-  priceMatrix.value[productUnitId][userId] = String(value);
+  priceMatrix.value[productUnitId][userId] = value != null ? String(value) : "";
 }
 
 function getUserFullName(user: User): string {
@@ -499,7 +499,7 @@ onMounted(async () => {
                         priceMatrix[unit.product_unit_id]?.[user.id] ?? ''
                       "
                       @update:model-value="
-                        (value: string | number) =>
+                        (value: string | number | null) =>
                           updatePrice(user.id, unit.product_unit_id, value)
                       "
                       type="number"
@@ -606,7 +606,7 @@ onMounted(async () => {
                         priceMatrix[unit.product_unit_id]?.[user.id] ?? ''
                       "
                       @update:model-value="
-                        (value: string | number) =>
+                        (value: string | number | null) =>
                           updatePrice(user.id, unit.product_unit_id, value)
                       "
                       type="number"

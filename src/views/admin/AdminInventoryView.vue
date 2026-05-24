@@ -230,12 +230,12 @@ async function updateProduct() {
   }
 }
 
-function getBaseUnitPrice(product: Product): string {
-  if (!product.base_unit_id || !product.units) return "-";
+function getBaseUnitPrice(product: Product): number | null {
+  if (!product.base_unit_id || !product.units) return null;
   const baseUnit = product.units.find(
     (pu) => pu.unit_id === product.base_unit_id,
   );
-  return baseUnit ? String(baseUnit.default_price) : "-";
+  return baseUnit ? Number(baseUnit.default_price) : null;
 }
 
 function handleProductUnitUpdated() {
@@ -385,8 +385,8 @@ onMounted(async () => {
       <template #cell-default_price="{ row }">
         <span class="text-sm font-medium text-secondary-900">
           {{
-            getBaseUnitPrice(row) !== "-"
-              ? `฿${formatPrice(getBaseUnitPrice(row))}`
+            getBaseUnitPrice(row) !== null
+              ? `฿${formatPrice(getBaseUnitPrice(row)!)}`
               : "-"
           }}
         </span>

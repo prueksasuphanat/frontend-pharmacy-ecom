@@ -22,7 +22,7 @@ configure({
     const messages: Record<string, string> = {
       required: "กรุณากรอกข้อมูล",
       email: "รูปแบบอีเมลไม่ถูกต้อง",
-      min: `ต้องมีอย่างน้อย ${context.rule?.params?.[0]} ตัวอักษร`,
+      min: `ต้องมีอย่างน้อย ${(context.rule?.params as any)?.[0]} ตัวอักษร`,
       confirmed: "รหัสผ่านไม่ตรงกัน",
     };
 

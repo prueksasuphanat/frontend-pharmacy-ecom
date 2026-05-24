@@ -1,6 +1,6 @@
 import { apiClient } from "../../client";
 import { API_ENDPOINTS } from "@/constants";
-import type { User, Pagination, ApiResponse } from "@/types";
+import type { User, Pagination, ApiResponse, PaginatedApiResponse } from "@/types";
 
 export interface GetUsersParams {
   page?: number;
@@ -24,7 +24,7 @@ export interface AdminUpdateUserPayload {
 
 export const usersApi = {
   getAll: (params?: GetUsersParams) =>
-    apiClient.get<ApiResponse<User[]>>(
+    apiClient.get<PaginatedApiResponse<User[]>>(
       API_ENDPOINTS.ADMIN.SETTINGS.USERS.BASE,
       { params },
     ),

@@ -148,18 +148,19 @@ function formatPrice(price: string | number): string {
   });
 }
 
-function fullName(user: {
+function fullName(user?: {
   title?: string | null;
   first_name?: string | null;
   last_name?: string | null;
   pmc_name?: string | null;
   username?: string | null;
-}): string {
-  const parts = [user?.title, user?.first_name, user?.last_name]
+} | null): string {
+  if (!user) return "";
+  const parts = [user.title, user.first_name, user.last_name]
     .filter(Boolean)
     .join(" ")
     .trim();
-  return parts || user?.pmc_name || user?.username || "";
+  return parts || user.pmc_name || user.username || "";
 }
 
 async function fetchLogs() {
@@ -196,7 +197,8 @@ function handleFilterChange() {
   fetchLogs();
 }
 
-function handlePricingTypeChange(value: string | number) {
+function handlePricingTypeChange(value: string | number | null) {
+  if (!value) return;
   const newType = value as PricingType;
   store.setPricingType(newType);
   searchQuery.value = "";

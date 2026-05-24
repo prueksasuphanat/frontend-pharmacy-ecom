@@ -4,31 +4,14 @@ import {
   customerProfileApi,
   type UpdateProfileData,
 } from "@/api/customer/profile";
-import type { RegisterData, User } from "@/types";
+import type {
+  RegisterData,
+  User,
+  LoginResponse,
+  ProfileResponse,
+  RefreshTokenResponse,
+} from "@/types";
 import { defineStore } from "pinia";
-
-interface LoginResponse {
-  success: boolean;
-  message: string;
-  data: {
-    user: User;
-    accessToken: string;
-    refreshToken: string;
-  };
-}
-
-interface ProfileResponse {
-  success: boolean;
-  data: User;
-}
-
-interface RefreshTokenResponse {
-  success: boolean;
-  data: {
-    accessToken: string;
-    refreshToken: string;
-  };
-}
 
 export const useAuthStore = defineStore("auth", {
   state: () => ({
@@ -41,8 +24,7 @@ export const useAuthStore = defineStore("auth", {
 
   getters: {
     isLoggedIn: (state) => !!state.accessToken && !!state.currentUser,
-    isAdmin: (state) =>
-      ["ADMIN", "PHARMACIST", "DEMO"].includes(state.currentUser?.role ?? ""),
+    isAdmin: (state) => state.currentUser?.role === "ADMIN",
     isVerified: (state) => state.currentUser?.is_verified ?? false,
     userRole: (state) => state.currentUser?.role ?? "CUSTOMER",
     roleName: (state) => {
@@ -95,8 +77,8 @@ export const useAuthStore = defineStore("auth", {
         useNotificationStore().startWs(response.data.data.accessToken);
 
         return true;
-      } catch (err: any) {
-        this.error = err.response?.data?.message || "เข้าสู่ระบบไม่สำเร็จ";
+      } catch (err: unknown) {
+        this.error = (err as any).response?.data?.message || "เข้าสู่ระบบไม่สำเร็จ";
         return false;
       } finally {
         this.isLoading = false;
@@ -122,10 +104,10 @@ export const useAuthStore = defineStore("auth", {
         }
 
         return true;
-      } catch (err: any) {
-        this.error = err.response?.data?.message || "ดึงข้อมูลผู้ใช้ไม่สำเร็จ";
+      } catch (err: unknown) {
+        this.error = (err as any).response?.data?.message || "ดึงข้อมูลผู้ใช้ไม่สำเร็จ";
 
-        if (err.response?.status === 401) {
+        if ((err as any).response?.status === 401) {
           this.accessToken = null;
           this.refreshToken = null;
           this.currentUser = null;
@@ -158,8 +140,8 @@ export const useAuthStore = defineStore("auth", {
         localStorage.setItem("refresh_token", response.data.data.refreshToken);
 
         return true;
-      } catch (err: any) {
-        this.error = err.response?.data?.message || "รีเฟรช token ไม่สำเร็จ";
+      } catch (err: unknown) {
+        this.error = (err as any).response?.data?.message || "รีเฟรช token ไม่สำเร็จ";
 
         this.logout();
         return false;
@@ -170,11 +152,11 @@ export const useAuthStore = defineStore("auth", {
       try {
         this.isLoading = true;
 
-        const response = await authApi.register(params);
+        await authApi.register(params);
 
         return true;
-      } catch (err: any) {
-        this.error = err.response?.data?.message || "ลงทะเบียนไม่สำเร็จ";
+      } catch (err: unknown) {
+        this.error = (err as any).response?.data?.message || "ลงทะเบียนไม่สำเร็จ";
         return false;
       } finally {
         this.isLoading = false;
@@ -250,9 +232,9 @@ export const useAuthStore = defineStore("auth", {
         }
 
         return { success: true, message: response.data.message };
-      } catch (err: any) {
+      } catch (err: unknown) {
         if (snapshot) this.currentUser = snapshot;
-        const message = err.response?.data?.message || "อัปเดตข้อมูลไม่สำเร็จ";
+        const message = (err as any).response?.data?.message || "อัปเดตข้อมูลไม่สำเร็จ";
         this.error = message;
         return { success: false, message };
       } finally {

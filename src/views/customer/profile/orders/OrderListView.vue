@@ -11,7 +11,8 @@ import {
   FileText,
   Loader2,
 } from "lucide-vue-next";
-import { ordersApi, type Order, type OrderStatus } from "@/api/customer/orders";
+import { ordersApi } from "@/api/customer/orders";
+import type { Order, OrderStatus } from "@/types";
 import { formatPrice, formatDateTime } from "@/utils/format";
 
 const orders = ref<Order[]>([]);
@@ -101,17 +102,17 @@ const stats = computed(() => {
     },
     {
       label: "รอดำเนินการ",
-      count: all.filter((o) => o.status === "PENDING").length,
+      count: all.filter((o: Order) => o.status === "PENDING").length,
       color: "bg-yellow-100 text-yellow-700",
     },
     {
       label: "กำลังจัดส่ง",
-      count: all.filter((o) => o.status === "SHIPPED").length,
+      count: all.filter((o: Order) => o.status === "SHIPPED").length,
       color: "bg-primary-100 text-primary-700",
     },
     {
       label: "สำเร็จ",
-      count: all.filter((o) => o.status === "COMPLETED").length,
+      count: all.filter((o: Order) => o.status === "COMPLETED").length,
       color: "bg-green-100 text-green-700",
     },
   ];

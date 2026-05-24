@@ -4,6 +4,12 @@ import { useToast } from "@/composables";
 import type { Product, ProductListParams } from "@/types";
 import { defineStore } from "pinia";
 
+let toastInstance: ReturnType<typeof useToast> | null = null;
+const getToast = () => {
+  if (!toastInstance) toastInstance = useToast();
+  return toastInstance;
+};
+
 interface ProductState {
   products: Product[];
   pagination: {
@@ -41,7 +47,7 @@ export const useProductStore = defineStore("product", {
     async getProducts(params?: ProductListParams): Promise<boolean> {
       this.isLoading = true;
       this.error = null;
-      const toast = useToast();
+      const toast = getToast();
 
       try {
         const response = await productsApi.getProducts(params);
@@ -49,11 +55,10 @@ export const useProductStore = defineStore("product", {
         this.products = response.data;
         this.pagination = response.pagination;
         return true;
-      } catch (err: any) {
+      } catch (err: unknown) {
         this.error =
-          err.response?.data?.message || "เกิดข้อผิดพลาดในการดึงข้อมูลสินค้า";
-        toast.error(this.error);
-        console.error("Error fetching products:", err);
+          (err as any).response?.data?.message || "เกิดข้อผิดพลาดในการดึงข้อมูลสินค้า";
+        toast.error(this.error || "เกิดข้อผิดพลาดในการดึงข้อมูลสินค้า");
         return false;
       } finally {
         this.isLoading = false;
@@ -63,7 +68,7 @@ export const useProductStore = defineStore("product", {
     async getProductById(id: number): Promise<Product | null> {
       this.isLoading = true;
       this.error = null;
-      const toast = useToast();
+      const toast = getToast();
 
       try {
         const product = await productsApi.getProductById(id);
@@ -74,11 +79,10 @@ export const useProductStore = defineStore("product", {
         }
 
         return product;
-      } catch (err: any) {
+      } catch (err: unknown) {
         this.error =
-          err.response?.data?.message || "เกิดข้อผิดพลาดในการดึงข้อมูลสินค้า";
-        toast.error(this.error);
-        console.error("Error fetching product by id:", err);
+          (err as any).response?.data?.message || "เกิดข้อผิดพลาดในการดึงข้อมูลสินค้า";
+        toast.error(this.error || "เกิดข้อผิดพลาดในการดึงข้อมูลสินค้า");
         return null;
       } finally {
         this.isLoading = false;
@@ -93,7 +97,7 @@ export const useProductStore = defineStore("product", {
     ): Promise<boolean> {
       this.isLoading = true;
       this.error = null;
-      const toast = useToast();
+      const toast = getToast();
 
       try {
         const updated = await productsApi.updateProduct(
@@ -113,11 +117,10 @@ export const useProductStore = defineStore("product", {
 
         toast.success("อัปเดตสินค้าสำเร็จ");
         return true;
-      } catch (err: any) {
+      } catch (err: unknown) {
         this.error =
-          err.response?.data?.message || "เกิดข้อผิดพลาดในการอัปเดตสินค้า";
-        toast.error(this.error);
-        console.error("Error updating product:", err);
+          (err as any).response?.data?.message || "เกิดข้อผิดพลาดในการอัปเดตสินค้า";
+        toast.error(this.error || "เกิดข้อผิดพลาดในการอัปเดตสินค้า");
         return false;
       } finally {
         this.isLoading = false;
@@ -127,7 +130,7 @@ export const useProductStore = defineStore("product", {
     async toggleProductActive(id: number): Promise<boolean> {
       this.isLoading = true;
       this.error = null;
-      const toast = useToast();
+      const toast = getToast();
 
       try {
         const currentProduct = this.products.find((p) => p.id === id);
@@ -154,12 +157,11 @@ export const useProductStore = defineStore("product", {
             : "ปิดใช้งานสินค้าสำเร็จ",
         );
         return true;
-      } catch (err: any) {
+      } catch (err: unknown) {
         this.error =
-          err.response?.data?.message ||
+          (err as any).response?.data?.message ||
           "เกิดข้อผิดพลาดในการเปลี่ยนสถานะสินค้า";
-        toast.error(this.error);
-        console.error("Error toggling product status:", err);
+        toast.error(this.error || "เกิดข้อผิดพลาดในการเปลี่ยนสถานะสินค้า");
         return false;
       } finally {
         this.isLoading = false;

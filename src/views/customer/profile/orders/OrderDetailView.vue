@@ -2,7 +2,8 @@
 import { ref, computed, onMounted } from "vue";
 import { useRoute, RouterLink } from "vue-router";
 import { useToast } from "vue-toastification";
-import { ordersApi, type Order } from "@/api/customer/orders";
+import { ordersApi } from "@/api/customer/orders";
+import type { Order, OrderStatusLog } from "@/types";
 import {
   ArrowLeft,
   X,
@@ -189,12 +190,12 @@ async function cancelOrder() {
                     {{ statusConfig[step].label }}
                   </p>
                   <p
-                    v-if="order.status_logs.find((l) => l.to_status === step)"
+                    v-if="order.status_logs.find((l: OrderStatusLog) => l.to_status === step)"
                     class="text-[10px] text-secondary-300 mt-0.5"
                   >
                     {{
                       fmtDate(
-                        order.status_logs.find((l) => l.to_status === step)!
+                        order.status_logs.find((l: OrderStatusLog) => l.to_status === step)!
                           .created_at,
                       )
                     }}

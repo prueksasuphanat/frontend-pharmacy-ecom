@@ -93,7 +93,7 @@ const onSubmit = handleSubmit(
         title: formValues.title,
         first_name: formValues.first_name,
         last_name: formValues.last_name,
-        birthdata: formValues.birthdate,
+        birthdate: formValues.birthdate,
         phone: formValues.phone,
         address: formValues.address,
         files: formValues.verificationDocument || null,

@@ -3,6 +3,12 @@ import { useToast } from "@/composables";
 import type { ProductPriceData, UpdateProductPricePayload } from "@/types";
 import { defineStore } from "pinia";
 
+let toastInstance: ReturnType<typeof useToast> | null = null;
+const getToast = () => {
+  if (!toastInstance) toastInstance = useToast();
+  return toastInstance;
+};
+
 interface ProductPriceState {
   productPrices: ProductPriceData[];
   isLoading: boolean;
@@ -68,7 +74,7 @@ export const useProductPriceStore = defineStore("productPrice", {
 
       this.isLoading = true;
       this.error = null;
-      const toast = useToast();
+      const toast = getToast();
 
       try {
         const response = await productPricesApi.getProductPrices({
@@ -77,11 +83,11 @@ export const useProductPriceStore = defineStore("productPrice", {
 
         this.productPrices = response.data.data;
         return true;
-      } catch (err: any) {
+      } catch (err: unknown) {
         this.error =
-          err.response?.data?.message ||
+          (err as any).response?.data?.message ||
           "เกิดข้อผิดพลาดในการดึงข้อมูลราคาสินค้า";
-        toast.error(this.error);
+        toast.error(this.error || "เกิดข้อผิดพลาดในการดึงข้อมูลราคาสินค้า");
         return false;
       } finally {
         this.isLoading = false;
@@ -93,7 +99,7 @@ export const useProductPriceStore = defineStore("productPrice", {
     ): Promise<boolean> {
       this.isSaving = true;
       this.error = null;
-      const toast = useToast();
+      const toast = getToast();
 
       try {
         const response = await productPricesApi.updateProductPrices({ prices });
@@ -136,10 +142,10 @@ export const useProductPriceStore = defineStore("productPrice", {
 
         toast.success(message);
         return true;
-      } catch (err: any) {
+      } catch (err: unknown) {
         this.error =
-          err.response?.data?.message || "เกิดข้อผิดพลาดในการบันทึกราคาสินค้า";
-        toast.error(this.error);
+          (err as any).response?.data?.message || "เกิดข้อผิดพลาดในการบันทึกราคาสินค้า";
+        toast.error(this.error || "เกิดข้อผิดพลาดในการบันทึกราคาสินค้า");
         return false;
       } finally {
         this.isSaving = false;

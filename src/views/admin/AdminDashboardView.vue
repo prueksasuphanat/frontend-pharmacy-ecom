@@ -9,15 +9,15 @@ import {
 } from "lucide-vue-next";
 import { RouterLink } from "vue-router";
 import VueApexCharts from "vue3-apexcharts";
-import {
-  adminDashboardApi,
-  type DashboardSummary,
-  type TopProduct,
-  type RecentOrder,
-  type TopViewedProduct,
-  type ActiveCart,
-  type SessionStats,
-} from "@/api/admin/dashboard";
+import { adminDashboardApi } from "@/api/admin/dashboard";
+import type {
+  DashboardSummary,
+  TopProduct,
+  RecentOrder,
+  TopViewedProduct,
+  ActiveCart,
+  SessionStats,
+} from "@/types";
 import { formatPrice } from "@/utils/format";
 
 const loading = ref(true);

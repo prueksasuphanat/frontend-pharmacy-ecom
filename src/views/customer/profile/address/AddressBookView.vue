@@ -13,7 +13,7 @@ import {
 } from "lucide-vue-next";
 import { useAddressStore } from "@/stores/customer/address.store";
 import { AddressForm } from "@/components/address";
-import type { AddressBody, Address } from "@/api/customer/addresses";
+import type { AddressBody, Address } from "@/types";
 
 const addressStore = useAddressStore();
 const addresses = computed(() => addressStore.addresses);
@@ -44,7 +44,7 @@ const addressFormValue = computed({
   get: () => ({
     address: form.address,
     subDistrict: "",
-    district: form.district,
+    district: form.district || "",
     province: form.province,
     postalCode: form.postal_code,
   }),
@@ -246,12 +246,12 @@ function getLabelIcon(label: string | null) {
         <button @click="showModal = false" class="btn-ghost">ยกเลิก</button>
         <button
           @click="saveAddress"
-          :disabled="addressStore.loading"
+          :disabled="addressStore.isLoading"
           class="btn-primary gap-2 ml-auto"
         >
-          <Loader2 v-if="addressStore.loading" class="w-4 h-4 animate-spin" />
+          <Loader2 v-if="addressStore.isLoading" class="w-4 h-4 animate-spin" />
           {{
-            addressStore.loading
+            addressStore.isLoading
               ? "กำลังบันทึก..."
               : isEditMode
                 ? "บันทึกการแก้ไข"

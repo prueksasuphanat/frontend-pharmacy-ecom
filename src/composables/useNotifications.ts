@@ -14,11 +14,11 @@ export function useNotifications() {
   }
 
   function startPolling(): void {
-    notificationStore.startPolling();
+    // WebSockets are used instead of polling
   }
 
   function stopPolling(): void {
-    notificationStore.stopPolling();
+    // WebSockets are used instead of polling
   }
 
   function markAsRead(id: number): void {

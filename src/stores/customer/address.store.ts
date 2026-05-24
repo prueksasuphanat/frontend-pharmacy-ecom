@@ -1,107 +1,112 @@
 import { defineStore } from "pinia";
-import { ref } from "vue";
-import {
-  addressesApi,
-  type Address,
-  type AddressBody,
-} from "@/api/customer/addresses";
-import { useToast } from "vue-toastification";
+import { addressesApi } from "@/api/customer/addresses";
+import type { Address, AddressBody } from "@/types";
+import { useToast } from "@/composables";
 
-export const useAddressStore = defineStore("customerAddress", () => {
-  const addresses = ref<Address[]>([]);
-  const loading = ref(false);
-  const error = ref<string | null>(null);
-  const toast = useToast();
+let toastInstance: ReturnType<typeof useToast> | null = null;
+const getToast = () => {
+  if (!toastInstance) toastInstance = useToast();
+  return toastInstance;
+};
 
-  const fetchAddresses = async () => {
-    loading.value = true;
-    error.value = null;
-    try {
-      const res = await addressesApi.getAddresses();
-      if (res.success) {
-        addresses.value = res.data;
+export const useAddressStore = defineStore("customerAddress", {
+  state: () => ({
+    addresses: [] as Address[],
+    isLoading: false,
+    error: null as string | null,
+  }),
+
+  actions: {
+    async fetchAddresses(): Promise<void> {
+      const toast = getToast();
+      this.isLoading = true;
+      this.error = null;
+      try {
+        const res = await addressesApi.getAddresses();
+        if (res.success) {
+          this.addresses = res.data;
+        }
+      } catch (err: unknown) {
+        this.error =
+          (err as any).response?.data?.message || "ไม่สามารถดึงข้อมูลที่อยู่ได้";
+        toast.error(this.error || "ไม่สามารถดึงข้อมูลที่อยู่ได้");
+      } finally {
+        this.isLoading = false;
       }
-    } catch (err: any) {
-      error.value =
-        err.response?.data?.message || "ไม่สามารถดึงข้อมูลที่อยู่ได้";
-      toast.error(error.value);
-    } finally {
-      loading.value = false;
-    }
-  };
+    },
 
-  const createAddress = async (data: AddressBody) => {
-    loading.value = true;
-    try {
-      const res = await addressesApi.createAddress(data);
-      if (res.success) {
-        toast.success(res.message);
-        await fetchAddresses();
-        return true;
+    async createAddress(data: AddressBody): Promise<boolean> {
+      const toast = getToast();
+      this.isLoading = true;
+      try {
+        const res = await addressesApi.createAddress(data);
+        if (res.success) {
+          toast.success(res.message);
+          await this.fetchAddresses();
+          return true;
+        }
+      } catch (err: unknown) {
+        toast.error((err as any).response?.data?.message || "ไม่สามารถเพิ่มที่อยู่ได้");
+      } finally {
+        this.isLoading = false;
       }
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || "ไม่สามารถเพิ่มที่อยู่ได้");
-    } finally {
-      loading.value = false;
-    }
-    return false;
-  };
+      return false;
+    },
 
-  const updateAddress = async (id: number, data: AddressBody) => {
-    loading.value = true;
-    try {
-      const res = await addressesApi.updateAddress(id, data);
-      if (res.success) {
-        toast.success(res.message);
-        await fetchAddresses();
-        return true;
+    async updateAddress(id: number, data: AddressBody): Promise<boolean> {
+      const toast = getToast();
+      this.isLoading = true;
+      try {
+        const res = await addressesApi.updateAddress(id, data);
+        if (res.success) {
+          toast.success(res.message);
+          await this.fetchAddresses();
+          return true;
+        }
+      } catch (err: unknown) {
+        toast.error((err as any).response?.data?.message || "ไม่สามารถแก้ไขที่อยู่ได้");
+      } finally {
+        this.isLoading = false;
       }
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || "ไม่สามารถแก้ไขที่อยู่ได้");
-    } finally {
-      loading.value = false;
-    }
-    return false;
-  };
+      return false;
+    },
 
-  const deleteAddress = async (id: number) => {
-    try {
-      const res = await addressesApi.deleteAddress(id);
-      if (res.success) {
-        toast.success(res.message);
-        await fetchAddresses();
-        return true;
+    async deleteAddress(id: number): Promise<boolean> {
+      const toast = getToast();
+      this.isLoading = true;
+      try {
+        const res = await addressesApi.deleteAddress(id);
+        if (res.success) {
+          toast.success(res.message);
+          await this.fetchAddresses();
+          return true;
+        }
+      } catch (err: unknown) {
+        toast.error((err as any).response?.data?.message || "ไม่สามารถลบที่อยู่ได้");
+      } finally {
+        this.isLoading = false;
       }
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || "ไม่สามารถลบที่อยู่ได้");
-    }
-    return false;
-  };
+      return false;
+    },
 
-  const setAsDefault = async (id: number) => {
-    try {
-      const res = await addressesApi.setAsDefault(id);
-      if (res.success) {
-        toast.success(res.message);
-        await fetchAddresses();
-        return true;
+    async setAsDefault(id: number): Promise<boolean> {
+      const toast = getToast();
+      this.isLoading = true;
+      try {
+        const res = await addressesApi.setAsDefault(id);
+        if (res.success) {
+          toast.success(res.message);
+          await this.fetchAddresses();
+          return true;
+        }
+      } catch (err: unknown) {
+        toast.error(
+          (err as any).response?.data?.message || "ไม่สามารถตั้งเป็นที่อยู่หลักได้",
+        );
+      } finally {
+        this.isLoading = false;
       }
-    } catch (err: any) {
-      toast.error(
-        err.response?.data?.message || "ไม่สามารถตั้งเป็นที่อยู่หลักได้",
-      );
-    }
-    return false;
-  };
-
-  return {
-    addresses,
-    loading,
-    error,
-    fetchAddresses,
-    createAddress,
-    updateAddress,
-    deleteAddress,
-    setAsDefault,
-  };
+      return false;
+    },
+  },
 });

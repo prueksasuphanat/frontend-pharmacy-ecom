@@ -8,7 +8,7 @@ import type { Notification } from "@/types/notification";
 export const useNotificationStore = defineStore("notification", () => {
   const notifications = ref<Notification[]>([]);
   const isOpen = ref(false);
-  const loading = ref(false);
+  const isLoading = ref(false);
 
   let wsInstance: ReturnType<typeof useWebSocket> | null = null;
 
@@ -18,13 +18,13 @@ export const useNotificationStore = defineStore("notification", () => {
   const latest5 = computed(() => [...notifications.value].slice(0, 5));
 
   async function fetchNotifications() {
-    loading.value = true;
+    isLoading.value = true;
     try {
       const res = await notificationsApi.getAll(1, 30);
       notifications.value = res.data.data;
     } catch {
     } finally {
-      loading.value = false;
+      isLoading.value = false;
     }
   }
 
@@ -81,8 +81,6 @@ export const useNotificationStore = defineStore("notification", () => {
       url,
       onMessage: (msg) => {
         if (msg.type === "notification" && msg.data) {
-          console.log("[Notification] Received realtime payload:", msg.data);
-
           playNotificationSound();
 
           const newNotif = msg.data as Notification;
@@ -94,12 +92,8 @@ export const useNotificationStore = defineStore("notification", () => {
           }
         }
       },
-      onConnected: () => {
-        console.log("[Notification] WS connected ✅");
-      },
-      onDisconnected: () => {
-        console.log("[Notification] WS disconnected");
-      },
+      onConnected: () => {},
+      onDisconnected: () => {},
     });
 
     wsInstance.connect();
@@ -151,7 +145,7 @@ export const useNotificationStore = defineStore("notification", () => {
     unreadCount,
     latest5,
     isOpen,
-    loading,
+    isLoading,
     fetchNotifications,
     startWs,
     stopWs,

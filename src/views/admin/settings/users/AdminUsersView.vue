@@ -227,7 +227,7 @@ function rejectUser() {
 
 function verifyUser() {
   if (!selectedUser.value) return;
-  userStore.verifiredUser(selectedUser.value.id).then((ok) => {
+  userStore.verifyUser(selectedUser.value.id).then((ok) => {
     if (ok && selectedUser.value) {
       selectedUser.value = { ...selectedUser.value, is_verified: true };
     }
@@ -459,7 +459,7 @@ onMounted(() => fetchUsers());
                   .join(" ")
                   .trim() ||
                 selectedUser.pmc_name ||
-                selectedUser.username.join(" ") ||
+                selectedUser.username ||
                 "-"
               }}
             </p>

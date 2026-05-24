@@ -8,17 +8,17 @@ export function useAuth() {
   const isLoggedIn = computed(() => authStore.isLoggedIn);
   const currentUser = computed(() => authStore.currentUser);
   const isAdmin = computed(() => authStore.isAdmin);
-  const isEmailVerified = computed(() => authStore.isEmailVerified);
+  const isEmailVerified = computed(() => authStore.isVerified);
   const roleName = computed(() => authStore.roleName);
   const isLoading = computed(() => authStore.isLoading);
-  const loginError = computed(() => authStore.loginError);
+  const loginError = computed(() => authStore.error);
 
   async function login(credentials: LoginCredentials): Promise<boolean> {
-    return authStore.login(credentials.email, credentials.password);
+    return authStore.login(credentials.username, credentials.password);
   }
 
   async function register(data: RegisterData): Promise<boolean> {
-    return authStore.register(data.email, data.password);
+    return authStore.register(data);
   }
 
   function logout(): void {

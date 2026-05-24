@@ -9,7 +9,8 @@ import {
   Eye,
   Loader2,
 } from "lucide-vue-next";
-import { adminOrdersApi, type AdminOrder } from "@/api/admin/orders";
+import { adminOrdersApi } from "@/api/admin/orders";
+import type { AdminOrder } from "@/types";
 import { formatPrice, formatDateTime } from "@/utils/format";
 
 const orders = ref<AdminOrder[]>([]);

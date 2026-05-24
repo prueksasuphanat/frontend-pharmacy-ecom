@@ -4,7 +4,8 @@ import { useForm } from "vee-validate";
 import { VInput, VTextarea } from "@/components/ui";
 import { useAuthStore } from "@/stores/auth.store";
 import { useToast } from "vue-toastification";
-import dayjs, { formatDate } from "@/utils/dayjs";
+import dayjs from "@/utils/dayjs";
+import { formatDate } from "@/utils/format";
 import "@/utils/validation";
 import {
   Camera,
@@ -367,12 +368,7 @@ const onSubmit = handleSubmit(
         </div>
 
         <div class="grid grid-cols-2 gap-4">
-          <VInput
-            name="birthdate"
-            type="date"
-            label="วันเกิด"
-            :icon="Calendar"
-          />
+          <VInput name="birthdate" label="วันเกิด" :icon="Calendar" />
           <div />
         </div>
 

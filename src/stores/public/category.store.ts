@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import { publicCategoriesApi } from "@/api/public/categories";
-import type { PublicCategory } from "@/api/public/categories";
+import type { PublicCategory } from "@/types";
 
 interface PublicCategoryState {
   categories: PublicCategory[];

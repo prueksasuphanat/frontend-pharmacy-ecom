@@ -8,7 +8,7 @@ import {
   BaseModal,
   BaseAutocomplete,
 } from "@/components/ui";
-import type { Column, PaginationConfig } from "@/components/ui/BaseTable.vue";
+import type { Column } from "@/components/ui/BaseTable.vue";
 import type { Category } from "@/types";
 import { useCategoryStore } from "@/stores";
 import { formatDate } from "@/utils";

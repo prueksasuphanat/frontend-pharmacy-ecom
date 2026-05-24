@@ -2,7 +2,7 @@
 import { computed } from "vue";
 
 interface Props {
-  modelValue?: string | number;
+  modelValue?: string | number | null;
   type?: "text" | "email" | "password" | "number" | "tel" | "url" | "search";
   placeholder?: string;
   label?: string;
@@ -22,7 +22,7 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const emit = defineEmits<{
-  "update:modelValue": [value: string | number];
+  "update:modelValue": [value: string | number | null];
   blur: [event: FocusEvent];
   focus: [event: FocusEvent];
   iconRightClick: [];

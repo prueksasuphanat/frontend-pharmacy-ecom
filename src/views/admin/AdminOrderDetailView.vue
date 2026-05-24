@@ -2,7 +2,8 @@
 import { ref, computed, onMounted } from "vue";
 import { useRoute, RouterLink } from "vue-router";
 import { useToast } from "vue-toastification";
-import { adminOrdersApi, type AdminOrder } from "@/api/admin/orders";
+import { adminOrdersApi } from "@/api/admin/orders";
+import type { AdminOrder } from "@/types";
 import {
   ArrowLeft,
   CheckCircle,
