@@ -17,6 +17,12 @@ jobs:
           COMMIT_URL: ${{ github.event.head_commit.url }}
           REPO_NAME: ${{ github.event.repository.name }} # ดึงชื่อ Repo ปัจจุบันมาใช้
         run: |
+          # ข้ามการแจ้งเตือนหากเป็น commit ที่เกี่ยวกับ CI (เริ่มต้นด้วย CI/ci หรือมี [CI]/[ci])
+          if [[ "$COMMIT_MESSAGE" =~ ^[Cc][Ii] ]] || [[ "$COMMIT_MESSAGE" == *"[CI]"* ]] || [[ "$COMMIT_MESSAGE" == *"[ci]"* ]]; then
+            echo "CI commit detected. Skipping Discord notification."
+            exit 0
+          fi
+
           COLOR=3447003
           
           if [[ "$COMMIT_MESSAGE" == *"feat 🚀"* ]]; then
