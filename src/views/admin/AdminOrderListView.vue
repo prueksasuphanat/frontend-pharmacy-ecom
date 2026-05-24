@@ -1,17 +1,17 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from "vue";
 import { RouterLink } from "vue-router";
-import {
-  Search,
-  Package,
-  ChevronLeft,
-  ChevronRight,
-  Eye,
-  Loader2,
-} from "lucide-vue-next";
+import { Search, Eye } from "lucide-vue-next";
 import { adminOrdersApi } from "@/api/admin/orders";
 import type { AdminOrder } from "@/types";
 import { formatPrice, formatDateTime } from "@/utils/format";
+import { formatOrderUser } from "@/utils";
+import {
+  BaseInput,
+  BaseAutocomplete,
+  BaseTable,
+  type Column,
+} from "@/components/ui";
 
 const orders = ref<AdminOrder[]>([]);
 const loading = ref(false);
@@ -46,6 +46,22 @@ const statusLbl: Record<string, string> = {
   CANCELLED: "ยกเลิก",
 };
 
+const columns: Column<AdminOrder>[] = [
+  { key: "id", label: "#", width: "90px", align: "left" },
+  { key: "customer", label: "ลูกค้า", minWidth: "220px" },
+  { key: "status", label: "สถานะ", width: "130px", align: "center" },
+  { key: "total_amount", label: "ยอดรวม", width: "130px", align: "right" },
+  { key: "created_at", label: "วันที่สั่ง", width: "180px", align: "left" },
+  { key: "actions", label: "จัดการ", width: "80px", align: "center", fixed: "right" },
+];
+
+const pagination = computed(() => ({
+  page: page.value,
+  limit: 15,
+  total: total.value,
+  totalPages: totalPages.value,
+}));
+
 async function fetchOrders() {
   loading.value = true;
   try {
@@ -67,7 +83,7 @@ async function fetchOrders() {
 
 onMounted(fetchOrders);
 
-watch([statusFilter], () => {
+watch(statusFilter, () => {
   page.value = 1;
   fetchOrders();
 });
@@ -81,31 +97,17 @@ watch(search, () => {
   }, 400);
 });
 
-function prevPage() {
-  if (page.value > 1) {
-    page.value--;
-    fetchOrders();
-  }
-}
-function nextPage() {
-  if (page.value < totalPages.value) {
-    page.value++;
-    fetchOrders();
-  }
+function handlePageChange(newPage: number) {
+  page.value = newPage;
+  fetchOrders();
 }
 
 function fmt(n: number) {
   return formatPrice(n);
 }
+
 function fmtDate(d: string) {
   return formatDateTime(d);
-}
-
-function customerName(order: AdminOrder) {
-  if (order.user.first_name || order.user.last_name) {
-    return `${order.user.first_name || ""} ${order.user.last_name || ""}`.trim();
-  }
-  return order.user.username || order.user.email || "-";
 }
 </script>
 
@@ -117,120 +119,77 @@ function customerName(order: AdminOrder) {
     </div>
 
     <div class="card mb-6">
-      <div class="flex flex-col sm:flex-row gap-3">
-        <div class="relative flex-1">
-          <Search
-            class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-secondary-400"
-          />
-          <input
+      <div class="flex flex-col sm:flex-row gap-4 items-end">
+        <div class="flex-1 w-full">
+          <BaseInput
+            label="ค้นหา"
             v-model="search"
-            type="text"
-            placeholder="ค้นหา Order ID, ชื่อ, อีเมล..."
-            class="input pl-9 w-full"
+            placeholder="ค้นหา Order ID, ชื่อลูกค้า, อีเมล..."
+            :icon="Search"
           />
         </div>
-        <select
-          v-model="statusFilter"
-          class="input w-full sm:w-auto min-w-[160px]"
-        >
-          <option
-            v-for="opt in statusOptions"
-            :key="opt.value"
-            :value="opt.value"
-          >
-            {{ opt.label }}
-          </option>
-        </select>
-      </div>
-    </div>
-
-    <div v-if="loading" class="flex justify-center py-16">
-      <Loader2 class="w-8 h-8 text-primary-600 animate-spin" />
-    </div>
-
-    <div v-else-if="orders.length === 0" class="text-center py-16">
-      <Package class="w-14 h-14 text-secondary-200 mx-auto mb-4" />
-      <p class="text-secondary-400">ไม่พบคำสั่งซื้อ</p>
-    </div>
-
-    <div v-else class="card overflow-hidden !p-0">
-      <div class="overflow-x-auto">
-        <table class="w-full text-sm">
-          <thead
-            class="bg-secondary-50 text-secondary-600 text-xs uppercase tracking-wider"
-          >
-            <tr>
-              <th class="px-4 py-3 text-left">#</th>
-              <th class="px-4 py-3 text-left">ลูกค้า</th>
-              <th class="px-4 py-3 text-left">สถานะ</th>
-              <th class="px-4 py-3 text-right">ยอดรวม</th>
-              <th class="px-4 py-3 text-left">วันที่สั่ง</th>
-              <th class="px-4 py-3 text-center">จัดการ</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-secondary-50">
-            <tr
-              v-for="order in orders"
-              :key="order.id"
-              class="hover:bg-secondary-50/50 transition-colors"
-            >
-              <td class="px-4 py-3 font-mono font-bold text-secondary-900">
-                #{{ order.id }}
-              </td>
-              <td class="px-4 py-3">
-                <p class="font-medium text-secondary-900 text-sm">
-                  {{ customerName(order) }}
-                </p>
-                <p class="text-xs text-secondary-400">{{ order.user.email }}</p>
-              </td>
-              <td class="px-4 py-3">
-                <span :class="['badge', statusCls[order.status]]">
-                  {{ statusLbl[order.status] }}
-                </span>
-              </td>
-              <td class="px-4 py-3 text-right font-medium">
-                ฿{{ fmt(order.total_amount) }}
-              </td>
-              <td class="px-4 py-3 text-secondary-500 text-xs">
-                {{ fmtDate(order.created_at) }}
-              </td>
-              <td class="px-4 py-3 text-center">
-                <RouterLink
-                  :to="`/admin/orders/${order.id}`"
-                  class="btn-ghost text-xs py-1.5 px-3 gap-1 text-primary-600"
-                >
-                  <Eye class="w-3.5 h-3.5" /> ดูรายละเอียด
-                </RouterLink>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div
-        v-if="totalPages > 1"
-        class="flex items-center justify-between px-4 py-3 bg-secondary-50/50 border-t border-secondary-100"
-      >
-        <p class="text-xs text-secondary-500">
-          หน้า {{ page }} จาก {{ totalPages }} ({{ total }} รายการ)
-        </p>
-        <div class="flex gap-2">
-          <button
-            @click="prevPage"
-            :disabled="page <= 1"
-            class="btn-ghost text-xs py-1.5 px-2 disabled:opacity-30"
-          >
-            <ChevronLeft class="w-4 h-4" />
-          </button>
-          <button
-            @click="nextPage"
-            :disabled="page >= totalPages"
-            class="btn-ghost text-xs py-1.5 px-2 disabled:opacity-30"
-          >
-            <ChevronRight class="w-4 h-4" />
-          </button>
+        <div class="w-full sm:w-48">
+          <BaseAutocomplete
+            label="สถานะคำสั่งซื้อ"
+            v-model="statusFilter"
+            :options="statusOptions"
+            placeholder="ทั้งหมด"
+          />
         </div>
       </div>
     </div>
+
+    <BaseTable
+      :columns="columns"
+      :data="orders"
+      :loading="loading"
+      :pagination="pagination"
+      @page-change="handlePageChange"
+      empty-text="ไม่พบคำสั่งซื้อ"
+    >
+      <template #cell-id="{ row }">
+        <span class="font-mono font-bold text-secondary-900">#{{ row.id }}</span>
+      </template>
+
+      <template #cell-customer="{ row }">
+        <div>
+          <p class="font-medium text-secondary-900 text-sm">
+            {{ formatOrderUser(row.user) }}
+          </p>
+          <p class="text-xs text-secondary-400">{{ row.user.email }}</p>
+        </div>
+      </template>
+
+      <template #cell-status="{ row }">
+        <span :class="['badge', statusCls[row.status]]">
+          {{ statusLbl[row.status] }}
+        </span>
+      </template>
+
+      <template #cell-total_amount="{ value }">
+        <span class="font-medium text-secondary-900">
+          ฿{{ fmt(value as number) }}
+        </span>
+      </template>
+
+      <template #cell-created_at="{ value }">
+        <span class="text-secondary-500 text-xs">
+          {{ fmtDate(value as string) }}
+        </span>
+      </template>
+
+      <template #cell-actions="{ row }">
+        <div class="flex items-center justify-center">
+          <RouterLink
+            :to="`/admin/orders/${row.id}`"
+            class="p-1.5 text-primary-600 hover:bg-blue-50 rounded-lg transition-colors flex items-center justify-center"
+            title="ดูรายละเอียด"
+          >
+            <Eye class="w-4 h-4" />
+          </RouterLink>
+        </div>
+      </template>
+    </BaseTable>
   </div>
 </template>
+

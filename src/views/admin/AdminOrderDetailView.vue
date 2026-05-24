@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, onMounted } from "vue";
 import { useRoute, RouterLink } from "vue-router";
 import { useToast } from "vue-toastification";
 import { adminOrdersApi } from "@/api/admin/orders";
@@ -13,6 +13,7 @@ import {
   Loader2,
 } from "lucide-vue-next";
 import { formatPrice, formatDateTime } from "@/utils/format";
+import { formatOrderUser } from "@/utils";
 
 const route = useRoute();
 const toast = useToast();
@@ -75,13 +76,6 @@ const statusLbl: Record<string, string> = {
   COMPLETED: "สำเร็จ",
   CANCELLED: "ยกเลิก",
 };
-
-function customerName(o: AdminOrder) {
-  if (o.user.first_name || o.user.last_name) {
-    return `${o.user.first_name || ""} ${o.user.last_name || ""}`.trim();
-  }
-  return o.user.username || o.user.email || "-";
-}
 </script>
 
 <template>
@@ -182,9 +176,9 @@ function customerName(o: AdminOrder) {
                 class="flex gap-3 py-3"
               >
                 <div
-                  class="w-14 h-14 rounded-xl bg-gradient-to-br from-primary-100 to-teal-100 flex items-center justify-center text-xs text-primary-500 font-semibold p-1 leading-snug text-center shrink-0"
+                  class="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-50 to-teal-50 border border-primary-100/50 flex items-center justify-center text-primary-500 shrink-0 shadow-sm"
                 >
-                  {{ item.product_name.slice(0, 12) }}
+                  <Package class="w-5 h-5 text-primary-500/80" />
                 </div>
                 <div class="flex-1">
                   <p class="font-medium text-secondary-900 text-sm">
@@ -251,7 +245,7 @@ function customerName(o: AdminOrder) {
               ข้อมูลลูกค้า
             </h3>
             <p class="text-sm font-medium text-secondary-900 mb-0.5">
-              {{ customerName(order) }}
+              {{ formatOrderUser(order.user) }}
             </p>
             <p class="text-sm text-secondary-500">{{ order.user.email }}</p>
             <p v-if="order.user.phone" class="text-sm text-secondary-500">
@@ -310,3 +304,4 @@ function customerName(o: AdminOrder) {
     </div>
   </div>
 </template>
+
