@@ -115,7 +115,6 @@ function updateUserRole(userId: number, newRole: string) {
   const user = users.value.find((u) => u.id === userId);
   if (!user) return;
 
-  // Open confirmation modal
   pendingRoleChange.value = {
     userId,
     newRole,
@@ -212,7 +211,6 @@ async function saveUserChanges() {
   });
 
   if (ok) {
-    // Refresh selectedUser with latest data from API
     const fresh = await userStore.adminGetUserById(selectedUser.value.id);
     if (fresh) selectedUser.value = fresh;
     isEditMode.value = false;
@@ -223,13 +221,13 @@ async function saveUserChanges() {
 
 function rejectUser() {
   if (!selectedUser.value) return;
-  // TODO: implement reject user logic
+
   console.log("TODO: reject user", selectedUser.value.id);
 }
 
 function verifyUser() {
   if (!selectedUser.value) return;
-  userStore.verifiredUser(selectedUser.value.id).then((ok) => {
+  userStore.verifyUser(selectedUser.value.id).then((ok) => {
     if (ok && selectedUser.value) {
       selectedUser.value = { ...selectedUser.value, is_verified: true };
     }
@@ -252,7 +250,6 @@ onMounted(() => fetchUsers());
   <div>
     <LoadingOverlay :loading="loading && users.length > 0" />
 
-    <!-- Back Button (Mobile) -->
     <button
       @click="router.push('/admin/settings')"
       class="lg:hidden flex items-center gap-2 text-secondary-600 hover:text-primary-600 mb-4 -ml-2"
@@ -261,7 +258,7 @@ onMounted(() => fetchUsers());
       <span class="text-sm font-medium">กลับไปตั้งค่าระบบ</span>
     </button>
 
-    <div class="flex items-center justify-between mb-6">
+    <div class="page-header mb-6">
       <div>
         <h1 class="page-title">จัดการผู้ใช้งาน</h1>
         <p class="text-sm text-secondary-500 mt-1">
@@ -270,7 +267,6 @@ onMounted(() => fetchUsers());
       </div>
     </div>
 
-    <!-- Summary Cards -->
     <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 my-6">
       <div class="card">
         <p class="text-xs text-secondary-400 mb-1">ผู้ใช้งานทั้งหมด</p>
@@ -298,7 +294,6 @@ onMounted(() => fetchUsers());
       </div>
     </div>
 
-    <!-- Search & Filter -->
     <div class="card mb-6">
       <div
         class="flex flex-col sm:flex-row items-stretch sm:items-center gap-4"
@@ -328,7 +323,6 @@ onMounted(() => fetchUsers());
       </div>
     </div>
 
-    <!-- Users Table -->
     <div class="mb-[100px] relative">
       <BaseTable
         :columns="columns"
@@ -343,7 +337,6 @@ onMounted(() => fetchUsers());
         empty-text="ไม่พบข้อมูลผู้ใช้"
         @page-change="handlePageChange"
       >
-        <!-- Email Column with Avatar -->
         <template #cell-email="{ row }">
           <div class="flex items-center gap-2 min-w-0">
             <div
@@ -355,7 +348,6 @@ onMounted(() => fetchUsers());
           </div>
         </template>
 
-        <!-- Full Name Column -->
         <template #cell-full_name="{ row }">
           <span class="text-sm text-secondary-600 block truncate">
             {{
@@ -369,7 +361,6 @@ onMounted(() => fetchUsers());
           </span>
         </template>
 
-        <!-- Role Column -->
         <template #cell-role="{ row }">
           <BaseAutocomplete
             :model-value="row.role"
@@ -379,7 +370,6 @@ onMounted(() => fetchUsers());
           />
         </template>
 
-        <!-- Email Verified Column -->
         <template #cell-is_verified="{ row }">
           <span
             v-if="row.is_verified"
@@ -392,7 +382,6 @@ onMounted(() => fetchUsers());
           </span>
         </template>
 
-        <!-- Status Column -->
         <template #cell-is_active="{ row }">
           <BaseToggle
             :model-value="row.is_active"
@@ -401,7 +390,6 @@ onMounted(() => fetchUsers());
           />
         </template>
 
-        <!-- Actions Column -->
         <template #cell-actions="{ row }">
           <div class="flex items-center justify-center gap-1.5 flex-wrap">
             <button
@@ -424,9 +412,7 @@ onMounted(() => fetchUsers());
       <div class="relative min-h-[120px]">
         <LoadingOverlay :loading="modalLoading" text="กำลังโหลดข้อมูล..." />
 
-        <!-- Profile Header -->
         <div class="flex gap-4 mb-5">
-          <!-- Avatar -->
           <div
             class="w-16 h-16 rounded-2xl overflow-hidden shrink-0 bg-primary-100 flex items-center justify-center shadow-sm"
           >
@@ -459,7 +445,6 @@ onMounted(() => fetchUsers());
             </span>
           </div>
 
-          <!-- Name + badges -->
           <div class="flex-1 min-w-0">
             <p
               class="font-semibold text-secondary-900 text-base leading-tight truncate"
@@ -474,7 +459,7 @@ onMounted(() => fetchUsers());
                   .join(" ")
                   .trim() ||
                 selectedUser.pmc_name ||
-                selectedUser.username.join(" ") ||
+                selectedUser.username ||
                 "-"
               }}
             </p>
@@ -509,9 +494,7 @@ onMounted(() => fetchUsers());
           </div>
         </div>
 
-        <!-- View Mode -->
         <div v-if="!isEditMode" class="space-y-4">
-          <!-- Info grid -->
           <div
             class="bg-secondary-50 rounded-xl p-4 grid grid-cols-2 gap-x-6 gap-y-3 text-sm"
           >
@@ -573,7 +556,6 @@ onMounted(() => fetchUsers());
             </div>
           </div>
 
-          <!-- Attachments -->
           <div>
             <p
               class="text-xs font-medium text-secondary-500 uppercase tracking-wide mb-2"
@@ -619,7 +601,6 @@ onMounted(() => fetchUsers());
           </div>
         </div>
 
-        <!-- Edit Mode -->
         <div v-else class="space-y-3">
           <div
             class="bg-secondary-50 rounded-xl px-4 py-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm"
@@ -700,10 +681,8 @@ onMounted(() => fetchUsers());
 
       <template #footer>
         <div class="flex justify-between w-full gap-2">
-          <!-- Left: verify / reject / already verified -->
           <div class="flex gap-2">
             <template v-if="!selectedUser.is_verified">
-              <!-- ยืนยัน: ต้องมี code -->
               <button
                 class="btn-primary text-sm"
                 :class="{ 'opacity-40 cursor-not-allowed': !selectedUser.code }"
@@ -713,7 +692,7 @@ onMounted(() => fetchUsers());
                 <CircleCheckBig class="w-4 h-4" />
                 อนุมัติ
               </button>
-              <!-- ไม่อนุมัติ -->
+
               <button class="btn-danger text-sm" @click="rejectUser">
                 ไม่อนุมัติ
               </button>
@@ -727,7 +706,6 @@ onMounted(() => fetchUsers());
             </div>
           </div>
 
-          <!-- Right: edit / save / cancel / close -->
           <div class="flex gap-2">
             <template v-if="isEditMode">
               <button class="btn-secondary text-sm" @click="toggleEditMode">
@@ -751,7 +729,6 @@ onMounted(() => fetchUsers());
       </template>
     </BaseModal>
 
-    <!-- Role Change Confirmation Modal -->
     <BaseModal
       v-if="roleChangeModal && pendingRoleChange"
       title="ยืนยันการเปลี่ยน Role"

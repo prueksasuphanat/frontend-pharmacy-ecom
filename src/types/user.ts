@@ -1,10 +1,3 @@
-// ============================================================
-// TYPE DEFINITIONS — User, Authentication
-// ============================================================
-
-/**
- * User attachment (profile image or document)
- */
 export interface UserAttachment {
   id: number;
   user_id: number;
@@ -19,9 +12,6 @@ export interface UserAttachment {
   updated_by: number | null;
 }
 
-/**
- * User entity representing a registered user in the system
- */
 export interface User {
   id: number;
   pmc_customer_id: string | null;
@@ -49,17 +39,11 @@ export interface User {
   attachments?: UserAttachment[];
 }
 
-/**
- * Login credentials for authentication
- */
 export interface LoginCredentials {
   username: string;
   password: string;
 }
 
-/**
- * Registration data for creating a new user account
- */
 export interface RegisterData {
   email: string;
   username: string;
@@ -67,7 +51,7 @@ export interface RegisterData {
   title: string;
   first_name: string;
   last_name: string;
-  birthdata: string;
+  birthdate: string;
   phone?: string;
   address?: string;
   files?: File[] | null;

@@ -24,7 +24,6 @@ const emit = defineEmits<{
   "update:modelValue": [value: string];
 }>();
 
-// ใช้ VeeValidate's useField
 const {
   value: inputValue,
   errorMessage,
@@ -35,7 +34,6 @@ const {
   syncVModel: true,
 });
 
-// แสดง error เมื่อ field ถูก touched และมี error
 const displayError = computed(() => {
   return meta.touched && errorMessage.value ? errorMessage.value : "";
 });

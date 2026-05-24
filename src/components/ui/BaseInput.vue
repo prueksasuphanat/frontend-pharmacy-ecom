@@ -2,15 +2,15 @@
 import { computed } from "vue";
 
 interface Props {
-  modelValue?: string | number;
+  modelValue?: string | number | null;
   type?: "text" | "email" | "password" | "number" | "tel" | "url" | "search";
   placeholder?: string;
   label?: string;
   error?: string;
   disabled?: boolean;
   required?: boolean;
-  icon?: any; // Lucide icon component
-  iconRight?: any; // Icon on the right side
+  icon?: any;
+  iconRight?: any;
   readonly?: boolean;
 }
 
@@ -22,7 +22,7 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const emit = defineEmits<{
-  "update:modelValue": [value: string | number];
+  "update:modelValue": [value: string | number | null];
   blur: [event: FocusEvent];
   focus: [event: FocusEvent];
   iconRightClick: [];

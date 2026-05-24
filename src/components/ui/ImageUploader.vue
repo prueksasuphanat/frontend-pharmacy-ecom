@@ -73,7 +73,6 @@ function removeImage() {
 
 <template>
   <div class="flex flex-col gap-1">
-    <!-- กล่องรูป — aspect-square จาก class ที่ส่งมา -->
     <div
       class="relative w-full overflow-hidden rounded-xl border-2 transition-all select-none"
       :class="[
@@ -89,12 +88,9 @@ function removeImage() {
       @dragleave.prevent="isDragging = false"
       @drop.prevent="onDrop"
     >
-      <!-- ต้องมี padding-top เพื่อทำ aspect-ratio 1:1 -->
       <div class="pt-[100%]" />
 
-      <!-- content วางทับด้วย absolute -->
       <div class="absolute inset-0">
-        <!-- มีรูป -->
         <template v-if="hasImage">
           <img
             :src="displayUrl!"
@@ -123,7 +119,6 @@ function removeImage() {
           </div>
         </template>
 
-        <!-- ไม่มีรูป: placeholder -->
         <template v-else>
           <div
             class="absolute inset-0 flex flex-col items-center justify-center gap-2 p-4 text-center"
@@ -154,10 +149,8 @@ function removeImage() {
       </div>
     </div>
 
-    <!-- Error -->
     <p v-if="error" class="text-xs text-red-600">{{ error }}</p>
 
-    <!-- Hidden input -->
     <input
       ref="inputRef"
       type="file"

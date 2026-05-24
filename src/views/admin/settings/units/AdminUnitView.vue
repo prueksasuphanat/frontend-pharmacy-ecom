@@ -8,18 +8,16 @@ import {
   BaseModal,
   BaseAutocomplete,
 } from "@/components/ui";
-import type { Column, PaginationConfig } from "@/components/ui/BaseTable.vue";
+import type { Column } from "@/components/ui/BaseTable.vue";
 import type { Unit } from "@/types";
 import { useUnitStore } from "@/stores";
 import { formatDate } from "@/utils";
 
 const unitStore = useUnitStore();
 
-// State
 const searchQuery = ref("");
 const statusFilter = ref<string | number | null>(null);
 
-// Modal state
 const addModalOpen = ref(false);
 const editModalOpen = ref(false);
 const deleteModalOpen = ref(false);
@@ -27,12 +25,10 @@ const modalLoading = ref(false);
 const unitForm = ref({ name: "", is_active: true });
 const selectedUnit = ref<Unit | null>(null);
 
-// Computed
 const units = computed(() => unitStore.units);
 const loading = computed(() => unitStore.isLoading);
 const pagination = computed(() => unitStore.pagination);
 
-// Table columns
 const columns: Column<Unit>[] = [
   { key: "name", label: "ชื่อหน่วย" },
   { key: "is_active", label: "สถานะ", width: "120px", align: "center" },
@@ -70,7 +66,6 @@ function handleStatusFilterChange() {
   fetchUnits();
 }
 
-// Add
 function handleAddUnit() {
   unitForm.value = { name: "", is_active: true };
   addModalOpen.value = true;
@@ -89,7 +84,6 @@ async function saveUnit() {
   if (success) closeAddModal();
 }
 
-// Edit
 async function handleEditUnit(unit: Unit) {
   selectedUnit.value = unit;
   editModalOpen.value = true;
@@ -119,7 +113,6 @@ async function updateUnit() {
   if (success) closeEditModal();
 }
 
-// Delete
 function handleDeleteUnit(unit: Unit) {
   selectedUnit.value = unit;
   deleteModalOpen.value = true;
@@ -138,7 +131,6 @@ async function confirmDeleteUnit() {
   if (success) closeDeleteModal();
 }
 
-// Toggle
 async function handleToggleStatus(unit: Unit) {
   await unitStore.toggleUnitActive(unit.id);
 }
@@ -150,7 +142,6 @@ onMounted(() => {
 
 <template>
   <div>
-    <!-- Header -->
     <div class="page-header mb-6">
       <h1 class="page-title">จัดการหน่วย</h1>
       <button class="btn-primary text-sm gap-1.5" @click="handleAddUnit">
@@ -158,7 +149,6 @@ onMounted(() => {
       </button>
     </div>
 
-    <!-- Filters -->
     <div class="card mb-6">
       <div class="flex flex-col sm:flex-row gap-4">
         <div class="flex-1">
@@ -184,7 +174,6 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- Table -->
     <BaseTable
       :columns="columns"
       :data="units"
@@ -228,7 +217,6 @@ onMounted(() => {
       </template>
     </BaseTable>
 
-    <!-- Add Modal -->
     <BaseModal
       v-if="addModalOpen"
       title="เพิ่มหน่วย"
@@ -262,7 +250,6 @@ onMounted(() => {
       </template>
     </BaseModal>
 
-    <!-- Edit Modal -->
     <BaseModal
       v-if="editModalOpen && selectedUnit"
       title="แก้ไขหน่วย"
@@ -320,7 +307,6 @@ onMounted(() => {
       </template>
     </BaseModal>
 
-    <!-- Delete Modal -->
     <BaseModal
       v-if="deleteModalOpen && selectedUnit"
       title="ยืนยันการลบ"

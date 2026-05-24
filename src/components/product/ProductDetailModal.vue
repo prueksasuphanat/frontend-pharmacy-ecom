@@ -2,6 +2,7 @@
 import { ref, computed, watch, onMounted, onUnmounted } from "vue";
 import { usePublicProductStore } from "@/stores/public/product.store";
 import { useCartStore } from "@/stores/customer/cart.store";
+import { useWishlistStore } from "@/stores/customer/wishlist.store";
 import { ProductImage } from "@/components/product";
 import {
   ShoppingCart,
@@ -14,6 +15,7 @@ import {
   Pill,
   Tag,
 } from "lucide-vue-next";
+import { formatPrice as _formatPrice } from "@/utils/format";
 
 const props = defineProps<{
   productId: number | null;
@@ -25,6 +27,7 @@ const emit = defineEmits<{
 
 const cart = useCartStore();
 const store = usePublicProductStore();
+const wishlistStore = useWishlistStore();
 
 const product = computed(() => store.selectedProduct);
 const isLoading = computed(() => store.isLoadingDetail);
@@ -32,7 +35,10 @@ const isLoading = computed(() => store.isLoadingDetail);
 const selectedUnitId = ref<number | null>(null);
 const qty = ref(1);
 const addedToCart = ref(false);
-const inWishlist = ref(false);
+
+const inWishlist = computed(() =>
+  product.value ? wishlistStore.isInWishlist(product.value.id) : false,
+);
 
 const selectedUnit = computed(() => {
   if (!product.value?.units?.length) return null;
@@ -44,13 +50,13 @@ const selectedUnit = computed(() => {
 
 function formatPrice(n: number) {
   if (n === 0) return "ติดต่อสอบถาม";
-  return n.toLocaleString("th-TH", { minimumFractionDigits: 2 });
+  return _formatPrice(n);
 }
 
 function addToCart() {
   if (!product.value || product.value.quantity === 0 || !selectedUnit.value)
     return;
-  cart.addToCart(String(product.value.id), qty.value);
+  cart.addToCart(selectedUnit.value.id, qty.value);
   addedToCart.value = true;
   setTimeout(() => (addedToCart.value = false), 2000);
 }
@@ -98,13 +104,11 @@ onUnmounted(() => {
         v-if="productId !== null"
         class="fixed inset-0 z-50 flex items-center justify-center p-4"
       >
-        <!-- Backdrop -->
         <div
           class="absolute inset-0 bg-black/50 backdrop-blur-sm"
           @click="$emit('close')"
         />
 
-        <!-- Modal -->
         <Transition
           enter-active-class="transition-all duration-200"
           leave-active-class="transition-all duration-200"
@@ -115,7 +119,6 @@ onUnmounted(() => {
             v-if="productId !== null"
             class="relative bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col"
           >
-            <!-- Close -->
             <div class="absolute top-0 right-0 z-10 p-4">
               <button
                 @click="$emit('close')"
@@ -125,7 +128,6 @@ onUnmounted(() => {
               </button>
             </div>
 
-            <!-- Loading skeleton -->
             <div
               v-if="isLoading"
               class="p-8 grid grid-cols-1 md:grid-cols-2 gap-6 animate-pulse"
@@ -140,16 +142,13 @@ onUnmounted(() => {
               </div>
             </div>
 
-            <!-- ไม่พบสินค้า -->
             <div v-else-if="!product" class="p-12 text-center">
               <Package class="w-16 h-16 text-secondary-200 mx-auto mb-4" />
               <p class="text-secondary-400">ไม่พบสินค้า</p>
             </div>
 
-            <!-- Content -->
             <div v-else class="overflow-y-auto">
               <div class="grid grid-cols-1 md:grid-cols-2 gap-0">
-                <!-- Left: Image -->
                 <div
                   class="relative bg-gradient-to-br from-teal-50 to-primary-50 flex items-center justify-center min-h-[360px] md:min-h-full"
                 >
@@ -159,7 +158,7 @@ onUnmounted(() => {
                     img-class="w-full h-full max-h-[480px] object-contain"
                     class="w-full h-full max-h-[480px] flex items-center justify-center"
                   />
-                  <!-- Category badges -->
+
                   <div
                     v-if="product.categories?.length"
                     class="absolute top-4 left-4 flex flex-wrap gap-1"
@@ -174,9 +173,7 @@ onUnmounted(() => {
                   </div>
                 </div>
 
-                <!-- Right: Details -->
                 <div class="p-6 md:p-8 flex flex-col gap-4 overflow-y-auto">
-                  <!-- Header -->
                   <div>
                     <h1
                       class="text-xl md:text-2xl font-bold text-secondary-900 leading-tight"
@@ -191,7 +188,6 @@ onUnmounted(() => {
                     </p>
                   </div>
 
-                  <!-- Unit Selector -->
                   <div v-if="product.units?.length">
                     <p
                       class="text-xs font-semibold text-secondary-500 uppercase tracking-wide mb-2"
@@ -216,7 +212,7 @@ onUnmounted(() => {
                         {{ unit.unit?.name }}
                       </button>
                     </div>
-                    <!-- unit label (จำนวนต่อหน่วย) -->
+
                     <p
                       v-if="selectedUnit && (selectedUnit as any).unit_label"
                       class="text-xs text-secondary-400 mt-1.5"
@@ -225,7 +221,6 @@ onUnmounted(() => {
                     </p>
                   </div>
 
-                  <!-- Price & Stock Card -->
                   <div
                     class="bg-gradient-to-br from-primary-50 to-teal-50 border border-primary-100 rounded-2xl p-4"
                   >
@@ -278,7 +273,6 @@ onUnmounted(() => {
                       </div>
                     </div>
 
-                    <!-- Add to cart -->
                     <div
                       v-if="product.quantity > 0"
                       class="flex items-center gap-2"
@@ -317,7 +311,11 @@ onUnmounted(() => {
                         {{ addedToCart ? "✓ เพิ่มแล้ว!" : "เพิ่มลงตะกร้า" }}
                       </button>
                       <button
-                        @click="inWishlist = !inWishlist"
+                        @click="
+                          inWishlist
+                            ? wishlistStore.toggle(product.id)
+                            : wishlistStore.toggle(product.id)
+                        "
                         :class="[
                           'w-10 h-10 rounded-xl border-2 flex items-center justify-center transition-all',
                           inWishlist
@@ -338,9 +336,7 @@ onUnmounted(() => {
                     </p>
                   </div>
 
-                  <!-- Info sections -->
                   <div class="space-y-2">
-                    <!-- วิธีใช้ — แสดงเสมอ -->
                     <div
                       class="flex items-start gap-3 p-3 bg-secondary-50 rounded-xl"
                     >
@@ -359,7 +355,6 @@ onUnmounted(() => {
                       </div>
                     </div>
 
-                    <!-- คำเตือน — แสดงเสมอ -->
                     <div
                       class="flex items-start gap-3 p-3 bg-yellow-50 border border-yellow-100 rounded-xl"
                     >
@@ -376,7 +371,6 @@ onUnmounted(() => {
                       </div>
                     </div>
 
-                    <!-- หมวดหมู่ — แสดงเสมอ -->
                     <div
                       class="flex items-start gap-3 p-3 bg-secondary-50 rounded-xl"
                     >

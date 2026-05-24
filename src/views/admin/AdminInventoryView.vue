@@ -16,25 +16,21 @@ import type { Column } from "@/components/ui/BaseTable.vue";
 import type { Product, Unit } from "@/types";
 import { useProductStore, useCategoryStore } from "@/stores";
 import { unitsApi } from "@/api";
-import { formatDate } from "@/utils";
+import { formatDate, formatPrice } from "@/utils";
 import AdminProductUnitView from "@/views/admin/settings/product-units/AdminProductUnitView.vue";
 import { useToast } from "@/composables";
 
-// Stores
 const productStore = useProductStore();
 const categoryStore = useCategoryStore();
 const toast = useToast();
 
-// Units state (for base_unit dropdown)
 const allUnits = ref<Unit[]>([]);
 
-// State
 const searchQuery = ref("");
 const statusFilter = ref<string | number | null>(null);
 const categoryFilter = ref<string | number | null>(null);
 const specialPricingFilter = ref<string | number | null>(null);
 
-// Modal state
 const editModalOpen = ref(false);
 const modalLoading = ref(false);
 const selectedProduct = ref<Product | null>(null);
@@ -52,7 +48,6 @@ const productForm = ref({
   base_unit_id: null as number | null,
 });
 
-// Computed
 const products = computed(() => productStore.products);
 const loading = computed(() => productStore.isLoading);
 const pagination = computed(() => productStore.pagination);
@@ -65,7 +60,6 @@ const currentImageUrl = computed(() => {
   return attachments[0].url;
 });
 
-// Table columns
 const columns: Column<Product>[] = [
   { key: "code", label: "รหัสสินค้า", width: "120px" },
   { key: "name", label: "ชื่อสินค้า", minWidth: "250px" },
@@ -88,7 +82,6 @@ const columns: Column<Product>[] = [
   },
 ];
 
-// Filter options
 const statusOptions = [
   { value: "active", label: "ใช้งาน" },
   { value: "inactive", label: "ไม่ใช้งาน" },
@@ -118,7 +111,7 @@ const unitOptions = computed(() =>
 );
 
 async function fetchUnits() {
-  if (allUnits.value.length > 0) return; // fetch once only
+  if (allUnits.value.length > 0) return;
   try {
     const res = await unitsApi.getUnits({ limit: 1000, is_active: true });
     allUnits.value = res.data;
@@ -225,7 +218,7 @@ async function updateProduct() {
       generic_name: productForm.value.generic_name || undefined,
       using: productForm.value.using || undefined,
       warning: productForm.value.warning || undefined,
-      base_unit_id: productForm.value.base_unit_id ?? null, // ส่ง null เพื่อ clear
+      base_unit_id: productForm.value.base_unit_id ?? null,
     },
     imageFile.value,
     removeImage.value,
@@ -237,27 +230,18 @@ async function updateProduct() {
   }
 }
 
-function formatPrice(price: string | number): string {
-  const numPrice = typeof price === "string" ? parseFloat(price) : price;
-  return numPrice.toLocaleString("th-TH", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-}
-
-function getBaseUnitPrice(product: Product): string {
-  if (!product.base_unit_id || !product.units) return "-";
+function getBaseUnitPrice(product: Product): number | null {
+  if (!product.base_unit_id || !product.units) return null;
   const baseUnit = product.units.find(
     (pu) => pu.unit_id === product.base_unit_id,
   );
-  return baseUnit ? String(baseUnit.default_price) : "-";
+  return baseUnit ? Number(baseUnit.default_price) : null;
 }
 
 function handleProductUnitUpdated() {
   fetchProducts();
 }
 
-// เมื่อ AdminProductUnitView ขอให้ save product ก่อน (เพื่อสร้าง base unit ใน DB)
 async function handleSaveProductFirst() {
   if (!selectedProduct.value) return;
   if (!productForm.value.name.trim()) return;
@@ -281,17 +265,15 @@ async function handleSaveProductFirst() {
   modalLoading.value = false;
 
   if (updated) {
-    // reload selectedProduct เพื่อให้ pendingBaseUnit computed รู้ว่า unit นั้นมีใน DB แล้ว
     const fresh = await productStore.getProductById(selectedProduct.value.id);
     if (fresh) selectedProduct.value = fresh;
   }
 }
 
-// computed หา Unit object จาก base_unit_id ที่เลือก (สำหรับ pending display)
 const pendingBaseUnit = computed(() => {
   const id = productForm.value.base_unit_id;
   if (id == null) return null;
-  // ถ้า unit นี้ยังไม่มีใน DB (ไม่มีใน selectedProduct.units) → pending
+
   const existsInDB = selectedProduct.value?.units?.some(
     (pu) => pu.unit_id === id,
   );
@@ -310,12 +292,10 @@ onMounted(async () => {
   <div>
     <LoadingOverlay :loading="loading && products.length > 0" />
 
-    <!-- Header -->
     <div class="page-header mb-6">
       <h1 class="page-title">สินค้า</h1>
     </div>
 
-    <!-- Filters -->
     <div class="card mb-6">
       <div class="flex flex-col gap-4">
         <div class="flex-1">
@@ -366,7 +346,6 @@ onMounted(async () => {
       </div>
     </div>
 
-    <!-- Table -->
     <BaseTable
       :columns="columns"
       :data="products"
@@ -406,8 +385,8 @@ onMounted(async () => {
       <template #cell-default_price="{ row }">
         <span class="text-sm font-medium text-secondary-900">
           {{
-            getBaseUnitPrice(row) !== "-"
-              ? `฿${formatPrice(getBaseUnitPrice(row))}`
+            getBaseUnitPrice(row) !== null
+              ? `฿${formatPrice(getBaseUnitPrice(row)!)}`
               : "-"
           }}
         </span>
@@ -444,7 +423,6 @@ onMounted(async () => {
       </template>
     </BaseTable>
 
-    <!-- Edit Product Modal -->
     <BaseModal
       v-if="editModalOpen && selectedProduct"
       title="แก้ไขสินค้า"
@@ -455,7 +433,6 @@ onMounted(async () => {
         <LoadingOverlay :loading="modalLoading" text="กำลังโหลดข้อมูล..." />
 
         <div class="grid grid-cols-2 gap-5 py-2">
-          <!-- รูปภาพ -->
           <div class="">
             <ImageUploader
               class="w-[300px] h-[300px]"
@@ -521,7 +498,6 @@ onMounted(async () => {
             :disabled="modalLoading"
           />
 
-          <!-- ราคา + จำนวน + ราคาพิเศษ -->
           <BaseInput
             v-model.number="productForm.quantity"
             label="จำนวนคงเหลือ"
@@ -540,7 +516,6 @@ onMounted(async () => {
             />
           </div>
 
-          <!-- วิธีใช้ + คำเตือน -->
           <BaseTextarea
             v-model="productForm.using"
             label="วิธีใช้"
@@ -556,9 +531,6 @@ onMounted(async () => {
             :disabled="modalLoading"
           />
 
-          <!-- Metadata -->
-
-          <!-- หน่วยขาย section -->
           <div class="col-span-2">
             <div class="border-t border-secondary-200 my-4"></div>
             <AdminProductUnitView
@@ -573,8 +545,6 @@ onMounted(async () => {
             />
             <div class="border-t border-secondary-200 my-4"></div>
           </div>
-
-          <!-- Metadata -->
 
           <div>
             <p class="text-secondary-400 text-xs mb-0.5">สถานะ</p>

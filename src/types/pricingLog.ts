@@ -1,5 +1,3 @@
-// Pricing Log type definitions
-
 export interface PricingLogProduct {
   id: number;
   code: string;
@@ -33,9 +31,6 @@ export interface PricingLogUser {
   role: string;
 }
 
-// ==========================================
-// Default Price Logs (อ้างอิง product_unit_id)
-// ==========================================
 export interface DefaultPriceLogEntry {
   id: number;
   product_unit_id: number | null;
@@ -62,9 +57,6 @@ export interface DefaultPriceLogByProductEntry {
   user: PricingLogUser | null;
 }
 
-// ==========================================
-// Special Price Logs (อ้างอิง product_unit_id)
-// ==========================================
 export interface SpecialPriceLogEntry {
   id: number;
   product_price_id: number | null;
@@ -112,9 +104,6 @@ export interface SpecialPriceLogByUserEntry {
   changed_by_user: PricingLogUser | null;
 }
 
-// ==========================================
-// Response types
-// ==========================================
 export interface DefaultPriceLogListResponse {
   success: boolean;
   data: DefaultPriceLogEntry[];
@@ -167,7 +156,7 @@ export interface PricingLogParams {
   search?: string;
   product_id?: number;
   user_id?: number;
-  changed_at?: string; // YYYY-MM-DD
+  changed_at?: string;
 }
 
 export type PricingType = "default" | "user";

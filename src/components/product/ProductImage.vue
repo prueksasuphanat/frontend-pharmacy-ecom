@@ -11,9 +11,8 @@ const imageUrl = props.attachments?.[0]?.url ?? null;
 </script>
 
 <template>
-  <!-- มีรูป → แสดง img -->
   <img v-if="imageUrl" :src="imageUrl" :alt="name" :class="imgClass" />
-  <!-- ไม่มีรูป → placeholder ชื่อยาเต็ม -->
+
   <div
     v-else
     :class="imgClass"

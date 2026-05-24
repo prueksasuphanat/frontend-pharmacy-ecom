@@ -35,13 +35,13 @@ const logsMenu = {
       icon: BarChart2,
     },
     {
-      to: "/admin/logs/user",
-      label: "ผู้ใช้งาน",
+      to: "/admin/logs/user-sessions",
+      label: "ประวัติการเข้าใช้งาน",
       icon: Users,
     },
     {
-      to: "/admin/logs/order",
-      label: "คำสั่งซื้อ",
+      to: "/admin/logs/product-views",
+      label: "ประวัติการชมสินค้า",
       icon: ShoppingBag,
     },
   ],
@@ -83,7 +83,6 @@ function isLogsActive() {
   return route.path.startsWith("/admin/logs");
 }
 
-// Auto-expand menus if on their pages
 if (isSettingsActive()) {
   settingsExpanded.value = true;
 }
@@ -97,7 +96,6 @@ if (isLogsActive()) {
   <aside
     class="w-60 shrink-0 hidden lg:flex flex-col h-screen sticky top-0 bg-white border-r border-secondary-100"
   >
-    <!-- Logo -->
     <div
       class="flex items-center gap-2.5 px-5 h-16 border-b border-secondary-100"
     >
@@ -112,9 +110,7 @@ if (isLogsActive()) {
       </div>
     </div>
 
-    <!-- Navigation -->
     <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-      <!-- Regular Links -->
       <RouterLink
         v-for="link in links"
         :key="link.to"
@@ -125,7 +121,6 @@ if (isLogsActive()) {
         {{ link.label }}
       </RouterLink>
 
-      <!-- Logs Menu with Submenu -->
       <div>
         <button
           @click="logsExpanded = !logsExpanded"
@@ -144,7 +139,6 @@ if (isLogsActive()) {
           />
         </button>
 
-        <!-- Submenu -->
         <div
           v-show="logsExpanded"
           class="ml-4 mt-1 space-y-1 border-l-2 border-secondary-100 pl-2"
@@ -161,7 +155,6 @@ if (isLogsActive()) {
         </div>
       </div>
 
-      <!-- Settings Menu with Submenu -->
       <div>
         <button
           @click="settingsExpanded = !settingsExpanded"
@@ -180,7 +173,6 @@ if (isLogsActive()) {
           />
         </button>
 
-        <!-- Submenu -->
         <div
           v-show="settingsExpanded"
           class="ml-4 mt-1 space-y-1 border-l-2 border-secondary-100 pl-2"
@@ -198,7 +190,6 @@ if (isLogsActive()) {
       </div>
     </nav>
 
-    <!-- Footer -->
     <div class="px-3 py-4 border-t border-secondary-100">
       <RouterLink
         to="/products"

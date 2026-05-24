@@ -14,18 +14,16 @@ const productPriceStore = useProductPriceStore();
 const usersStore = useUsersStore();
 const productStore = useProductStore();
 
-// State
 const allUsers = computed(() => usersStore.users);
 const products = ref<Product[]>([]);
 const selectedProducts = ref<Product[]>([]);
-// Task 1.1: key is product_unit_id → user_id → price string
+
 const priceMatrix = ref<Record<number, Record<number, string>>>({});
-// Task 1.2: track is_special per cell (product_unit_id → user_id → boolean)
+
 const specialMatrix = ref<Record<number, Record<number, boolean>>>({});
 const isLoading = ref(false);
 const isTransposed = ref(false);
 
-// Custom user selection
 const isCustomUserMode = ref(false);
 const selectedUsers = ref<User[]>([]);
 const selectedUserId = ref<number | null>(null);
@@ -55,7 +53,6 @@ function addUserRow() {
 
   selectedUsers.value.push(user);
 
-  // Task 1.9: initialize priceMatrix with product_unit_id keys
   allProductUnits.value.forEach((unit) => {
     if (!priceMatrix.value[unit.product_unit_id]) {
       priceMatrix.value[unit.product_unit_id] = {};
@@ -94,7 +91,6 @@ const productOptions = computed(() =>
 
 const selectedProductId = ref<number | null>(null);
 
-// Task 1.3: flatten units from all selectedProducts
 const allProductUnits = computed(() => {
   return selectedProducts.value.flatMap((product) => {
     const priceData = productPriceStore.productPrices.find(
@@ -104,7 +100,6 @@ const allProductUnits = computed(() => {
   });
 });
 
-// Task 1.4: grouped columns: product → units[] for rendering grouped headers
 const groupedColumns = computed(() => {
   return selectedProducts.value.map((product) => {
     const priceData = productPriceStore.productPrices.find(
@@ -117,7 +112,6 @@ const groupedColumns = computed(() => {
   });
 });
 
-// Fetch data
 async function fetchUsers() {
   await usersStore.getUsers({ is_delete: false, limit: 1000 });
   initializePriceMatrix();
@@ -132,10 +126,7 @@ async function fetchProducts() {
   products.value = productStore.products;
 }
 
-function initializePriceMatrix() {
-  // priceMatrix is now keyed by product_unit_id → user_id
-  // No pre-initialization needed; populated by fetchPricesForProducts
-}
+function initializePriceMatrix() {}
 
 async function addProductColumn() {
   if (!selectedProductId.value) {
@@ -153,7 +144,6 @@ async function addProductColumn() {
   selectedProductId.value = null;
 }
 
-// Task 1.7: delete all product_unit_id keys for that product from priceMatrix and specialMatrix
 function removeProductColumn(productId: number) {
   const priceData = productPriceStore.productPrices.find(
     (pp) => pp.product_id === productId,
@@ -167,23 +157,21 @@ function removeProductColumn(productId: number) {
   );
 }
 
-// Task 1.6: use productUnitId as key instead of productId
 function updatePrice(
   userId: number,
   productUnitId: number,
-  value: string | number,
+  value: string | number | null,
 ) {
   if (!priceMatrix.value[productUnitId]) {
     priceMatrix.value[productUnitId] = {};
   }
-  priceMatrix.value[productUnitId][userId] = String(value);
+  priceMatrix.value[productUnitId][userId] = value != null ? String(value) : "";
 }
 
 function getUserFullName(user: User): string {
   return formatUserName(user);
 }
 
-// Task 1.5: read from storePriceMatrix[product_unit_id][user_id] and populate both priceMatrix and specialMatrix
 async function fetchPricesForProducts() {
   if (selectedProducts.value.length === 0) {
     return;
@@ -210,7 +198,6 @@ async function fetchPricesForProducts() {
   });
 }
 
-// Task 1.8: generate payload { product_unit_id, user_id, price } instead of { product_id, user_id, price }
 async function saveAllPrices() {
   if (selectedProducts.value.length === 0) {
     toast.warning("ไม่มีข้อมูลที่จะบันทึก");
@@ -244,7 +231,6 @@ onMounted(async () => {
 
 <template>
   <div>
-    <!-- Back Button (Mobile) -->
     <button
       @click="router.push('/admin/settings')"
       class="lg:hidden flex items-center gap-2 text-secondary-600 hover:text-primary-600 mb-4 -ml-2"
@@ -260,7 +246,6 @@ onMounted(async () => {
       </p>
     </div>
 
-    <!-- Loading State -->
     <div v-if="isLoading" class="card">
       <div class="flex items-center justify-center py-12">
         <div
@@ -270,11 +255,8 @@ onMounted(async () => {
       </div>
     </div>
 
-    <!-- Main Content -->
     <div v-else class="card">
-      <!-- Filters Row -->
       <div class="mb-4 pb-4 border-b border-secondary-100 space-y-2">
-        <!-- Product -->
         <div class="flex flex-col sm:flex-row sm:items-center gap-2">
           <span class="text-sm font-medium text-secondary-700 sm:w-16 shrink-0"
             >สินค้า</span
@@ -299,7 +281,6 @@ onMounted(async () => {
           </div>
         </div>
 
-        <!-- User -->
         <div class="flex flex-col sm:flex-row sm:items-center gap-2">
           <div class="sm:w-16 shrink-0 flex items-center gap-1.5">
             <input
@@ -375,14 +356,12 @@ onMounted(async () => {
         </div>
 
         <div class="overflow-x-auto -mx-6 px-6">
-          <!-- Normal: users = rows, product_units = columns -->
           <table
             v-if="!isTransposed"
             class="w-full border-collapse"
             style="min-width: 500px"
           >
             <thead>
-              <!-- Row 1: Product group headers -->
               <tr class="border-b border-secondary-200">
                 <th
                   class="sticky left-0 z-10 bg-white px-4 py-3 text-left text-sm font-semibold text-secondary-900 w-[160px] sm:min-w-[200px] border-r border-secondary-200"
@@ -394,7 +373,6 @@ onMounted(async () => {
                   v-for="group in groupedColumns"
                   :key="group.product.id"
                 >
-                  <!-- Empty state: product has no units -->
                   <th
                     v-if="group.units.length === 0"
                     class="px-4 py-3 text-left text-sm font-semibold text-secondary-900 min-w-[180px] border-r border-secondary-200 last:border-r-0"
@@ -420,7 +398,7 @@ onMounted(async () => {
                       </button>
                     </div>
                   </th>
-                  <!-- Normal: product has units -->
+
                   <th
                     v-else
                     :colspan="group.units.length"
@@ -521,7 +499,7 @@ onMounted(async () => {
                         priceMatrix[unit.product_unit_id]?.[user.id] ?? ''
                       "
                       @update:model-value="
-                        (value: string | number) =>
+                        (value: string | number | null) =>
                           updatePrice(user.id, unit.product_unit_id, value)
                       "
                       type="number"
@@ -628,7 +606,7 @@ onMounted(async () => {
                         priceMatrix[unit.product_unit_id]?.[user.id] ?? ''
                       "
                       @update:model-value="
-                        (value: string | number) =>
+                        (value: string | number | null) =>
                           updatePrice(user.id, unit.product_unit_id, value)
                       "
                       type="number"
@@ -677,12 +655,10 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-/* Ensure sticky column works properly */
 .sticky {
   position: sticky;
 }
 
-/* Custom scrollbar for table */
 .overflow-x-auto::-webkit-scrollbar {
   height: 8px;
 }
@@ -701,7 +677,6 @@ onMounted(async () => {
   background: #94a3b8;
 }
 
-/* Table styling */
 table {
   border-spacing: 0;
 }
@@ -711,7 +686,6 @@ td {
   white-space: nowrap;
 }
 
-/* Ensure hover effect works with sticky column */
 tr:hover .sticky {
   background-color: rgb(248 250 252);
 }

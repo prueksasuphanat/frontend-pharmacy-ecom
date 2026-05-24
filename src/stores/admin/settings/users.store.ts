@@ -3,11 +3,17 @@ import type { User } from "@/types";
 import { usersApi } from "@/api";
 import type { GetUsersParams } from "@/api";
 import { useToast } from "@/composables";
-import dayjs from "dayjs";
+
+let toastInstance: ReturnType<typeof useToast> | null = null;
+const getToast = () => {
+  if (!toastInstance) toastInstance = useToast();
+  return toastInstance;
+};
 
 interface UsersState {
   users: User[];
   userFullName: User[];
+  selectedUser: User | null;
   pagination: {
     page: number;
     limit: number;
@@ -22,6 +28,7 @@ export const useUsersStore = defineStore("users", {
   state: (): UsersState => ({
     users: [],
     userFullName: [],
+    selectedUser: null,
     pagination: {
       page: 1,
       limit: 10,
@@ -49,7 +56,7 @@ export const useUsersStore = defineStore("users", {
         const response = await usersApi.getAll(params);
 
         if (response.data.success) {
-          this.users = response.data.data as unknown as User[];
+          this.users = response.data.data;
           if (response.data.pagination) {
             this.pagination = response.data.pagination;
           }
@@ -58,10 +65,9 @@ export const useUsersStore = defineStore("users", {
           this.error = response.data.message || "ไม่สามารถดึงข้อมูลผู้ใช้ได้";
           return false;
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         this.error =
-          err.response?.data?.message || "เกิดข้อผิดพลาดในการดึงข้อมูลผู้ใช้";
-        console.error("Error fetching users:", err);
+          (err as any).response?.data?.message || "เกิดข้อผิดพลาดในการดึงข้อมูลผู้ใช้";
         return false;
       } finally {
         this.isLoading = false;
@@ -76,26 +82,25 @@ export const useUsersStore = defineStore("users", {
         const response = await usersApi.getUserFullName();
 
         if (response.data.success) {
-          this.userFullName = response.data.data as unknown as User[];
-
+          this.userFullName = response.data.data;
           return true;
         } else {
           this.error = response.data.message || "ไม่สามารถดึงข้อมูลผู้ใช้ได้";
           return false;
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         this.error =
-          err.response?.data?.message || "เกิดข้อผิดพลาดในการดึงข้อมูลผู้ใช้";
-        console.error("Error fetching users:", err);
+          (err as any).response?.data?.message || "เกิดข้อผิดพลาดในการดึงข้อมูลผู้ใช้";
         return false;
       } finally {
         this.isLoading = false;
       }
     },
 
-    getFullName(id: number | string) {
+    getFullName(id?: number | string | null) {
+      if (id == null) return null;
       return (
-        this.userFullName.find((user) => user.id === id)?.full_name || null
+        (this.userFullName.find((user) => user.id === id) as any)?.full_name || null
       );
     },
 
@@ -107,18 +112,15 @@ export const useUsersStore = defineStore("users", {
         const response = await usersApi.getById(id);
 
         if (response.data.success) {
-          this.selectedUser = response.data.data as unknown as User[];
-
+          this.selectedUser = response.data.data;
           return true;
         } else {
           this.error = response.data.message || "ไม่สามารถดึงข้อมูลผู้ใช้ได้";
-
           return false;
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         this.error =
-          err.response?.data?.message || "เกิดข้อผิดพลาดในการดึงข้อมูลผู้ใช้";
-        console.error("Error fetching users:", err);
+          (err as any).response?.data?.message || "เกิดข้อผิดพลาดในการดึงข้อมูลผู้ใช้";
         return false;
       } finally {
         this.isLoading = false;
@@ -133,8 +135,7 @@ export const useUsersStore = defineStore("users", {
         const response = await usersApi.adminGetById(id);
 
         if (response.data.success) {
-          const updated = response.data.data as unknown as User;
-          // Sync into local list if present
+          const updated = response.data.data;
           const idx = this.users.findIndex((u) => u.id === id);
           if (idx !== -1) this.users[idx] = updated;
           return updated;
@@ -142,10 +143,9 @@ export const useUsersStore = defineStore("users", {
           this.error = response.data.message || "ไม่สามารถดึงข้อมูลผู้ใช้ได้";
           return null;
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         this.error =
-          err.response?.data?.message || "เกิดข้อผิดพลาดในการดึงข้อมูลผู้ใช้";
-        console.error("Error fetching user by id:", err);
+          (err as any).response?.data?.message || "เกิดข้อผิดพลาดในการดึงข้อมูลผู้ใช้";
         return null;
       } finally {
         this.isLoading = false;
@@ -158,18 +158,17 @@ export const useUsersStore = defineStore("users", {
     ): Promise<boolean> {
       this.isLoading = true;
       this.error = null;
-      const toast = useToast();
+      const toast = getToast();
 
       try {
         const response = await usersApi.adminUpdateById(id, payload);
 
         if (response.data.success) {
-          // Update user in local state
           const idx = this.users.findIndex((u) => u.id === id);
           if (idx !== -1) {
             this.users[idx] = {
               ...this.users[idx],
-              ...(response.data.data as unknown as User),
+              ...response.data.data,
             };
           }
           toast.success("อัปเดตข้อมูลผู้ใช้สำเร็จ");
@@ -180,12 +179,11 @@ export const useUsersStore = defineStore("users", {
           toast.error(this.error);
           return false;
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         this.error =
-          err.response?.data?.message ||
+          (err as any).response?.data?.message ||
           "เกิดข้อผิดพลาดในการอัปเดตข้อมูลผู้ใช้";
-        toast.error(this.error);
-        console.error("Error updating user:", err);
+        toast.error(this.error || "เกิดข้อผิดพลาดในการอัปเดตข้อมูลผู้ใช้");
         return false;
       } finally {
         this.isLoading = false;
@@ -195,7 +193,7 @@ export const useUsersStore = defineStore("users", {
     async toggleActive(id: number | string) {
       this.isLoading = true;
       this.error = null;
-      const toast = useToast();
+      const toast = getToast();
       try {
         const response = await usersApi.toggleActive(id);
 
@@ -215,11 +213,10 @@ export const useUsersStore = defineStore("users", {
         }
 
         return false;
-      } catch (err: any) {
+      } catch (err: unknown) {
         this.error =
-          err.response?.data?.message || "ไม่สามารถเปลี่ยนสถานะผู้ใช้ได้";
-        toast.error(this.error);
-        console.error("Error updating user:", err);
+          (err as any).response?.data?.message || "ไม่สามารถเปลี่ยนสถานะผู้ใช้ได้";
+        toast.error(this.error || "ไม่สามารถเปลี่ยนสถานะผู้ใช้ได้");
         return false;
       } finally {
         this.isLoading = false;
@@ -229,7 +226,7 @@ export const useUsersStore = defineStore("users", {
     async adminChangeRole(id: number | string, role: string) {
       this.isLoading = true;
       this.error = null;
-      const toast = useToast();
+      const toast = getToast();
       try {
         const response = await usersApi.changeRole(id, role);
 
@@ -248,22 +245,20 @@ export const useUsersStore = defineStore("users", {
         }
 
         return false;
-      } catch (err: any) {
+      } catch (err: unknown) {
         this.error =
-          err.response?.data?.message || "ไม่สามารถเปลี่ยนสถานะผู้ใช้ได้";
-        toast.error(this.error);
-        console.error("Error updating user:", err);
+          (err as any).response?.data?.message || "ไม่สามารถเปลี่ยนสถานะผู้ใช้ได้";
+        toast.error(this.error || "ไม่สามารถเปลี่ยนสถานะผู้ใช้ได้");
         return false;
       } finally {
         this.isLoading = false;
       }
     },
 
-    async verifiredUser(id: number | string) {
+    async verifyUser(id: number | string) {
       this.isLoading = true;
       this.error = null;
-
-      const toast = useToast();
+      const toast = getToast();
 
       try {
         const response = await usersApi.verified(id);
@@ -285,10 +280,9 @@ export const useUsersStore = defineStore("users", {
         }
 
         return false;
-      } catch (err: any) {
-        this.error = err.response?.data?.message || "ไม่สามารถยืนยันผู้ใช้งาน";
-        toast.error(this.error);
-        console.error("Error updating user:", err);
+      } catch (err: unknown) {
+        this.error = (err as any).response?.data?.message || "ไม่สามารถยืนยันผู้ใช้งาน";
+        toast.error(this.error || "ไม่สามารถยืนยันผู้ใช้งาน");
         return false;
       } finally {
         this.isLoading = false;

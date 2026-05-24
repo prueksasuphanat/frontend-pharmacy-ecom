@@ -3,6 +3,12 @@ import { useToast } from "@/composables";
 import type { ProductPriceData, UpdateProductPricePayload } from "@/types";
 import { defineStore } from "pinia";
 
+let toastInstance: ReturnType<typeof useToast> | null = null;
+const getToast = () => {
+  if (!toastInstance) toastInstance = useToast();
+  return toastInstance;
+};
+
 interface ProductPriceState {
   productPrices: ProductPriceData[];
   isLoading: boolean;
@@ -19,7 +25,6 @@ export const useProductPriceStore = defineStore("productPrice", {
   }),
 
   getters: {
-    // price matrix: product_unit_id → user_id → price
     priceMatrix: (state) => {
       const matrix: Record<number, Record<number, number>> = {};
 
@@ -38,7 +43,6 @@ export const useProductPriceStore = defineStore("productPrice", {
       return matrix;
     },
 
-    // ดึงราคาของ user สำหรับ product_unit_id ที่ระบุ
     getPriceByUserAndUnit:
       (state) => (userId: number, productUnitId: number) => {
         for (const productPrice of state.productPrices) {
@@ -53,7 +57,6 @@ export const useProductPriceStore = defineStore("productPrice", {
         return null;
       },
 
-    // ดึง units ทั้งหมดของ product
     getUnitsByProduct: (state) => (productId: number) => {
       const productPrice = state.productPrices.find(
         (pp) => pp.product_id === productId,
@@ -71,7 +74,7 @@ export const useProductPriceStore = defineStore("productPrice", {
 
       this.isLoading = true;
       this.error = null;
-      const toast = useToast();
+      const toast = getToast();
 
       try {
         const response = await productPricesApi.getProductPrices({
@@ -80,11 +83,11 @@ export const useProductPriceStore = defineStore("productPrice", {
 
         this.productPrices = response.data.data;
         return true;
-      } catch (err: any) {
+      } catch (err: unknown) {
         this.error =
-          err.response?.data?.message ||
+          (err as any).response?.data?.message ||
           "เกิดข้อผิดพลาดในการดึงข้อมูลราคาสินค้า";
-        toast.error(this.error);
+        toast.error(this.error || "เกิดข้อผิดพลาดในการดึงข้อมูลราคาสินค้า");
         return false;
       } finally {
         this.isLoading = false;
@@ -96,12 +99,11 @@ export const useProductPriceStore = defineStore("productPrice", {
     ): Promise<boolean> {
       this.isSaving = true;
       this.error = null;
-      const toast = useToast();
+      const toast = getToast();
 
       try {
         const response = await productPricesApi.updateProductPrices({ prices });
 
-        // Update local state
         response.data.data.forEach((result) => {
           if (result.action === "unchanged") return;
 
@@ -140,10 +142,10 @@ export const useProductPriceStore = defineStore("productPrice", {
 
         toast.success(message);
         return true;
-      } catch (err: any) {
+      } catch (err: unknown) {
         this.error =
-          err.response?.data?.message || "เกิดข้อผิดพลาดในการบันทึกราคาสินค้า";
-        toast.error(this.error);
+          (err as any).response?.data?.message || "เกิดข้อผิดพลาดในการบันทึกราคาสินค้า";
+        toast.error(this.error || "เกิดข้อผิดพลาดในการบันทึกราคาสินค้า");
         return false;
       } finally {
         this.isSaving = false;

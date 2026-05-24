@@ -40,13 +40,13 @@ const fullName = computed(() => {
 });
 
 onMounted(() => {
-  notif.startPolling();
+  if (notif.notifications.length === 0) {
+    notif.fetchNotifications();
+  }
   if (usersStore.userFullName.length === 0) {
     usersStore.getUserFullName();
   }
 });
-
-onUnmounted(() => notif.stopPolling());
 </script>
 
 <template>
@@ -54,7 +54,6 @@ onUnmounted(() => notif.stopPolling());
     <AdminSidebar />
 
     <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
-      <!-- Top bar -->
       <header
         class="bg-white border-b border-secondary-100 px-6 h-16 flex items-center justify-between shrink-0"
       >
@@ -82,7 +81,6 @@ onUnmounted(() => notif.stopPolling());
         </div>
       </header>
 
-      <!-- Main content -->
       <main class="relative flex-1 min-h-0 p-0">
         <LoadingOverlay :loading="usersStore.isLoading" />
         <div class="h-full overflow-y-auto pt-6 px-6 pb-[100px]">
@@ -91,7 +89,6 @@ onUnmounted(() => notif.stopPolling());
       </main>
     </div>
 
-    <!-- Mobile bottom nav -->
     <nav
       class="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-secondary-100 flex z-30"
     >

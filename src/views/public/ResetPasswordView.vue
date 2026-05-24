@@ -21,7 +21,6 @@ const errorMessage = ref("");
 const username = ref("");
 const showPw = ref(false);
 
-// ตรวจสอบ token เมื่อโหลดหน้า
 onMounted(async () => {
   token.value = (route.query.token as string) || "";
 
@@ -92,7 +91,6 @@ async function onSubmit() {
       </div>
 
       <div class="card">
-        <!-- Loading state -->
         <div v-if="isVerifying" class="text-center py-8">
           <div
             class="inline-block w-8 h-8 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin mb-3"
@@ -100,7 +98,6 @@ async function onSubmit() {
           <p class="text-sm text-secondary-500">กำลังตรวจสอบลิงก์...</p>
         </div>
 
-        <!-- Token invalid -->
         <div v-else-if="!tokenValid" class="text-center py-4">
           <div
             class="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-3"
@@ -122,7 +119,6 @@ async function onSubmit() {
           </RouterLink>
         </div>
 
-        <!-- Success state -->
         <div v-else-if="success" class="text-center py-4">
           <div
             class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3"
@@ -135,7 +131,6 @@ async function onSubmit() {
           </p>
         </div>
 
-        <!-- Reset password form -->
         <form v-else @submit.prevent="onSubmit" class="space-y-4">
           <BaseInput
             v-model="password"

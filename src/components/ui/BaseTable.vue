@@ -1,6 +1,7 @@
 <script setup lang="ts" generic="T extends Record<string, any>">
 import { computed } from "vue";
 import { ChevronLeft, ChevronRight } from "lucide-vue-next";
+import type { Pagination } from "@/types";
 
 export interface Column<T> {
   key: keyof T | string;
@@ -12,19 +13,12 @@ export interface Column<T> {
   fixed?: "left" | "right" | boolean;
 }
 
-export interface PaginationConfig {
-  page: number;
-  totalPages: number;
-  total: number;
-  limit?: number;
-}
-
 interface Props {
   columns: Column<T>[];
   data: T[];
   loading?: boolean;
   emptyText?: string;
-  pagination?: PaginationConfig;
+  pagination?: Pagination;
   hoverable?: boolean;
   striped?: boolean;
 }
@@ -160,7 +154,6 @@ function isFixed(column: Column<T>) {
 
 <template>
   <div class="base-table-wrapper">
-    <!-- Table -->
     <div class="overflow-x-auto">
       <table
         :class="[
@@ -194,7 +187,6 @@ function isFixed(column: Column<T>) {
           </tr>
         </thead>
         <tbody>
-          <!-- Loading State -->
           <tr v-if="loading">
             <td :colspan="columns.length" class="text-center py-12">
               <div class="flex items-center justify-center gap-2">
@@ -206,7 +198,6 @@ function isFixed(column: Column<T>) {
             </td>
           </tr>
 
-          <!-- Empty State -->
           <tr v-else-if="data.length === 0">
             <td :colspan="columns.length" class="text-center py-12">
               <slot name="empty">
@@ -217,7 +208,6 @@ function isFixed(column: Column<T>) {
             </td>
           </tr>
 
-          <!-- Data Rows -->
           <tr v-else v-for="(row, index) in data" :key="index">
             <td
               v-for="column in columns"
@@ -242,12 +232,10 @@ function isFixed(column: Column<T>) {
       </table>
     </div>
 
-    <!-- Pagination -->
     <div
       v-if="pagination"
       class="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 sm:px-6 py-4 border-t border-secondary-100"
     >
-      <!-- Info -->
       <div
         class="text-xs sm:text-sm text-secondary-500 text-center sm:text-left"
       >
@@ -262,9 +250,7 @@ function isFixed(column: Column<T>) {
         รายการ
       </div>
 
-      <!-- Page Numbers -->
       <div class="flex items-center gap-1">
-        <!-- Previous Button -->
         <button
           @click="goToPage(pagination.page - 1)"
           :disabled="pagination.page === 1"
@@ -272,11 +258,11 @@ function isFixed(column: Column<T>) {
           :class="{
             'opacity-50 cursor-not-allowed': pagination.page === 1,
           }"
+          aria-label="ย้อนกลับไปหน้าก่อนหน้า"
         >
           <ChevronLeft class="w-4 h-4" />
         </button>
 
-        <!-- Page Numbers -->
         <button
           v-for="(page, idx) in visiblePages"
           :key="idx"
@@ -289,11 +275,12 @@ function isFixed(column: Column<T>) {
               'cursor-default': page === '...',
             },
           ]"
+          :aria-label="typeof page === 'number' ? `ไปที่หน้า ${page}` : undefined"
+          :aria-current="page === pagination.page ? 'page' : undefined"
         >
           {{ page }}
         </button>
 
-        <!-- Next Button -->
         <button
           @click="goToPage(pagination.page + 1)"
           :disabled="pagination.page === totalPages"
@@ -301,6 +288,7 @@ function isFixed(column: Column<T>) {
           :class="{
             'opacity-50 cursor-not-allowed': pagination.page === totalPages,
           }"
+          aria-label="ไปที่หน้าถัดไป"
         >
           <ChevronRight class="w-4 h-4" />
         </button>

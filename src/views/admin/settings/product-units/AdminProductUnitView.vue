@@ -11,29 +11,26 @@ import type {
 import { unitsApi } from "@/api";
 import { useToast } from "@/composables";
 
-// Props
 const props = defineProps<{
   productId: number;
   productName?: string;
   initialUnits?: Unit[];
-  baseUnitId?: number | null; // base unit ที่เลือกอยู่ใน form (อาจยังไม่ได้ save)
-  originalBaseUnitId?: number | null; // base unit ที่บันทึกอยู่ใน DB จริงๆ
+  baseUnitId?: number | null;
+  originalBaseUnitId?: number | null;
   pendingBaseUnit?: Unit | null;
 }>();
 
 const emit = defineEmits<{
   (e: "updated"): void;
-  (e: "save-product-first"): void; // ขอให้ parent save product ก่อน
+  (e: "save-product-first"): void;
 }>();
 
 const toast = useToast();
 
-// State
 const productUnits = ref<ProductUnit[]>([]);
 const allUnits = ref<Unit[]>([]);
 const isLoading = ref(false);
 
-// Modal state
 const addModalOpen = ref(false);
 const editModalOpen = ref(false);
 const deleteModalOpen = ref(false);
@@ -62,7 +59,6 @@ const editForm = ref<{
   default_price: 0,
 });
 
-// Computed multiplier preview
 const multiplierPreview = computed(() => {
   if (!addForm.value.base_unit_id || !addForm.value.base_unit_qty) return 1;
   const parentUnit = productUnits.value.find(
@@ -83,14 +79,13 @@ const editMultiplierPreview = computed(() => {
   return editForm.value.base_unit_qty * parentUnit.multiplier_to_base;
 });
 
-// Unit options for add form (exclude already added units + pending base unit)
 const addedUnitIds = computed(() => productUnits.value.map((pu) => pu.unit_id));
 const availableUnitOptions = computed(() =>
   allUnits.value
     .filter((u) => {
       if (!u.is_active) return false;
       if (addedUnitIds.value.includes(u.id)) return false;
-      // exclude pending base unit ถ้ายังไม่มีใน DB
+
       if (
         props.pendingBaseUnit &&
         u.id === props.pendingBaseUnit.id &&
@@ -102,20 +97,18 @@ const availableUnitOptions = computed(() =>
     .map((u) => ({ value: u.id, label: u.name })),
 );
 
-// แสดง pending base unit เป็น row พิเศษถ้ายังไม่มีใน productUnits
 const showPendingBaseUnit = computed(() => {
   if (!props.pendingBaseUnit) return false;
   return !productUnits.value.some(
     (pu) => pu.unit_id === props.pendingBaseUnit!.id,
   );
 });
-// Base unit options (units already added to product + pending base unit)
+
 const baseUnitOptions = computed(() => {
   const fromDB = productUnits.value
     .filter((pu) => pu.id !== selectedUnit.value?.id)
     .map((pu) => ({ value: pu.unit_id, label: pu.unit.name }));
 
-  // เพิ่ม pending base unit ถ้ายังไม่มีใน DB
   if (
     props.pendingBaseUnit &&
     !fromDB.some((o) => o.value === props.pendingBaseUnit!.id)
@@ -129,14 +122,12 @@ const baseUnitOptions = computed(() => {
   return fromDB;
 });
 
-// ถ้า baseUnitId ถูก clear หรือเปลี่ยนจาก DB → ซ่อนหน่วยขายทั้งหมดใน UI (รอ save จริง)
 const visibleUnits = computed(() => {
   const baseChanged = props.baseUnitId !== props.originalBaseUnitId;
   if (baseChanged) return [];
   return productUnits.value;
 });
 
-// ตรวจสอบว่า unit นี้คือ base unit ของ product หรือไม่ (ลบไม่ได้)
 function isBaseUnit(unit: ProductUnit): boolean {
   return props.baseUnitId != null && unit.unit_id === props.baseUnitId;
 }
@@ -147,7 +138,7 @@ async function fetchData() {
     const promises: [Promise<any>, Promise<any>?] = [
       unitsApi.getProductUnits(props.productId),
     ];
-    // Only fetch all units if not provided by parent
+
     if (!props.initialUnits || props.initialUnits.length === 0) {
       promises.push(unitsApi.getUnits({ limit: 1000, is_active: true }));
     }
@@ -165,7 +156,6 @@ async function fetchData() {
   }
 }
 
-// Add form errors
 const addFormErrors = ref<{
   base_unit_id: string;
   base_unit_qty: string;
@@ -190,7 +180,6 @@ function validateAddForm(): boolean {
   return valid;
 }
 
-// Add
 function openAddModal() {
   addForm.value = {
     unit_id: null,
@@ -211,16 +200,13 @@ async function saveProductUnit() {
   if (!validateAddForm()) return;
   modalLoading.value = true;
   try {
-    // ถ้า base_unit_id ที่เลือกเป็น pending (ยังไม่มีใน DB) → ให้ parent save product ก่อน
     const baseIsPending =
       addForm.value.base_unit_id != null &&
       props.pendingBaseUnit?.id === addForm.value.base_unit_id;
 
     if (baseIsPending) {
-      // emit ให้ parent save product (จะสร้าง base unit ใน DB)
       emit("save-product-first");
-      // รอให้ fetchData ดึงข้อมูลใหม่ (parent จะ trigger re-mount หรือ fetch)
-      // retry หลัง 800ms เพื่อให้ backend มีเวลา commit
+
       await new Promise((resolve) => setTimeout(resolve, 800));
       await fetchData();
     }
@@ -249,7 +235,6 @@ async function saveProductUnit() {
   }
 }
 
-// Edit
 function openEditModal(unit: ProductUnit) {
   selectedUnit.value = unit;
   editForm.value = {
@@ -292,13 +277,11 @@ async function updateProductUnit() {
   }
 }
 
-// Delete
 function openDeleteModal(unit: ProductUnit) {
   selectedUnit.value = unit;
   deleteModalOpen.value = true;
 }
 
-// นับ special prices ของ unit ที่จะลบ
 const deletingSpecialPriceCount = computed(() => {
   return selectedUnit.value?._count?.special_prices ?? 0;
 });
@@ -331,7 +314,6 @@ onMounted(() => {
 
 <template>
   <div>
-    <!-- Header -->
     <div class="flex items-center justify-between mb-4">
       <h3 class="text-base font-semibold text-secondary-900">หน่วยขาย</h3>
       <button class="btn-primary text-xs gap-1" @click="openAddModal">
@@ -339,12 +321,10 @@ onMounted(() => {
       </button>
     </div>
 
-    <!-- Loading -->
     <div v-if="isLoading" class="text-center py-8 text-secondary-400 text-sm">
       กำลังโหลด...
     </div>
 
-    <!-- Empty -->
     <div
       v-else-if="visibleUnits.length === 0 && !showPendingBaseUnit"
       class="text-center py-8 text-secondary-400 text-sm border border-dashed border-secondary-200 rounded-lg"
@@ -352,12 +332,10 @@ onMounted(() => {
       ยังไม่มีหน่วยขาย กดเพิ่มหน่วยเพื่อเริ่มต้น
     </div>
 
-    <!-- Unit List -->
     <div
       v-if="visibleUnits.length > 0 || showPendingBaseUnit"
       class="space-y-2"
     >
-      <!-- Pending base unit row (ยังไม่ได้ save) -->
       <div
         v-if="showPendingBaseUnit && pendingBaseUnit"
         class="flex items-center justify-between p-3 bg-primary-50 rounded-lg border border-primary-200 border-dashed"
@@ -467,7 +445,6 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- Add Modal -->
     <BaseModal
       v-if="addModalOpen"
       title="เพิ่มหน่วยขาย"
@@ -533,7 +510,6 @@ onMounted(() => {
       </template>
     </BaseModal>
 
-    <!-- Edit Modal -->
     <BaseModal
       v-if="editModalOpen && selectedUnit"
       :title="`แก้ไขหน่วย: ${selectedUnit.unit.name}`"
@@ -541,7 +517,6 @@ onMounted(() => {
       @close="closeEditModal"
     >
       <div class="flex flex-col gap-4 py-2">
-        <!-- ซ่อน field หน่วยฐาน + จำนวนที่เทียบ ถ้าเป็น base unit (หน่วยเล็กสุด) -->
         <template v-if="!isBaseUnit(selectedUnit)">
           <div>
             <label class="label">หน่วยฐาน</label>
@@ -586,7 +561,6 @@ onMounted(() => {
       </template>
     </BaseModal>
 
-    <!-- Delete Modal -->
     <BaseModal
       v-if="deleteModalOpen && selectedUnit"
       title="ยืนยันการลบ"

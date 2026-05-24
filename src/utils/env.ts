@@ -1,10 +1,3 @@
-/**
- * Environment configuration utilities
- *
- * Provides safe access to environment variables with fallbacks
- * and validation for production builds
- */
-
 interface EnvConfig {
   apiBaseUrl: string;
   appName: string;
@@ -14,10 +7,6 @@ interface EnvConfig {
   isProduction: boolean;
 }
 
-/**
- * Get environment configuration
- * Validates that required environment variables are set
- */
 export function getEnvConfig(): EnvConfig {
   const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
   const appName = import.meta.env.VITE_APP_NAME || "Phanadrug";
@@ -25,7 +14,6 @@ export function getEnvConfig(): EnvConfig {
   const s3BucketUrl = import.meta.env.VITE_S3_BUCKET_URL;
   const mode = import.meta.env.MODE;
 
-  // Validate required variables in production
   if (mode === "production" && !apiBaseUrl) {
     console.error("❌ VITE_API_BASE_URL is not set in production build!");
     console.error("Please set GitHub Secrets properly and rebuild.");
@@ -41,10 +29,6 @@ export function getEnvConfig(): EnvConfig {
   };
 }
 
-/**
- * Log environment configuration (for debugging)
- * Only logs in development mode
- */
 export function logEnvConfig(): void {
   const config = getEnvConfig();
 
@@ -59,5 +43,4 @@ export function logEnvConfig(): void {
   }
 }
 
-// Export singleton instance
 export const env = getEnvConfig();

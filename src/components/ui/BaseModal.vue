@@ -27,7 +27,6 @@ defineEmits<{ close: [] }>();
         ]"
         role="dialog"
       >
-        <!-- Header -->
         <div
           v-if="title"
           class="flex items-center justify-between px-6 py-4 border-b border-secondary-100 shrink-0"
@@ -41,12 +40,10 @@ defineEmits<{ close: [] }>();
           </button>
         </div>
 
-        <!-- Body (scrollable) -->
         <div class="px-6 py-5 overflow-y-auto flex-1 min-h-0">
           <slot />
         </div>
 
-        <!-- Footer -->
         <div
           v-if="$slots.footer"
           class="px-6 py-4 border-t border-secondary-100 flex gap-3 shrink-0"

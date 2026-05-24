@@ -20,7 +20,6 @@ function formatPrice(n: number) {
 </script>
 
 <template>
-  <!-- Trigger button -->
   <button
     @click="isOpen = !isOpen"
     class="relative p-2 rounded-xl text-secondary-600 hover:bg-secondary-50 transition-colors"
@@ -34,7 +33,6 @@ function formatPrice(n: number) {
     </span>
   </button>
 
-  <!-- Overlay -->
   <Transition name="fade">
     <div
       v-if="isOpen"
@@ -43,13 +41,11 @@ function formatPrice(n: number) {
     />
   </Transition>
 
-  <!-- Drawer -->
   <Transition name="slide-cart">
     <div
       v-if="isOpen"
       class="fixed top-0 right-0 h-full w-full max-w-sm bg-white shadow-2xl z-50 flex flex-col"
     >
-      <!-- Header -->
       <div class="flex items-center justify-between px-5 py-4 border-b">
         <h2 class="font-bold text-lg flex items-center gap-2">
           <ShoppingCart class="w-5 h-5 text-primary-600" />
@@ -64,7 +60,6 @@ function formatPrice(n: number) {
         </button>
       </div>
 
-      <!-- Items -->
       <div class="flex-1 overflow-y-auto px-5 py-4 space-y-4">
         <div v-if="cart.items.length === 0" class="text-center py-12">
           <ShoppingBag class="w-14 h-14 text-secondary-200 mx-auto mb-3" />
@@ -80,28 +75,37 @@ function formatPrice(n: number) {
 
         <div
           v-for="item in cart.items"
-          :key="item.product_id"
+          :key="item.id"
           class="flex gap-3 p-3 bg-secondary-50 rounded-xl"
         >
           <img
-            :src="item.product_image"
-            :alt="item.product_name"
+            v-if="item.product.image_url"
+            :src="item.product.image_url"
+            :alt="item.product.name"
             class="w-14 h-14 rounded-lg object-cover shrink-0"
           />
+          <div
+            v-else
+            class="w-14 h-14 rounded-lg bg-gradient-to-br from-primary-100 to-teal-100 flex items-center justify-center shrink-0 text-xs text-primary-500 font-semibold text-center leading-snug p-1"
+          >
+            {{ item.product.name }}
+          </div>
           <div class="flex-1 min-w-0">
             <p
               class="text-sm font-medium text-secondary-800 line-clamp-2 leading-snug"
             >
-              {{ item.product_name }}
+              {{ item.product.name }}
             </p>
-            <p class="text-xs text-secondary-400 mt-0.5">{{ item.unit }}</p>
+            <p class="text-xs text-secondary-400 mt-0.5">
+              {{ item.unit.name }}
+            </p>
             <p class="text-primary-600 font-semibold text-sm mt-1">
               ฿{{ formatPrice(item.unit_price) }}
             </p>
           </div>
           <div class="flex flex-col items-end gap-2 shrink-0">
             <button
-              @click="cart.removeItem(item.product_id)"
+              @click="cart.removeItem(item.id)"
               class="p-1 text-secondary-300 hover:text-danger transition-colors"
             >
               <Trash2 class="w-3.5 h-3.5" />
@@ -110,7 +114,7 @@ function formatPrice(n: number) {
               class="flex items-center gap-1.5 border border-secondary-200 rounded-lg"
             >
               <button
-                @click="cart.updateQty(item.product_id, item.quantity - 1)"
+                @click="cart.updateQty(item.id, item.quantity - 1)"
                 class="w-6 h-6 flex items-center justify-center hover:bg-secondary-50 rounded-md transition-colors"
               >
                 <Minus class="w-3 h-3" />
@@ -119,8 +123,8 @@ function formatPrice(n: number) {
                 item.quantity
               }}</span>
               <button
-                @click="cart.updateQty(item.product_id, item.quantity + 1)"
-                :disabled="item.quantity >= item.stock"
+                @click="cart.updateQty(item.id, item.quantity + 1)"
+                :disabled="item.quantity >= item.product.stock"
                 class="w-6 h-6 flex items-center justify-center hover:bg-secondary-50 rounded-md transition-colors disabled:opacity-30"
               >
                 <Plus class="w-3 h-3" />
@@ -130,7 +134,6 @@ function formatPrice(n: number) {
         </div>
       </div>
 
-      <!-- Footer -->
       <div v-if="cart.items.length > 0" class="border-t px-5 py-4 space-y-3">
         <div class="space-y-1.5 text-sm">
           <div class="flex justify-between text-secondary-600">

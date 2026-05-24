@@ -15,6 +15,12 @@ import type {
 } from "@/types";
 import { defineStore } from "pinia";
 
+let toastInstance: ReturnType<typeof useToast> | null = null;
+const getToast = () => {
+  if (!toastInstance) toastInstance = useToast();
+  return toastInstance;
+};
+
 interface PricingLogState {
   defaultLogs: DefaultPriceLogEntry[];
   specialLogs: SpecialPriceLogEntry[];
@@ -61,7 +67,7 @@ export const usePricingLogStore = defineStore("pricingLog", {
     async fetchLogs(params?: PricingLogParams): Promise<boolean> {
       this.isLoading = true;
       this.error = null;
-      const toast = useToast();
+      const toast = getToast();
 
       try {
         if (this.pricingType === "default") {
@@ -74,11 +80,11 @@ export const usePricingLogStore = defineStore("pricingLog", {
           this.pagination = res.data.pagination;
         }
         return true;
-      } catch (err: any) {
+      } catch (err: unknown) {
         this.error =
-          err.response?.data?.message ||
+          (err as any).response?.data?.message ||
           "เกิดข้อผิดพลาดในการดึงข้อมูลบันทึกราคา";
-        toast.error(this.error);
+        toast.error(this.error || "เกิดข้อผิดพลาดในการดึงข้อมูลบันทึกราคา");
         return false;
       } finally {
         this.isLoading = false;
@@ -91,29 +97,27 @@ export const usePricingLogStore = defineStore("pricingLog", {
     ): Promise<boolean> {
       this.isModalLoading = true;
       this.error = null;
-      const toast = useToast();
+      const toast = getToast();
 
       try {
         const res = await pricingLogsApi.getDefaultPriceLogsByProduct(
           productId,
           params,
         );
-        this.selectedProduct = res.data.data.product;
+        this.selectedProduct = res.data.data.product as any;
         this.defaultProductLogs = res.data.data.logs;
         this.modalPagination = res.data.pagination;
         return true;
-      } catch (err: any) {
+      } catch (err: unknown) {
         this.error =
-          err.response?.data?.message ||
+          (err as any).response?.data?.message ||
           "เกิดข้อผิดพลาดในการดึงข้อมูลบันทึกราคา";
-        toast.error(this.error);
+        toast.error(this.error || "เกิดข้อผิดพลาดในการดึงข้อมูลบันทึกราคา");
         return false;
       } finally {
         this.isModalLoading = false;
       }
     },
-
-    // ─── Detail: special price by product ───────────────────────────────
 
     async fetchSpecialLogsByProduct(
       productId: number,
@@ -121,22 +125,22 @@ export const usePricingLogStore = defineStore("pricingLog", {
     ): Promise<boolean> {
       this.isModalLoading = true;
       this.error = null;
-      const toast = useToast();
+      const toast = getToast();
 
       try {
         const res = await pricingLogsApi.getSpecialPriceLogsByProduct(
           productId,
           params,
         );
-        this.selectedProduct = res.data.data.product;
+        this.selectedProduct = res.data.data.product as any;
         this.specialProductLogs = res.data.data.logs;
         this.modalPagination = res.data.pagination;
         return true;
-      } catch (err: any) {
+      } catch (err: unknown) {
         this.error =
-          err.response?.data?.message ||
+          (err as any).response?.data?.message ||
           "เกิดข้อผิดพลาดในการดึงข้อมูลบันทึกราคา";
-        toast.error(this.error);
+        toast.error(this.error || "เกิดข้อผิดพลาดในการดึงข้อมูลบันทึกราคา");
         return false;
       } finally {
         this.isModalLoading = false;
@@ -154,7 +158,7 @@ export const usePricingLogStore = defineStore("pricingLog", {
     ): Promise<boolean> {
       this.isModalLoading = true;
       this.error = null;
-      const toast = useToast();
+      const toast = getToast();
 
       try {
         const res = await pricingLogsApi.getSpecialPriceLogsByUser(
@@ -165,11 +169,11 @@ export const usePricingLogStore = defineStore("pricingLog", {
         this.specialUserLogs = res.data.data.logs;
         this.modalPagination = res.data.pagination;
         return true;
-      } catch (err: any) {
+      } catch (err: unknown) {
         this.error =
-          err.response?.data?.message ||
+          (err as any).response?.data?.message ||
           "เกิดข้อผิดพลาดในการดึงข้อมูลบันทึกราคา";
-        toast.error(this.error);
+        toast.error(this.error || "เกิดข้อผิดพลาดในการดึงข้อมูลบันทึกราคา");
         return false;
       } finally {
         this.isModalLoading = false;

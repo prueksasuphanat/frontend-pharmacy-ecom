@@ -1,7 +1,3 @@
-/**
- * Units API service
- */
-
 import type {
   CreateProductUnitPayload,
   ProductUnit,
@@ -12,10 +8,6 @@ import type {
   UpdateProductUnitPayload,
 } from "@/types";
 import { apiClient } from "../../client";
-
-// ==========================================
-// Master Unit CRUD
-// ==========================================
 
 export async function getUnits(
   params: UnitListParams = {},
@@ -75,10 +67,6 @@ export async function toggleUnitActive(id: number): Promise<Unit> {
 export async function deleteUnit(id: number): Promise<void> {
   await apiClient.delete(`/admin/units/${id}`);
 }
-
-// ==========================================
-// Product Unit CRUD
-// ==========================================
 
 export async function getProductUnits(
   productId: number,

@@ -2,13 +2,11 @@ import type { RouteRecordRaw } from "vue-router";
 
 export const profileRoutes: RouteRecordRaw[] = [
   {
-    // Layout wrapper — มี Navbar + sidebar + <RouterView>
     path: "/profile",
     component: () => import("@/layouts/ProfileLayout.vue"),
     meta: { requiresAuth: true },
     children: [
       {
-        // /profile → แสดง hub menu (mobile) หรือ redirect ไป information (desktop)
         path: "",
         component: () => import("@/views/customer/profile/ProfileView.vue"),
       },

@@ -1,7 +1,3 @@
-/**
- * Category type definitions
- */
-
 export interface Category {
   id: number;
   name: string;
@@ -32,4 +28,9 @@ export interface CategoryListResponse {
     limit: number;
     totalPages: number;
   };
+}
+
+export interface PublicCategory {
+  id: number;
+  name: string;
 }

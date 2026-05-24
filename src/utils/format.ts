@@ -1,37 +1,68 @@
-/**
- * Formatting utility functions
- *
- * **Validates: Requirements 5.2**
- */
+import dayjs from "./dayjs";
+import numeral from "numeral";
 
-/**
- * Format a number as Thai Baht currency
- * @param amount - The amount to format
- * @returns Formatted currency string (e.g., "฿1,234.56")
- */
 export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat("th-TH", {
-    style: "currency",
-    currency: "THB",
-  }).format(amount);
+  if (amount === undefined || amount === null || isNaN(amount)) return "฿0.00";
+  return `฿${numeral(amount).format("0,0.00")}`;
 }
 
-/**
- * Format a date in Thai locale
- * @param date - The date to format (string or Date object)
- * @returns Formatted date string (e.g., "15 มกราคม 2567")
- */
-export function formatDate(date: string | Date): string {
-  return new Intl.DateTimeFormat("th-TH", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  }).format(new Date(date));
+export function formatNumber(value: number): string {
+  if (value === undefined || value === null || isNaN(value)) return "0";
+  return numeral(value).format("0,0");
 }
 
-/**
- * Get display name for a user — ใช้ first_name+last_name ถ้ามี, fallback pmc_name, fallback username
- */
+export function formatPrice(value: number): string {
+  if (value === undefined || value === null || isNaN(value)) return "0.00";
+  return numeral(value).format("0,0.00");
+}
+
+export function formatPriceWithSymbol(value: number): string {
+  return formatCurrency(value);
+}
+
+export const formatDate = (
+  date: string | Date | null | undefined,
+  formatStr: string = "D MMMM BBBB",
+): string => {
+  if (!date) return "-";
+  return dayjs(date).format(formatStr);
+};
+
+export const formatDateTime = (
+  date: string | Date | null | undefined,
+): string => {
+  if (!date) return "-";
+  return dayjs(date).format("D MMM BBBB HH:mm");
+};
+
+export const formatTime = (date: string | Date | null | undefined): string => {
+  if (!date) return "-";
+  return dayjs(date).format("HH:mm");
+};
+
+export const formatDateShort = (
+  date: string | Date | null | undefined,
+): string => {
+  if (!date) return "-";
+  return dayjs(date).format("DD/MM/BBBB");
+};
+
+export const fromNow = (date: string | Date | null | undefined): string => {
+  if (!date) return "-";
+  return dayjs(date).fromNow();
+};
+
+export const toLocal = (date: string | Date) => dayjs.tz(date, "Asia/Bangkok");
+
+export const toIctDateRange = (
+  dateStr: string,
+): { gte: string; lte: string } => ({
+  gte: dayjs.tz(`${dateStr} 00:00:00`, "Asia/Bangkok").toISOString(),
+  lte: dayjs.tz(`${dateStr} 23:59:59`, "Asia/Bangkok").toISOString(),
+});
+
+export const toDateParam = (localDate: string): string => localDate;
+
 export function formatUserName(user: {
   title?: string | null;
   first_name?: string | null;
@@ -46,13 +77,8 @@ export function formatUserName(user: {
   return parts || user.pmc_name || user.username || "";
 }
 
-/**
- * Truncate text with ellipsis if it exceeds max length
- * @param text - The text to truncate
- * @param maxLength - Maximum length before truncation
- * @returns Truncated text with ellipsis if needed
- */
 export function truncateText(text: string, maxLength: number): string {
+  if (!text) return "";
   if (text.length <= maxLength) return text;
   return text.slice(0, maxLength) + "...";
 }

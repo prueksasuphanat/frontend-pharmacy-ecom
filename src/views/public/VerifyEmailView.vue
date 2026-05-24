@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { RouterLink } from "vue-router";
 import { CheckCircle } from "lucide-vue-next";
-const email = "user@example.com"; // TODO: get from query param
+const email = "user@example.com";
 </script>
 <template>
   <div
@@ -19,7 +19,7 @@ const email = "user@example.com"; // TODO: get from query param
       <p class="text-secondary-500 text-sm mb-6">
         บัญชีของคุณได้รับการยืนยันแล้ว สามารถเข้าสู่ระบบและใช้งานได้เต็มรูปแบบ
       </p>
-      <!-- TODO: call POST /auth/verify-email?token= -->
+
       <RouterLink to="/login" class="btn-primary w-full"
         >เข้าสู่ระบบ</RouterLink
       >

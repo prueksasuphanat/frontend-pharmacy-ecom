@@ -52,9 +52,7 @@ const fullName = computed(() => {
       <h1 class="page-title mb-6">บัญชีของฉัน</h1>
 
       <div class="flex flex-col lg:flex-row gap-6">
-        <!-- ── Sidebar — hidden on mobile ── -->
         <aside class="hidden lg:block w-64 shrink-0">
-          <!-- Profile summary card -->
           <div class="card mb-4 flex items-center gap-3">
             <div
               class="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center overflow-hidden shrink-0"
@@ -77,7 +75,6 @@ const fullName = computed(() => {
             </div>
           </div>
 
-          <!-- Navigation -->
           <nav class="card p-2 space-y-0.5">
             <RouterLink
               v-for="item in menuItems"
@@ -97,7 +94,6 @@ const fullName = computed(() => {
           </nav>
         </aside>
 
-        <!-- ── Page content ── -->
         <main class="flex-1 min-w-0">
           <RouterView />
         </main>

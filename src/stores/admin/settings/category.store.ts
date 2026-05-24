@@ -15,6 +15,12 @@ interface CategoryState {
   error: string | null;
 }
 
+let toastInstance: ReturnType<typeof useToast> | null = null;
+const getToast = () => {
+  if (!toastInstance) toastInstance = useToast();
+  return toastInstance;
+};
+
 export const useCategoryStore = defineStore("category", {
   state: (): CategoryState => ({
     categories: [],
@@ -40,7 +46,7 @@ export const useCategoryStore = defineStore("category", {
     async getCategories(params?: CategoryListParams): Promise<boolean> {
       this.isLoading = true;
       this.error = null;
-      const toast = useToast();
+      const toast = getToast();
 
       try {
         const response = await categoriesApi.getCategories(params);
@@ -48,12 +54,11 @@ export const useCategoryStore = defineStore("category", {
         this.categories = response.data;
         this.pagination = response.pagination;
         return true;
-      } catch (err: any) {
+      } catch (err: unknown) {
         this.error =
-          err.response?.data?.message ||
+          (err as any).response?.data?.message ||
           "เกิดข้อผิดพลาดในการดึงข้อมูลประเภทสินค้า";
-        toast.error(this.error);
-        console.error("Error fetching categories:", err);
+        toast.error(this.error || "เกิดข้อผิดพลาดในการดึงข้อมูลประเภทสินค้า");
         return false;
       } finally {
         this.isLoading = false;
@@ -63,24 +68,22 @@ export const useCategoryStore = defineStore("category", {
     async getCategoryById(id: number): Promise<Category | null> {
       this.isLoading = true;
       this.error = null;
-      const toast = useToast();
+      const toast = getToast();
 
       try {
         const category = await categoriesApi.getCategoryById(id);
 
-        // Sync into local list if present
         const idx = this.categories.findIndex((c) => c.id === id);
         if (idx !== -1) {
           this.categories[idx] = category;
         }
 
         return category;
-      } catch (err: any) {
+      } catch (err: unknown) {
         this.error =
-          err.response?.data?.message ||
+          (err as any).response?.data?.message ||
           "เกิดข้อผิดพลาดในการดึงข้อมูลประเภทสินค้า";
-        toast.error(this.error);
-        console.error("Error fetching category by id:", err);
+        toast.error(this.error || "เกิดข้อผิดพลาดในการดึงข้อมูลประเภทสินค้า");
         return null;
       } finally {
         this.isLoading = false;
@@ -90,25 +93,23 @@ export const useCategoryStore = defineStore("category", {
     async createCategory(name: string): Promise<boolean> {
       this.isLoading = true;
       this.error = null;
-      const toast = useToast();
+      const toast = getToast();
 
       try {
         await categoriesApi.createCategory({ name });
 
         toast.success("สร้างประเภทสำเร็จ");
 
-        // Refresh list
         await this.getCategories({
           page: 1,
           limit: this.pagination.limit,
         });
 
         return true;
-      } catch (err: any) {
+      } catch (err: unknown) {
         this.error =
-          err.response?.data?.message || "เกิดข้อผิดพลาดในการสร้างประเภทสินค้า";
-        toast.error(this.error);
-        console.error("Error creating category:", err);
+          (err as any).response?.data?.message || "เกิดข้อผิดพลาดในการสร้างประเภทสินค้า";
+        toast.error(this.error || "เกิดข้อผิดพลาดในการสร้างประเภทสินค้า");
         return false;
       } finally {
         this.isLoading = false;
@@ -121,12 +122,11 @@ export const useCategoryStore = defineStore("category", {
     ): Promise<boolean> {
       this.isLoading = true;
       this.error = null;
-      const toast = useToast();
+      const toast = getToast();
 
       try {
         const updated = await categoriesApi.updateCategory(id, data);
 
-        // Update in local state
         const idx = this.categories.findIndex((c) => c.id === id);
         if (idx !== -1) {
           this.categories[idx] = {
@@ -137,12 +137,11 @@ export const useCategoryStore = defineStore("category", {
 
         toast.success("อัปเดตประเภทสำเร็จ");
         return true;
-      } catch (err: any) {
+      } catch (err: unknown) {
         this.error =
-          err.response?.data?.message ||
+          (err as any).response?.data?.message ||
           "เกิดข้อผิดพลาดในการอัปเดตประเภทสินค้า";
-        toast.error(this.error);
-        console.error("Error updating category:", err);
+        toast.error(this.error || "เกิดข้อผิดพลาดในการอัปเดตประเภทสินค้า");
         return false;
       } finally {
         this.isLoading = false;
@@ -152,12 +151,11 @@ export const useCategoryStore = defineStore("category", {
     async toggleCategoryActive(id: number): Promise<boolean> {
       this.isLoading = true;
       this.error = null;
-      const toast = useToast();
+      const toast = getToast();
 
       try {
         const updated = await categoriesApi.toggleCategoryActive(id);
 
-        // Update in local state (preserve _count)
         const idx = this.categories.findIndex((c) => c.id === id);
         if (idx !== -1) {
           this.categories[idx] = {
@@ -172,12 +170,11 @@ export const useCategoryStore = defineStore("category", {
             : "ปิดใช้งานประเภทสำเร็จ",
         );
         return true;
-      } catch (err: any) {
+      } catch (err: unknown) {
         this.error =
-          err.response?.data?.message ||
+          (err as any).response?.data?.message ||
           "เกิดข้อผิดพลาดในการเปลี่ยนสถานะประเภทสินค้า";
-        toast.error(this.error);
-        console.error("Error toggling category status:", err);
+        toast.error(this.error || "เกิดข้อผิดพลาดในการเปลี่ยนสถานะประเภทสินค้า");
         return false;
       } finally {
         this.isLoading = false;
@@ -187,18 +184,16 @@ export const useCategoryStore = defineStore("category", {
     async deleteCategory(id: number): Promise<boolean> {
       this.isLoading = true;
       this.error = null;
-      const toast = useToast();
+      const toast = getToast();
 
       try {
         await categoriesApi.deleteCategory(id);
 
         toast.success("ลบประเภทสำเร็จ");
 
-        // Remove from local state
         this.categories = this.categories.filter((c) => c.id !== id);
         this.pagination.total -= 1;
 
-        // If current page becomes empty, go to previous page
         if (this.categories.length === 0 && this.pagination.page > 1) {
           await this.getCategories({
             page: this.pagination.page - 1,
@@ -207,11 +202,10 @@ export const useCategoryStore = defineStore("category", {
         }
 
         return true;
-      } catch (err: any) {
+      } catch (err: unknown) {
         this.error =
-          err.response?.data?.message || "เกิดข้อผิดพลาดในการลบประเภทสินค้า";
-        toast.error(this.error);
-        console.error("Error deleting category:", err);
+          (err as any).response?.data?.message || "เกิดข้อผิดพลาดในการลบประเภทสินค้า";
+        toast.error(this.error || "เกิดข้อผิดพลาดในการลบประเภทสินค้า");
         return false;
       } finally {
         this.isLoading = false;

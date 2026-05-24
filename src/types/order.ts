@@ -1,60 +1,109 @@
-// ============================================================
-// TYPE DEFINITIONS — order.ts
-// Order-related type definitions extracted from mock data
-// ============================================================
-
 export type OrderStatus =
-  | "pending"
-  | "confirmed"
-  | "shipped"
-  | "completed"
-  | "cancelled";
-export type PrescriptionStatus =
-  | "not_required"
-  | "pending"
-  | "approved"
-  | "rejected";
+  | "PENDING"
+  | "CONFIRMED"
+  | "SHIPPED"
+  | "COMPLETED"
+  | "CANCELLED";
 
-export interface Address {
+export interface OrderShippingAddress {
   recipient: string;
   phone: string;
   address: string;
-  district: string;
+  district?: string;
   province: string;
   postal_code: string;
 }
 
 export interface OrderItem {
-  id: string;
-  product_id: string;
+  id: number;
+  order_id: number;
+  product_unit_id: number;
   product_name: string;
-  product_image: string;
-  sku: string;
+  unit_name: string;
   quantity: number;
   unit_price: number;
-  role_id: string;
+  is_special_price: boolean;
+  subtotal: number;
 }
 
 export interface OrderStatusLog {
-  from: string;
-  to: string;
-  changed_at: string;
-  note: string;
+  id: number;
+  order_id: number;
+  from_status: OrderStatus | null;
+  to_status: OrderStatus;
+  changed_by: number | null;
+  note: string | null;
+  created_at: string;
 }
 
 export interface Order {
-  id: string;
-  user_id: string;
-  user_email: string;
+  id: number;
+  user_id: number;
   status: OrderStatus;
-  prescription_status: PrescriptionStatus;
-  shipping_address: Address;
+  shipping_address: OrderShippingAddress;
   shipping_fee: number;
+  subtotal: number;
   total_amount: number;
-  note: string;
-  cancelled_reason: string;
-  items: OrderItem[];
-  status_logs: OrderStatusLog[];
+  note: string | null;
+  cancelled_reason: string | null;
   created_at: string;
   updated_at: string;
+  items: OrderItem[];
+  status_logs: OrderStatusLog[];
+}
+
+export interface CreateOrderRequest {
+  shipping_address: OrderShippingAddress;
+  note?: string;
+}
+
+export interface AdminOrder {
+  id: number;
+  user_id: number;
+  status: string;
+  shipping_address: {
+    recipient: string;
+    phone: string;
+    address: string;
+    district?: string;
+    province: string;
+    postal_code: string;
+  };
+  shipping_fee: number;
+  subtotal: number;
+  total_amount: number;
+  note: string | null;
+  cancelled_reason: string | null;
+  created_at: string;
+  updated_at: string;
+  items: AdminOrderItem[];
+  status_logs: AdminStatusLog[];
+  user: {
+    id: number;
+    username: string | null;
+    email: string | null;
+    first_name: string | null;
+    last_name: string | null;
+    phone: string | null;
+  };
+}
+
+export interface AdminOrderItem {
+  id: number;
+  product_unit_id: number;
+  product_name: string;
+  unit_name: string;
+  quantity: number;
+  unit_price: number;
+  subtotal: number;
+  is_special_price: boolean;
+}
+
+export interface AdminStatusLog {
+  id: number;
+  from_status: string | null;
+  to_status: string;
+  changed_by: number | null;
+  note: string | null;
+  created_at: string;
 }

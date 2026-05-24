@@ -1,8 +1,3 @@
-// ============================================================
-// MOCK DATA — users.ts, roles.ts, notifications.ts
-// TODO: Replace with real API calls
-// ============================================================
-
 export interface Role {
   id: string;
   name: string;
@@ -46,7 +41,6 @@ export interface AuditLog {
   changed_at: string;
 }
 
-// Mock Roles
 export const MOCK_ROLES: Role[] = [
   {
     id: "role-admin",
@@ -82,7 +76,6 @@ export const MOCK_ROLES: Role[] = [
   },
 ];
 
-// Mock Users
 export const MOCK_USERS: User[] = [
   {
     id: "user-admin-001",
@@ -240,7 +233,6 @@ export const MOCK_USERS: User[] = [
   },
 ];
 
-// Mock Notifications
 export const MOCK_NOTIFICATIONS: Notification[] = [
   {
     id: "notif-001",
@@ -289,7 +281,6 @@ export const MOCK_NOTIFICATIONS: Notification[] = [
   },
 ];
 
-// Mock Admin Notifications
 export const MOCK_ADMIN_NOTIFICATIONS: Notification[] = [
   {
     id: "an-001",
@@ -329,7 +320,6 @@ export const MOCK_ADMIN_NOTIFICATIONS: Notification[] = [
   },
 ];
 
-// Mock Audit Logs
 export const MOCK_AUDIT_LOGS: AuditLog[] = [
   {
     id: "al-001",

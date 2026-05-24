@@ -36,7 +36,6 @@ const settingsMenuItems = [
       </p>
     </div>
 
-    <!-- Settings Menu Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       <RouterLink
         v-for="item in settingsMenuItems"
@@ -45,7 +44,6 @@ const settingsMenuItems = [
         class="card hover:shadow-md transition-shadow group"
       >
         <div class="flex items-start gap-4">
-          <!-- Icon -->
           <div
             :class="[
               'w-12 h-12 rounded-xl flex items-center justify-center shrink-0',
@@ -55,7 +53,6 @@ const settingsMenuItems = [
             <component :is="item.icon" class="w-6 h-6" />
           </div>
 
-          <!-- Content -->
           <div class="flex-1 min-w-0">
             <div class="flex items-center justify-between gap-2 mb-1">
               <h3 class="font-semibold text-secondary-900">

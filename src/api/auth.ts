@@ -20,7 +20,7 @@ export const authApi = {
     if (data.title) formData.append("title", data.title);
     if (data.first_name) formData.append("first_name", data.first_name);
     if (data.last_name) formData.append("last_name", data.last_name);
-    if (data.birthdata) formData.append("birthdate", data.birthdata);
+    if (data.birthdate) formData.append("birthdate", data.birthdate);
     if (data.phone) formData.append("phone", data.phone);
     if (data.address) formData.append("address", data.address);
     if (data.files && data.files.length > 0) {

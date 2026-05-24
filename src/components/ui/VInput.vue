@@ -12,7 +12,7 @@ interface Props {
   iconRight?: any;
   disabled?: boolean;
   readonly?: boolean;
-  modelValue?: string | number;
+  modelValue?: string | number | null;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -22,11 +22,10 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const emit = defineEmits<{
-  "update:modelValue": [value: string | number];
+  "update:modelValue": [value: string | number | null];
   iconRightClick: [];
 }>();
 
-// ใช้ VeeValidate's useField
 const {
   value: inputValue,
   errorMessage,
@@ -38,12 +37,11 @@ const {
   syncVModel: true,
 });
 
-// แสดง error เมื่อ field ถูก touched และมี error
 const displayError = computed(() => {
   return meta.touched && errorMessage.value ? errorMessage.value : "";
 });
 
-function onInput(value: string | number) {
+function onInput(value: string | number | null) {
   handleChange(value);
   emit("update:modelValue", value);
 }

@@ -6,10 +6,4 @@ export const checkoutRoutes: RouteRecordRaw[] = [
     component: () => import("@/views/customer/checkout/CheckoutView.vue"),
     meta: { requiresAuth: true },
   },
-  {
-    path: "/checkout/success",
-    component: () =>
-      import("@/views/customer/checkout/CheckoutSuccessView.vue"),
-    meta: { requiresAuth: true },
-  },
 ];

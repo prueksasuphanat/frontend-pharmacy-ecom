@@ -48,7 +48,6 @@ const onSubmit = handleSubmit(async (values) => {
     class="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 flex items-center justify-center p-4"
   >
     <div class="w-full max-w-md">
-      <!-- Logo -->
       <div class="text-center mb-8">
         <div
           class="w-14 h-14 bg-primary-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-primary-200"
@@ -59,7 +58,6 @@ const onSubmit = handleSubmit(async (values) => {
         <p class="text-secondary-500 text-sm mt-1">Phanadrug</p>
       </div>
 
-      <!-- Login form -->
       <div class="card">
         <form @submit.prevent="onSubmit" novalidate class="space-y-4">
           <VInput

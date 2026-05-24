@@ -30,7 +30,6 @@ const emit = defineEmits<{
   change: [value: string | number];
 }>();
 
-// ── Refs ──────────────────────────────────────────────────
 const containerRef = ref<HTMLElement>();
 const triggerRef = ref<HTMLElement>();
 const dropdownRef = ref<HTMLElement>();
@@ -39,7 +38,6 @@ const activeIndex = ref(-1);
 
 const dropdownStyle = ref({ top: "0px", left: "0px", width: "0px" });
 
-// ── Dropdown position ─────────────────────────────────────
 function updateDropdownPosition() {
   if (!triggerRef.value) return;
   const rect = triggerRef.value.getBoundingClientRect();
@@ -72,7 +70,6 @@ function updateDropdownPosition() {
   };
 }
 
-// ── Selected label ────────────────────────────────────────
 const selectedLabel = computed(() => {
   if (props.modelValue === undefined || props.modelValue === "") return "";
   return (
@@ -81,7 +78,6 @@ const selectedLabel = computed(() => {
   );
 });
 
-// ── Close on outside click / scroll / resize ──────────────
 useEventListener(document, "mousedown", (e: MouseEvent) => {
   if (!isOpen.value) return;
   const target = e.target as Node;
@@ -111,7 +107,6 @@ if (typeof window !== "undefined" && window.visualViewport) {
   });
 }
 
-// ── Open / Close / Select ─────────────────────────────────
 function open() {
   if (props.disabled) return;
   isOpen.value = true;
@@ -137,7 +132,6 @@ function select(option: SelectOption) {
   close();
 }
 
-// ── Keyboard navigation ───────────────────────────────────
 function onKeydown(e: KeyboardEvent) {
   if (!isOpen.value) {
     if (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ") {
@@ -171,7 +165,6 @@ function onKeydown(e: KeyboardEvent) {
       <span v-if="required" class="text-red-500 ml-0.5">*</span>
     </label>
 
-    <!-- Trigger -->
     <div
       ref="triggerRef"
       role="combobox"
@@ -188,14 +181,12 @@ function onKeydown(e: KeyboardEvent) {
       @click="toggle"
       @keydown="onKeydown"
     >
-      <!-- Left icon -->
       <component
         v-if="icon"
         :is="icon"
         class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-secondary-400 pointer-events-none"
       />
 
-      <!-- Selected value / placeholder -->
       <span
         class="flex-1 text-sm truncate"
         :class="selectedLabel ? 'text-secondary-900' : 'text-secondary-400'"
@@ -203,14 +194,12 @@ function onKeydown(e: KeyboardEvent) {
         {{ selectedLabel || placeholder || "เลือก..." }}
       </span>
 
-      <!-- Chevron -->
       <ChevronDown
         class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-secondary-400 pointer-events-none transition-transform duration-200"
         :class="{ 'rotate-180': isOpen }"
       />
     </div>
 
-    <!-- Dropdown — Teleport to body เหมือน BaseAutocomplete -->
     <Teleport to="body">
       <Transition name="slide-up">
         <div

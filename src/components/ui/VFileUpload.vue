@@ -7,17 +7,17 @@ interface Props {
   name: string;
   label?: string;
   accept?: string;
-  maxSize?: number; // in MB
+  maxSize?: number;
   required?: boolean;
   disabled?: boolean;
   multiple?: boolean;
-  maxFiles?: number; // undefined = unlimited
+  maxFiles?: number;
   modelValue?: File | File[] | null;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   accept: "image/*,.pdf",
-  maxSize: 5, // 5MB default
+  maxSize: 5,
   multiple: false,
   maxFiles: undefined,
 });
@@ -26,7 +26,6 @@ const emit = defineEmits<{
   "update:modelValue": [value: File | File[] | null];
 }>();
 
-// ใช้ VeeValidate's useField
 const {
   value: inputValue,
   errorMessage,
@@ -37,7 +36,6 @@ const {
   syncVModel: true,
 });
 
-// แสดง error เมื่อ field ถูก touched และมี error
 const displayError = computed(() => {
   return meta.touched && errorMessage.value ? errorMessage.value : "";
 });

@@ -1,12 +1,32 @@
+export interface AutocompleteOption {
+  value: string | number;
+  label: string;
+  disabled?: boolean;
+}
+
+export interface MultiSelectOption {
+  value: string | number;
+  label: string;
+  disabled?: boolean;
+}
+
+export interface Column<T = any> {
+  key: keyof T | string;
+  label: string;
+  align?: "left" | "center" | "right";
+  width?: string;
+  minWidth?: string;
+  sortable?: boolean;
+  fixed?: "left" | "right" | boolean;
+}
+
 export { default as BaseAutocomplete } from "./BaseAutocomplete.vue";
-export type { AutocompleteOption } from "./BaseAutocomplete.vue";
 export { default as BaseCheckbox } from "./BaseCheckbox.vue";
 export { default as BaseDatePicker } from "./BaseDatePicker.vue";
 export { default as BaseFileUpload } from "./BaseFileUpload.vue";
 export { default as BaseInput } from "./BaseInput.vue";
 export { default as BaseModal } from "./BaseModal.vue";
 export { default as BaseMultiSelect } from "./BaseMultiSelect.vue";
-export type { MultiSelectOption } from "./BaseMultiSelect.vue";
 export { default as BaseSelect } from "./BaseSelect.vue";
 export { default as BaseTable } from "./BaseTable.vue";
 export { default as BaseTextarea } from "./BaseTextarea.vue";
@@ -15,7 +35,6 @@ export { default as DrugTypeBadge } from "./DrugTypeBadge.vue";
 export { default as ImageUploader } from "./ImageUploader.vue";
 export { default as LoadingOverlay } from "./LoadingOverlay.vue";
 
-// VeeValidate wrapped components
 export { default as VAutocomplete } from "./VAutocomplete.vue";
 export { default as VCheckbox } from "./VCheckbox.vue";
 export { default as VDatePicker } from "./VDatePicker.vue";

@@ -1,6 +1,5 @@
 import type { RouteRecordRaw } from "vue-router";
 
-// Import route modules
 import { dashboardRoutes } from "./admin/dashboard.routes";
 import { ordersRoutes } from "./admin/orders.routes";
 import { productsRoutes } from "./admin/products.routes";

@@ -11,11 +11,13 @@ export const logsRoutes: RouteRecordRaw[] = [
       import("@/views/admin/admin-logs/AdminLogSetPricingView.vue"),
   },
   {
-    path: "logs/user",
-    component: () => import("@/views/admin/admin-logs/AdminLogView.vue"),
+    path: "logs/user-sessions",
+    component: () =>
+      import("@/views/admin/admin-logs/AdminLogUserSessionView.vue"),
   },
   {
-    path: "logs/order",
-    component: () => import("@/views/admin/admin-logs/AdminLogView.vue"),
+    path: "logs/product-views",
+    component: () =>
+      import("@/views/admin/admin-logs/AdminLogProductView.vue"),
   },
 ];

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, reactive } from "vue";
+import { ref, reactive, onMounted, computed } from "vue";
 import { BaseInput, BaseSelect, BaseModal } from "@/components/ui";
 import {
   Plus,
@@ -11,51 +11,15 @@ import {
   MapPin,
   Loader2,
 } from "lucide-vue-next";
+import { useAddressStore } from "@/stores/customer/address.store";
+import { AddressForm } from "@/components/address";
+import type { AddressBody, Address } from "@/types";
 
-interface Address {
-  id: number;
-  label: string;
-  recipient: string;
-  phone: string;
-  address: string;
-  sub_district: string;
-  district: string;
-  province: string;
-  postal_code: string;
-  is_default: boolean;
-}
-
-// TODO: GET /api/v1/profile/addresses
-const addresses = ref<Address[]>([
-  {
-    id: 1,
-    label: "บ้าน",
-    recipient: "สมชาย ใจดี",
-    phone: "081-234-5678",
-    address: "123/45 ถ.พหลโยธิน",
-    sub_district: "จตุจักร",
-    district: "จตุจักร",
-    province: "กรุงเทพมหานคร",
-    postal_code: "10900",
-    is_default: true,
-  },
-  {
-    id: 2,
-    label: "ที่ทำงาน",
-    recipient: "สมชาย ใจดี",
-    phone: "02-345-6789",
-    address: "456 อาคาร ABC ชั้น 12 ถ.สีลม",
-    sub_district: "สีลม",
-    district: "บางรัก",
-    province: "กรุงเทพมหานคร",
-    postal_code: "10500",
-    is_default: false,
-  },
-]);
+const addressStore = useAddressStore();
+const addresses = computed(() => addressStore.addresses);
 
 const showModal = ref(false);
 const isEditMode = ref(false);
-const isSaving = ref(false);
 const editingId = ref<number | null>(null);
 
 const labelOptions = [
@@ -64,29 +28,37 @@ const labelOptions = [
   { value: "อื่นๆ", label: "📍 อื่นๆ" },
 ];
 
-const provinceOptions = [
-  { value: "กรุงเทพมหานคร", label: "กรุงเทพมหานคร" },
-  { value: "นนทบุรี", label: "นนทบุรี" },
-  { value: "ปทุมธานี", label: "ปทุมธานี" },
-  { value: "สมุทรปราการ", label: "สมุทรปราการ" },
-  { value: "เชียงใหม่", label: "เชียงใหม่" },
-  { value: "ขอนแก่น", label: "ขอนแก่น" },
-  { value: "สงขลา", label: "สงขลา" },
-  { value: "ชลบุรี", label: "ชลบุรี" },
-];
-
-const emptyForm = {
+const emptyForm: AddressBody = {
   label: "บ้าน",
   recipient: "",
   phone: "",
   address: "",
-  sub_district: "",
   district: "",
-  province: "กรุงเทพมหานคร",
+  province: "",
   postal_code: "",
   is_default: false,
 };
-const form = reactive({ ...emptyForm });
+const form = reactive<AddressBody>({ ...emptyForm });
+
+const addressFormValue = computed({
+  get: () => ({
+    address: form.address,
+    subDistrict: "",
+    district: form.district || "",
+    province: form.province,
+    postalCode: form.postal_code,
+  }),
+  set: (val) => {
+    form.address = val.address;
+    form.district = val.district;
+    form.province = val.province;
+    form.postal_code = val.postalCode;
+  },
+});
+
+onMounted(() => {
+  addressStore.fetchAddresses();
+});
 
 function openAddModal() {
   Object.assign(form, { ...emptyForm });
@@ -97,12 +69,11 @@ function openAddModal() {
 
 function openEditModal(addr: Address) {
   Object.assign(form, {
-    label: addr.label,
+    label: addr.label || "บ้าน",
     recipient: addr.recipient,
     phone: addr.phone,
     address: addr.address,
-    sub_district: addr.sub_district,
-    district: addr.district,
+    district: addr.district || "",
     province: addr.province,
     postal_code: addr.postal_code,
     is_default: addr.is_default,
@@ -113,34 +84,28 @@ function openEditModal(addr: Address) {
 }
 
 async function saveAddress() {
-  isSaving.value = true;
-  // TODO: POST /api/v1/profile/addresses | PUT /api/v1/profile/addresses/:id
-  await new Promise((r) => setTimeout(r, 600));
+  let success = false;
   if (isEditMode.value && editingId.value) {
-    const idx = addresses.value.findIndex((a) => a.id === editingId.value);
-    if (idx !== -1) addresses.value[idx] = { ...addresses.value[idx], ...form };
+    success = await addressStore.updateAddress(editingId.value, form);
   } else {
-    const newId = Math.max(...addresses.value.map((a) => a.id), 0) + 1;
-    addresses.value.push({ id: newId, ...form });
+    success = await addressStore.createAddress(form);
   }
-  isSaving.value = false;
-  showModal.value = false;
+
+  if (success) {
+    showModal.value = false;
+  }
 }
 
 async function setDefault(id: number) {
-  // TODO: PATCH /api/v1/profile/addresses/:id/default
-  addresses.value.forEach((a) => {
-    a.is_default = a.id === id;
-  });
+  await addressStore.setAsDefault(id);
 }
 
 async function deleteAddress(id: number) {
   if (!confirm("ต้องการลบที่อยู่นี้หรือไม่?")) return;
-  // TODO: DELETE /api/v1/profile/addresses/:id
-  addresses.value = addresses.value.filter((a) => a.id !== id);
+  await addressStore.deleteAddress(id);
 }
 
-function getLabelIcon(label: string) {
+function getLabelIcon(label: string | null) {
   if (label === "บ้าน") return Home;
   if (label === "ที่ทำงาน") return Building2;
   return MapPin;
@@ -216,7 +181,7 @@ function getLabelIcon(label: string) {
                 {{ addr.recipient }} · {{ addr.phone }}
               </p>
               <p class="text-sm text-secondary-500 mt-0.5">
-                {{ addr.address }}, {{ addr.sub_district }},
+                {{ addr.address }}
                 {{ addr.district }}, {{ addr.province }} {{ addr.postal_code }}
               </p>
               <div class="flex items-center gap-2 mt-3">
@@ -274,52 +239,19 @@ function getLabelIcon(label: string) {
             required
           />
         </div>
-        <BaseInput
-          v-model="form.address"
-          label="ที่อยู่"
-          placeholder="บ้านเลขที่ ซอย ถนน"
-          required
-        />
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <BaseInput
-            v-model="form.sub_district"
-            label="แขวง/ตำบล"
-            placeholder="แขวง/ตำบล"
-            required
-          />
-          <BaseInput
-            v-model="form.district"
-            label="เขต/อำเภอ"
-            placeholder="เขต/อำเภอ"
-            required
-          />
-        </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <BaseSelect
-            v-model="form.province"
-            :options="provinceOptions"
-            label="จังหวัด"
-            placeholder="เลือกจังหวัด"
-            required
-          />
-          <BaseInput
-            v-model="form.postal_code"
-            label="รหัสไปรษณีย์"
-            placeholder="xxxxx"
-            required
-          />
-        </div>
+
+        <AddressForm v-model="addressFormValue" />
       </form>
       <template #footer>
         <button @click="showModal = false" class="btn-ghost">ยกเลิก</button>
         <button
           @click="saveAddress"
-          :disabled="isSaving"
+          :disabled="addressStore.isLoading"
           class="btn-primary gap-2 ml-auto"
         >
-          <Loader2 v-if="isSaving" class="w-4 h-4 animate-spin" />
+          <Loader2 v-if="addressStore.isLoading" class="w-4 h-4 animate-spin" />
           {{
-            isSaving
+            addressStore.isLoading
               ? "กำลังบันทึก..."
               : isEditMode
                 ? "บันทึกการแก้ไข"

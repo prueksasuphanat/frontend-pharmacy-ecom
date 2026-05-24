@@ -55,7 +55,6 @@ const iconMap: Record<string, Component> = {
       </span>
     </button>
 
-    <!-- Overlay -->
     <Transition name="fade">
       <div
         v-if="notif.isOpen"
@@ -64,7 +63,6 @@ const iconMap: Record<string, Component> = {
       />
     </Transition>
 
-    <!-- Dropdown -->
     <Transition name="slide-up">
       <div
         v-if="notif.isOpen"
@@ -96,7 +94,7 @@ const iconMap: Record<string, Component> = {
           <RouterLink
             v-for="n in notif.latest5"
             :key="n.id"
-            :to="n.link"
+            :to="n.link || '#'"
             @click="
               notif.markRead(n.id);
               notif.close();

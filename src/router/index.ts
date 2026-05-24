@@ -11,7 +11,6 @@ const router = createRouter({
   routes: [...publicRoutes, ...customerRoutes, adminRoutes, ...errorRoutes],
 });
 
-// Apply auth guard
 router.beforeEach(authGuard);
 
 export default router;

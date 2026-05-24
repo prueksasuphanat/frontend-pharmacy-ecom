@@ -15,6 +15,12 @@ interface UnitState {
   error: string | null;
 }
 
+let toastInstance: ReturnType<typeof useToast> | null = null;
+const getToast = () => {
+  if (!toastInstance) toastInstance = useToast();
+  return toastInstance;
+};
+
 export const useUnitStore = defineStore("unit", {
   state: (): UnitState => ({
     units: [],
@@ -31,16 +37,16 @@ export const useUnitStore = defineStore("unit", {
     async getUnits(params?: UnitListParams): Promise<boolean> {
       this.isLoading = true;
       this.error = null;
-      const toast = useToast();
+      const toast = getToast();
       try {
         const response = await unitsApi.getUnits(params);
         this.units = response.data;
         this.pagination = response.pagination;
         return true;
-      } catch (err: any) {
+      } catch (err: unknown) {
         this.error =
-          err.response?.data?.message || "เกิดข้อผิดพลาดในการดึงข้อมูลหน่วย";
-        toast.error(this.error);
+          (err as any).response?.data?.message || "เกิดข้อผิดพลาดในการดึงข้อมูลหน่วย";
+        toast.error(this.error || "เกิดข้อผิดพลาดในการดึงข้อมูลหน่วย");
         return false;
       } finally {
         this.isLoading = false;
@@ -50,16 +56,16 @@ export const useUnitStore = defineStore("unit", {
     async getUnitById(id: number): Promise<Unit | null> {
       this.isLoading = true;
       this.error = null;
-      const toast = useToast();
+      const toast = getToast();
       try {
         const unit = await unitsApi.getUnitById(id);
         const idx = this.units.findIndex((u) => u.id === id);
         if (idx !== -1) this.units[idx] = unit;
         return unit;
-      } catch (err: any) {
+      } catch (err: unknown) {
         this.error =
-          err.response?.data?.message || "เกิดข้อผิดพลาดในการดึงข้อมูลหน่วย";
-        toast.error(this.error);
+          (err as any).response?.data?.message || "เกิดข้อผิดพลาดในการดึงข้อมูลหน่วย";
+        toast.error(this.error || "เกิดข้อผิดพลาดในการดึงข้อมูลหน่วย");
         return null;
       } finally {
         this.isLoading = false;
@@ -69,16 +75,16 @@ export const useUnitStore = defineStore("unit", {
     async createUnit(name: string): Promise<boolean> {
       this.isLoading = true;
       this.error = null;
-      const toast = useToast();
+      const toast = getToast();
       try {
         await unitsApi.createUnit({ name });
         toast.success("สร้างหน่วยสำเร็จ");
         await this.getUnits({ page: 1, limit: this.pagination.limit });
         return true;
-      } catch (err: any) {
+      } catch (err: unknown) {
         this.error =
-          err.response?.data?.message || "เกิดข้อผิดพลาดในการสร้างหน่วย";
-        toast.error(this.error);
+          (err as any).response?.data?.message || "เกิดข้อผิดพลาดในการสร้างหน่วย";
+        toast.error(this.error || "เกิดข้อผิดพลาดในการสร้างหน่วย");
         return false;
       } finally {
         this.isLoading = false;
@@ -91,17 +97,17 @@ export const useUnitStore = defineStore("unit", {
     ): Promise<boolean> {
       this.isLoading = true;
       this.error = null;
-      const toast = useToast();
+      const toast = getToast();
       try {
         const updated = await unitsApi.updateUnit(id, data);
         const idx = this.units.findIndex((u) => u.id === id);
         if (idx !== -1) this.units[idx] = { ...this.units[idx], ...updated };
         toast.success("อัปเดตหน่วยสำเร็จ");
         return true;
-      } catch (err: any) {
+      } catch (err: unknown) {
         this.error =
-          err.response?.data?.message || "เกิดข้อผิดพลาดในการอัปเดตหน่วย";
-        toast.error(this.error);
+          (err as any).response?.data?.message || "เกิดข้อผิดพลาดในการอัปเดตหน่วย";
+        toast.error(this.error || "เกิดข้อผิดพลาดในการอัปเดตหน่วย");
         return false;
       } finally {
         this.isLoading = false;
@@ -111,7 +117,7 @@ export const useUnitStore = defineStore("unit", {
     async toggleUnitActive(id: number): Promise<boolean> {
       this.isLoading = true;
       this.error = null;
-      const toast = useToast();
+      const toast = getToast();
       try {
         const updated = await unitsApi.toggleUnitActive(id);
         const idx = this.units.findIndex((u) => u.id === id);
@@ -121,10 +127,10 @@ export const useUnitStore = defineStore("unit", {
           updated.is_active ? "เปิดใช้งานหน่วยสำเร็จ" : "ปิดใช้งานหน่วยสำเร็จ",
         );
         return true;
-      } catch (err: any) {
+      } catch (err: unknown) {
         this.error =
-          err.response?.data?.message || "เกิดข้อผิดพลาดในการเปลี่ยนสถานะหน่วย";
-        toast.error(this.error);
+          (err as any).response?.data?.message || "เกิดข้อผิดพลาดในการเปลี่ยนสถานะหน่วย";
+        toast.error(this.error || "เกิดข้อผิดพลาดในการเปลี่ยนสถานะหน่วย");
         return false;
       } finally {
         this.isLoading = false;
@@ -134,7 +140,7 @@ export const useUnitStore = defineStore("unit", {
     async deleteUnit(id: number): Promise<boolean> {
       this.isLoading = true;
       this.error = null;
-      const toast = useToast();
+      const toast = getToast();
       try {
         await unitsApi.deleteUnit(id);
         toast.success("ลบหน่วยสำเร็จ");
@@ -147,10 +153,10 @@ export const useUnitStore = defineStore("unit", {
           });
         }
         return true;
-      } catch (err: any) {
+      } catch (err: unknown) {
         this.error =
-          err.response?.data?.message || "เกิดข้อผิดพลาดในการลบหน่วย";
-        toast.error(this.error);
+          (err as any).response?.data?.message || "เกิดข้อผิดพลาดในการลบหน่วย";
+        toast.error(this.error || "เกิดข้อผิดพลาดในการลบหน่วย");
         return false;
       } finally {
         this.isLoading = false;

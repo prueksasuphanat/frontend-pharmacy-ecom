@@ -148,18 +148,19 @@ function formatPrice(price: string | number): string {
   });
 }
 
-function fullName(user: {
+function fullName(user?: {
   title?: string | null;
   first_name?: string | null;
   last_name?: string | null;
   pmc_name?: string | null;
   username?: string | null;
-}): string {
-  const parts = [user?.title, user?.first_name, user?.last_name]
+} | null): string {
+  if (!user) return "";
+  const parts = [user.title, user.first_name, user.last_name]
     .filter(Boolean)
     .join(" ")
     .trim();
-  return parts || user?.pmc_name || user?.username || "";
+  return parts || user.pmc_name || user.username || "";
 }
 
 async function fetchLogs() {
@@ -196,7 +197,8 @@ function handleFilterChange() {
   fetchLogs();
 }
 
-function handlePricingTypeChange(value: string | number) {
+function handlePricingTypeChange(value: string | number | null) {
+  if (!value) return;
   const newType = value as PricingType;
   store.setPricingType(newType);
   searchQuery.value = "";
@@ -332,7 +334,6 @@ watch(
   <div class="overflow-y-visible">
     <LoadingOverlay :loading="loading && logs.length > 0" />
 
-    <!-- Header -->
     <div class="page-header mb-6">
       <div>
         <h1 class="page-title">บันทึกการตั้งราคา</h1>
@@ -356,10 +357,8 @@ watch(
       </div>
     </div>
 
-    <!-- Filters -->
     <div class="card mb-6">
       <div class="flex flex-col gap-4">
-        <!-- Row 1: Pricing type + Search -->
         <div class="flex flex-col sm:flex-row gap-4">
           <div class="w-full sm:w-56">
             <BaseAutocomplete
@@ -383,7 +382,6 @@ watch(
           </div>
         </div>
 
-        <!-- Row 2: Date + User filter (special only) -->
         <div class="flex flex-col sm:flex-row gap-4">
           <div class="w-full sm:w-52 relative">
             <BaseDatePicker
@@ -402,7 +400,6 @@ watch(
             </button>
           </div>
 
-          <!-- User filter (special pricing only) -->
           <div v-if="!isDefault" class="w-full sm:flex-1 relative">
             <BaseAutocomplete
               v-model="userFilter"
@@ -418,7 +415,6 @@ watch(
       </div>
     </div>
 
-    <!-- Table -->
     <BaseTable
       :columns="columns"
       :data="logs"
@@ -427,14 +423,12 @@ watch(
       @page-change="handlePageChange"
       empty-text="ไม่พบข้อมูลบันทึกการตั้งราคา"
     >
-      <!-- Date -->
       <template #cell-changed_at="{ value }">
         <span class="text-sm text-secondary-600 whitespace-nowrap">
           {{ formatDateTime(value as string) }}
         </span>
       </template>
 
-      <!-- Product -->
       <template #cell-product="{ row }">
         <div>
           <p class="text-sm font-medium text-secondary-900">
@@ -446,7 +440,6 @@ watch(
         </div>
       </template>
 
-      <!-- Category -->
       <template #cell-category="{ row }">
         <div
           v-if="row.product_unit?.product?.categories?.length"
@@ -463,7 +456,6 @@ watch(
         <span v-else class="text-sm text-secondary-400">-</span>
       </template>
 
-      <!-- Target user (special only) -->
       <template #cell-target_user="{ row }">
         <div v-if="row.target_user">
           <p class="text-sm text-secondary-700">
@@ -474,21 +466,18 @@ watch(
         <span v-else class="text-sm text-secondary-400">-</span>
       </template>
 
-      <!-- Old Price -->
       <template #cell-old_price="{ value }">
         <span class="text-sm text-secondary-600">
           ฿{{ formatPrice(value as string) }}
         </span>
       </template>
 
-      <!-- New Price -->
       <template #cell-new_price="{ value }">
         <span class="text-sm font-medium text-secondary-900">
           ฿{{ formatPrice(value as string) }}
         </span>
       </template>
 
-      <!-- Diff -->
       <template #cell-diff="{ row }">
         <span
           :class="[
@@ -513,7 +502,6 @@ watch(
         </span>
       </template>
 
-      <!-- User / changed_by_user (default) -->
       <template #cell-user="{ row }">
         <div v-if="row.user">
           <p class="text-sm text-secondary-700">{{ fullName(row.user) }}</p>
@@ -521,7 +509,6 @@ watch(
         </div>
       </template>
 
-      <!-- Changed by user (special) -->
       <template #cell-changed_by_user="{ row }">
         <div v-if="row.changed_by_user">
           <p class="text-sm text-secondary-700">
@@ -534,10 +521,8 @@ watch(
         <span v-else class="text-sm text-secondary-400">-</span>
       </template>
 
-      <!-- Actions -->
       <template #cell-actions="{ row }">
         <div class="flex items-center justify-center gap-1">
-          <!-- View product history -->
           <button
             @click="openProductDetail(row)"
             class="p-1.5 text-primary-600 hover:bg-blue-50 rounded-lg transition-colors"
@@ -545,7 +530,7 @@ watch(
           >
             <Eye class="w-4 h-4" />
           </button>
-          <!-- View user history (special only) -->
+
           <button
             v-if="!isDefault && row.target_user"
             @click="openUserDetail(row.target_user.id)"
@@ -558,7 +543,6 @@ watch(
       </template>
     </BaseTable>
 
-    <!-- ─── Product Detail Modal ─────────────────────────────────────────── -->
     <BaseModal
       v-if="showProductModal"
       :title="
@@ -572,7 +556,6 @@ watch(
       <div class="relative min-h-[200px]">
         <LoadingOverlay :loading="modalLoading" />
 
-        <!-- Product info with pricing type badge -->
         <div
           v-if="selectedProductUnit"
           class="mb-4 p-4 bg-secondary-50 rounded-lg"
@@ -625,7 +608,6 @@ watch(
           </div>
         </div>
 
-        <!-- Default: product logs -->
         <BaseTable
           v-if="isDefault"
           :columns="defaultProductModalColumns"
@@ -678,7 +660,6 @@ watch(
           </template>
         </BaseTable>
 
-        <!-- Special: product logs -->
         <BaseTable
           v-else
           :columns="specialProductModalColumns"
@@ -746,7 +727,6 @@ watch(
       </template>
     </BaseModal>
 
-    <!-- ─── User Detail Modal (Special only) ─────────────────────────────── -->
     <BaseModal
       v-if="showUserModal"
       :title="
@@ -760,7 +740,6 @@ watch(
       <div class="relative min-h-[200px]">
         <LoadingOverlay :loading="modalLoading" />
 
-        <!-- User info with badge -->
         <div v-if="selectedUser" class="mb-4 p-4 bg-secondary-50 rounded-lg">
           <div class="flex items-start justify-between mb-3">
             <span class="badge badge-purple text-xs">ราคาตามผู้ใช้</span>
@@ -793,7 +772,6 @@ watch(
           </div>
         </div>
 
-        <!-- User logs table -->
         <BaseTable
           :columns="userModalColumns"
           :data="store.specialUserLogs"

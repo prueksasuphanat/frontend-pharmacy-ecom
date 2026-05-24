@@ -50,7 +50,6 @@ export const usePublicProductStore = defineStore("publicProduct", {
         const res = await publicProductsApi.getById(id);
         this.selectedProduct = res.data.data;
       } catch (err: any) {
-        // ไม่ toast — modal จะแสดง error state เอง
         console.error("[publicProductStore] fetchProductById error:", err);
       } finally {
         this.isLoadingDetail = false;

@@ -3,14 +3,14 @@ import { ref, computed } from "vue";
 import { Calendar } from "lucide-vue-next";
 
 interface Props {
-  modelValue?: string; // ISO date string (YYYY-MM-DD)
+  modelValue?: string;
   label?: string;
   placeholder?: string;
   error?: string;
   disabled?: boolean;
   required?: boolean;
-  min?: string; // ISO date string
-  max?: string; // ISO date string
+  min?: string;
+  max?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {

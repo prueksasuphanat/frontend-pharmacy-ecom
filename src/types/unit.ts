@@ -1,7 +1,3 @@
-/**
- * Unit type definitions
- */
-
 export interface Unit {
   id: number;
   pmc_unit_id: number | null;

@@ -1,9 +1,3 @@
-/**
- * Public Products API
- * GET /products      — ไม่ต้อง auth, ไม่มีราคา
- * GET /products/:id  — ต้อง auth, มีราคาตาม user
- */
-
 import type { Product, ProductListResponse } from "@/types";
 import { apiClient } from "../client";
 

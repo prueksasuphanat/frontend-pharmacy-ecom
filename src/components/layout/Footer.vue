@@ -19,10 +19,8 @@ const currentYear = new Date().getFullYear();
   <footer
     class="bg-gradient-to-b from-secondary-900 to-secondary-950 text-secondary-300"
   >
-    <!-- Main Footer -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-        <!-- Company Info with License -->
         <div>
           <div class="flex items-center gap-2.5 mb-4">
             <div
@@ -38,7 +36,6 @@ const currentYear = new Date().getFullYear();
             พร้อมให้บริการด้วยทีมเภสัชกรมืออาชีพ
           </p>
 
-          <!-- License Badges -->
           <div class="space-y-2.5 mb-5">
             <div
               class="flex items-center gap-2.5 px-3 py-2.5 bg-secondary-800/50 rounded-xl border border-secondary-700/50"
@@ -74,7 +71,6 @@ const currentYear = new Date().getFullYear();
             </div>
           </div>
 
-          <!-- Social Media -->
           <div class="flex items-center gap-2.5">
             <a
               href="#"
@@ -103,7 +99,6 @@ const currentYear = new Date().getFullYear();
           </div>
         </div>
 
-        <!-- Quick Links -->
         <div>
           <h3 class="text-white font-semibold mb-4 text-base">เมนูหลัก</h3>
           <ul class="space-y-2.5 text-sm">
@@ -165,7 +160,6 @@ const currentYear = new Date().getFullYear();
           </ul>
         </div>
 
-        <!-- Customer Service -->
         <div>
           <h3 class="text-white font-semibold mb-4 text-base">บริการลูกค้า</h3>
           <ul class="space-y-2.5 text-sm">
@@ -249,7 +243,6 @@ const currentYear = new Date().getFullYear();
           </ul>
         </div>
 
-        <!-- Contact Info -->
         <div>
           <h3 class="text-white font-semibold mb-4 text-base">ติดต่อเรา</h3>
           <ul class="space-y-3.5 text-sm">
@@ -310,7 +303,6 @@ const currentYear = new Date().getFullYear();
       </div>
     </div>
 
-    <!-- Bottom Bar -->
     <div class="border-t border-secondary-800/50">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div

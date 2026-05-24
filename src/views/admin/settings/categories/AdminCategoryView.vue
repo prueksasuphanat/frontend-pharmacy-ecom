@@ -8,19 +8,16 @@ import {
   BaseModal,
   BaseAutocomplete,
 } from "@/components/ui";
-import type { Column, PaginationConfig } from "@/components/ui/BaseTable.vue";
+import type { Column } from "@/components/ui/BaseTable.vue";
 import type { Category } from "@/types";
 import { useCategoryStore } from "@/stores";
 import { formatDate } from "@/utils";
 
-// Store
 const categoryStore = useCategoryStore();
 
-// State
 const searchQuery = ref("");
 const statusFilter = ref<string | number | null>(null);
 
-// Modal state
 const addModalOpen = ref(false);
 const editModalOpen = ref(false);
 const deleteModalOpen = ref(false);
@@ -31,12 +28,10 @@ const categoryForm = ref({
 });
 const selectedCategory = ref<Category | null>(null);
 
-// Computed
 const categories = computed(() => categoryStore.categories);
 const loading = computed(() => categoryStore.isLoading);
 const pagination = computed(() => categoryStore.pagination);
 
-// Table columns
 const columns: Column<Category>[] = [
   { key: "name", label: "ชื่อประเภท" },
   { key: "is_active", label: "สถานะ", width: "120px", align: "center" },
@@ -44,13 +39,11 @@ const columns: Column<Category>[] = [
   { key: "actions", label: "จัดการ", width: "150px", align: "center" },
 ];
 
-// Status filter options
 const statusOptions = [
   { value: "active", label: "ใช้งาน" },
   { value: "inactive", label: "ไม่ใช้งาน" },
 ];
 
-// Fetch categories
 async function fetchCategories() {
   await categoryStore.getCategories({
     page: pagination.value.page,
@@ -61,39 +54,33 @@ async function fetchCategories() {
   });
 }
 
-// Handle page change
 function handlePageChange(page: number) {
   categoryStore.pagination.page = page;
   fetchCategories();
 }
 
-// Handle search
 function handleSearch() {
   categoryStore.pagination.page = 1;
   fetchCategories();
 }
 
-// Handle status filter change
 function handleStatusFilterChange() {
   categoryStore.pagination.page = 1;
   fetchCategories();
 }
 
-// Add category
 function handleAddCategory() {
   categoryForm.value.name = "";
   categoryForm.value.is_active = true;
   addModalOpen.value = true;
 }
 
-// Close add modal
 function closeAddModal() {
   addModalOpen.value = false;
   categoryForm.value.name = "";
   categoryForm.value.is_active = true;
 }
 
-// Save new category
 async function saveCategory() {
   if (!categoryForm.value.name.trim()) {
     return;
@@ -110,13 +97,11 @@ async function saveCategory() {
   }
 }
 
-// Edit category
 async function handleEditCategory(category: Category) {
   selectedCategory.value = category;
   modalLoading.value = true;
   editModalOpen.value = true;
 
-  // Fetch fresh data
   const fresh = await categoryStore.getCategoryById(category.id);
   modalLoading.value = false;
 
@@ -127,7 +112,6 @@ async function handleEditCategory(category: Category) {
   }
 }
 
-// Close edit modal
 function closeEditModal() {
   editModalOpen.value = false;
   selectedCategory.value = null;
@@ -135,7 +119,6 @@ function closeEditModal() {
   categoryForm.value.is_active = true;
 }
 
-// Update category
 async function updateCategory() {
   if (!selectedCategory.value) return;
 
@@ -158,19 +141,16 @@ async function updateCategory() {
   }
 }
 
-// Delete category
 function handleDeleteCategory(category: Category) {
   selectedCategory.value = category;
   deleteModalOpen.value = true;
 }
 
-// Close delete modal
 function closeDeleteModal() {
   deleteModalOpen.value = false;
   selectedCategory.value = null;
 }
 
-// Confirm delete category
 async function confirmDeleteCategory() {
   if (!selectedCategory.value) return;
 
@@ -183,12 +163,10 @@ async function confirmDeleteCategory() {
   }
 }
 
-// Toggle category status
 async function handleToggleStatus(category: Category) {
   await categoryStore.toggleCategoryActive(category.id);
 }
 
-// Initialize
 onMounted(() => {
   fetchCategories();
 });
@@ -196,7 +174,6 @@ onMounted(() => {
 
 <template>
   <div>
-    <!-- Header -->
     <div class="page-header mb-6">
       <h1 class="page-title">ประเภทสินค้า</h1>
 
@@ -205,10 +182,8 @@ onMounted(() => {
       </button>
     </div>
 
-    <!-- Filters -->
     <div class="card mb-6">
       <div class="flex flex-col sm:flex-row gap-4">
-        <!-- Search -->
         <div class="flex-1">
           <BaseInput
             v-model="searchQuery"
@@ -221,7 +196,6 @@ onMounted(() => {
           </BaseInput>
         </div>
 
-        <!-- Status Filter -->
         <div class="w-full sm:w-48">
           <BaseAutocomplete
             v-model="statusFilter"
@@ -234,7 +208,6 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- Table -->
     <BaseTable
       :columns="columns"
       :data="categories"
@@ -243,7 +216,6 @@ onMounted(() => {
       @page-change="handlePageChange"
       empty-text="ไม่พบข้อมูลประเภทสินค้า"
     >
-      <!-- Status Toggle -->
       <template #cell-is_active="{ row }">
         <BaseToggle
           :model-value="row.is_active"
@@ -252,12 +224,10 @@ onMounted(() => {
         />
       </template>
 
-      <!-- Product Count -->
       <template #cell-_count="{ value }">
         {{ (value as { products: number }).products }} รายการ
       </template>
 
-      <!-- Actions -->
       <template #cell-actions="{ row }">
         <div class="flex items-center justify-center gap-2">
           <button
@@ -278,7 +248,6 @@ onMounted(() => {
       </template>
     </BaseTable>
 
-    <!-- Add Category Modal -->
     <BaseModal
       v-if="addModalOpen"
       title="เพิ่มประเภทสินค้า"
@@ -313,7 +282,6 @@ onMounted(() => {
       </template>
     </BaseModal>
 
-    <!-- Edit Category Modal -->
     <BaseModal
       v-if="editModalOpen && selectedCategory"
       title="แก้ไขประเภทสินค้า"
@@ -338,7 +306,6 @@ onMounted(() => {
           />
         </div>
 
-        <!-- Metadata -->
         <div
           class="pt-4 mt-4 border-t border-secondary-100 grid grid-cols-2 gap-x-4 gap-y-2 text-sm"
         >
@@ -387,7 +354,6 @@ onMounted(() => {
       </template>
     </BaseModal>
 
-    <!-- Delete Confirmation Modal -->
     <BaseModal
       v-if="deleteModalOpen && selectedCategory"
       title="ยืนยันการลบ"

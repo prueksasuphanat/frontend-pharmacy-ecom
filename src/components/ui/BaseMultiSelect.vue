@@ -43,7 +43,6 @@ const isOpen = ref(false);
 const query = ref("");
 const activeIndex = ref(-1);
 
-// Detect touch/mobile device — suppress keyboard on touch devices
 const isTouchDevice =
   typeof window !== "undefined" &&
   window.matchMedia("(pointer: coarse)").matches;
@@ -103,7 +102,6 @@ const isMaxReached = computed(
   () => props.max !== undefined && (props.modelValue ?? []).length >= props.max,
 );
 
-// Close when clicking outside
 useEventListener(document, "mousedown", (e: MouseEvent) => {
   if (!isOpen.value) return;
   const target = e.target as Node;
@@ -138,7 +136,7 @@ watch(isOpen, (val) => {
   if (val) {
     nextTick(() => {
       updateDropdownPosition();
-      // Only focus input on non-touch devices to avoid keyboard popup
+
       if (!isTouchDevice) inputRef.value?.focus();
     });
   }
@@ -243,7 +241,6 @@ function onKeydown(e: KeyboardEvent) {
       <span v-if="required" class="text-red-500 ml-0.5">*</span>
     </label>
 
-    <!-- Trigger box -->
     <div
       ref="triggerRef"
       class="input min-h-[42px] h-auto flex items-stretch gap-1.5 cursor-pointer py-1.5 pr-2"
@@ -261,7 +258,6 @@ function onKeydown(e: KeyboardEvent) {
         class="absolute left-3 top-3.5 w-4 h-4 text-secondary-400 pointer-events-none"
       />
 
-      <!-- Tags + input -->
       <div class="flex flex-wrap items-center gap-1.5 flex-1 min-w-0">
         <span
           v-for="opt in selectedOptions"
@@ -278,7 +274,6 @@ function onKeydown(e: KeyboardEvent) {
           </button>
         </span>
 
-        <!-- Search input — readonly on touch to prevent keyboard popup -->
         <input
           v-if="!disabled"
           ref="inputRef"
@@ -296,7 +291,6 @@ function onKeydown(e: KeyboardEvent) {
         />
       </div>
 
-      <!-- Right icons -->
       <div class="flex items-center gap-1 shrink-0 self-center">
         <button
           v-if="(modelValue ?? []).length > 0"
@@ -319,7 +313,6 @@ function onKeydown(e: KeyboardEvent) {
       </div>
     </div>
 
-    <!-- Teleport to body — escapes overflow:hidden / stacking context -->
     <Teleport to="body">
       <Transition name="slide-up">
         <div

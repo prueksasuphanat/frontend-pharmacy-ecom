@@ -19,10 +19,6 @@ export interface UpdateProfileResponse {
 }
 
 export const customerProfileApi = {
-  /**
-   * PATCH /api/v1/customer/profile
-   * อัปเดตข้อมูลส่วนตัว + รูปโปรไฟล์ (multipart/form-data)
-   */
   updateProfile: (data: UpdateProfileData) => {
     const formData = new FormData();
 

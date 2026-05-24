@@ -24,7 +24,6 @@ const toast = useToast();
 const showPw = ref(false);
 const isLoading = ref(false);
 
-// Profile image preview
 const profileFile = ref<File | null>(null);
 const profilePreview = ref<string | null>(null);
 const profileInputRef = ref<HTMLInputElement | null>(null);
@@ -94,7 +93,7 @@ const onSubmit = handleSubmit(
         title: formValues.title,
         first_name: formValues.first_name,
         last_name: formValues.last_name,
-        birthdata: formValues.birthdate,
+        birthdate: formValues.birthdate,
         phone: formValues.phone,
         address: formValues.address,
         files: formValues.verificationDocument || null,
@@ -133,7 +132,6 @@ const onSubmit = handleSubmit(
     class="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 flex items-center justify-center p-4"
   >
     <div class="w-full max-w-md">
-      <!-- Header -->
       <div class="text-center mb-8">
         <div
           class="w-14 h-14 bg-primary-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-primary-200"
@@ -146,10 +144,8 @@ const onSubmit = handleSubmit(
 
       <div class="card">
         <form @submit="onSubmit" novalidate class="space-y-4">
-          <!-- Profile Image -->
           <div class="flex flex-col items-center gap-2 pb-2">
             <div class="relative group">
-              <!-- Avatar circle -->
               <div
                 class="w-24 h-24 rounded-full overflow-hidden border-2 border-dashed border-secondary-300 bg-secondary-50 flex items-center justify-center transition-colors group-hover:border-primary-400"
                 :class="{
@@ -169,7 +165,6 @@ const onSubmit = handleSubmit(
                 />
               </div>
 
-              <!-- Upload overlay button -->
               <label
                 class="absolute inset-0 rounded-full cursor-pointer"
                 title="เลือกรูปโปรไฟล์"
@@ -183,7 +178,6 @@ const onSubmit = handleSubmit(
                 />
               </label>
 
-              <!-- Remove button -->
               <button
                 v-if="profilePreview"
                 type="button"

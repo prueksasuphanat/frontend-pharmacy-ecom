@@ -1,5 +1,3 @@
-// Product type definitions
-
 import type { ProductUnit } from "./unit";
 
 export type DrugType =
@@ -56,7 +54,7 @@ export interface Product {
   updated_at: string;
   categories: ProductCategory[];
   attachments?: ProductAttachment[];
-  // units พร้อม price ที่ resolve แล้ว (มี price + is_special_price)
+
   units?: (ProductUnit & { price?: number; is_special_price?: boolean })[];
 }
 
@@ -80,7 +78,6 @@ export interface ProductListResponse {
   };
 }
 
-// Legacy types (keep for backward compatibility)
 export interface ProductFilters {
   drug_type?: DrugType;
   search?: string;

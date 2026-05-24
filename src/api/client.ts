@@ -1,18 +1,6 @@
-/**
- * Axios client configuration
- *
- * Provides a configured Axios instance with interceptors for:
- * - Authentication token injection
- * - Token refresh on 401
- * - Error handling
- */
-
 import axios from "axios";
 import { env } from "@/utils/env";
 
-/**
- * Base API client instance
- */
 export const apiClient = axios.create({
   baseURL: env.apiBaseUrl,
   timeout: 10000,
@@ -21,10 +9,6 @@ export const apiClient = axios.create({
   },
 });
 
-/**
- * Request interceptor
- * Injects access_token from localStorage into request headers
- */
 apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("access_token");
@@ -36,10 +20,6 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error),
 );
 
-/**
- * Response interceptor
- * On 401 → try refresh token once, then retry original request
- */
 let isRefreshing = false;
 let failedQueue: Array<{
   resolve: (token: string) => void;
@@ -62,7 +42,6 @@ apiClient.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       const refreshToken = localStorage.getItem("refresh_token");
 
-      // No refresh token → redirect to login
       if (!refreshToken) {
         localStorage.removeItem("access_token");
         localStorage.removeItem("refresh_token");
@@ -73,7 +52,6 @@ apiClient.interceptors.response.use(
       }
 
       if (isRefreshing) {
-        // Queue requests while refreshing
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
         }).then((token) => {
@@ -116,7 +94,6 @@ apiClient.interceptors.response.use(
       }
     }
 
-    // Handle other errors
     if (error.response) {
       const { status, data } = error.response;
       switch (status) {

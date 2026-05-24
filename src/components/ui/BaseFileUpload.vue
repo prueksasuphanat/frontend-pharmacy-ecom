@@ -6,17 +6,17 @@ interface Props {
   modelValue?: File | File[] | null;
   label?: string;
   accept?: string;
-  maxSize?: number; // in MB
+  maxSize?: number;
   required?: boolean;
   disabled?: boolean;
   multiple?: boolean;
-  maxFiles?: number; // undefined = unlimited
+  maxFiles?: number;
   error?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   accept: "image/*,.pdf",
-  maxSize: 5, // 5MB default
+  maxSize: 5,
   multiple: false,
   maxFiles: undefined,
 });
@@ -37,7 +37,7 @@ const files = computed(() => {
 });
 
 const formatFileSize = (bytes: number) => {
-  const size = bytes / 1024 / 1024; // Convert to MB
+  const size = bytes / 1024 / 1024;
   return size < 1 ? `${(size * 1024).toFixed(0)} KB` : `${size.toFixed(2)} MB`;
 };
 
@@ -60,7 +60,6 @@ const handleDrop = (event: DragEvent) => {
 const processFiles = (newFiles: File[]) => {
   if (!newFiles.length) return;
 
-  // Filter valid files
   const validFiles = newFiles.filter((file) => {
     const fileSizeMB = file.size / 1024 / 1024;
     return fileSizeMB <= props.maxSize;
@@ -74,13 +73,11 @@ const processFiles = (newFiles: File[]) => {
       : [];
     const combinedFiles = [...currentFiles, ...validFiles];
 
-    // Limit number of files if maxFiles is set
     const limitedFiles = props.maxFiles
       ? combinedFiles.slice(0, props.maxFiles)
       : combinedFiles;
     emit("update:modelValue", limitedFiles);
 
-    // Create previews for new images
     validFiles.forEach((file) => {
       if (file.type.startsWith("image/")) {
         const reader = new FileReader();
@@ -94,7 +91,6 @@ const processFiles = (newFiles: File[]) => {
     const file = validFiles[0];
     emit("update:modelValue", file);
 
-    // Create preview for image
     if (file.type.startsWith("image/")) {
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -107,7 +103,6 @@ const processFiles = (newFiles: File[]) => {
     }
   }
 
-  // Reset input
   if (fileInputRef.value) {
     fileInputRef.value.value = "";
   }
@@ -145,7 +140,7 @@ const handleDragLeave = () => {
 
 const canAddMore = computed(() => {
   if (!props.multiple) return files.value.length === 0;
-  // If maxFiles is not set, always allow adding more
+
   if (!props.maxFiles) return true;
   return files.value.length < props.maxFiles;
 });
@@ -164,7 +159,6 @@ const canAddMore = computed(() => {
       </span>
     </label>
 
-    <!-- Upload Area (only show when no files) -->
     <div
       v-if="files.length === 0"
       @click="openFileDialog"
@@ -197,7 +191,6 @@ const canAddMore = computed(() => {
       </p>
     </div>
 
-    <!-- File Previews -->
     <div v-if="files.length > 0" class="space-y-2">
       <div
         v-for="(file, index) in files"
@@ -205,7 +198,6 @@ const canAddMore = computed(() => {
         class="border-[1px] border-secondary-200 rounded-lg p-3 bg-secondary-50"
       >
         <div class="flex items-start gap-3">
-          <!-- Preview Thumbnail -->
           <div
             class="flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden bg-white border border-secondary-200 flex items-center justify-center"
           >
@@ -218,7 +210,6 @@ const canAddMore = computed(() => {
             <FileText v-else class="w-6 h-6 text-secondary-400" />
           </div>
 
-          <!-- File Info -->
           <div class="flex-1 min-w-0">
             <p class="text-sm font-medium text-secondary-900 truncate">
               {{ file.name }}
@@ -228,7 +219,6 @@ const canAddMore = computed(() => {
             </p>
           </div>
 
-          <!-- Remove Button -->
           <button
             type="button"
             @click="removeFile(index)"
@@ -241,7 +231,6 @@ const canAddMore = computed(() => {
         </div>
       </div>
 
-      <!-- Add More Button (for multiple mode) -->
       <button
         v-if="multiple && canAddMore"
         type="button"
@@ -256,7 +245,6 @@ const canAddMore = computed(() => {
       </button>
     </div>
 
-    <!-- Hidden File Input -->
     <input
       ref="fileInputRef"
       type="file"
@@ -267,7 +255,6 @@ const canAddMore = computed(() => {
       class="hidden"
     />
 
-    <!-- Error Message -->
     <p v-if="error" class="text-xs text-red-600 mt-1.5">
       {{ error }}
     </p>

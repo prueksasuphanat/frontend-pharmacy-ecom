@@ -21,7 +21,7 @@ export const publicRoutes: RouteRecordRaw[] = [
       if (!allowed) {
         return { path: "/register" };
       }
-      // Clear so user can't refresh and stay on this page
+
       sessionStorage.removeItem("fromRegister");
     },
   },

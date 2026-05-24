@@ -49,25 +49,22 @@ function updateDropdownPosition() {
   if (!triggerRef.value) return;
   const rect = triggerRef.value.getBoundingClientRect();
 
-  // Use visualViewport when available (accounts for mobile keyboard)
   const vp = window.visualViewport;
   const viewportWidth = vp ? vp.width : window.innerWidth;
   const viewportHeight = vp ? vp.height : window.innerHeight;
   const vpOffsetTop = vp ? vp.offsetTop : 0;
   const vpOffsetLeft = vp ? vp.offsetLeft : 0;
 
-  // Clamp left so dropdown doesn't overflow right edge, min 8px from left edge
   const left = Math.max(
     8,
     Math.min(rect.left - vpOffsetLeft, viewportWidth - rect.width - 8),
   );
-  // Cap width so it never exceeds viewport
+
   const width = Math.min(rect.width, viewportWidth - left - 8);
 
-  // Decide whether to open above or below based on available space
   const spaceBelow = viewportHeight - (rect.bottom - vpOffsetTop);
   const spaceAbove = rect.top - vpOffsetTop;
-  const maxDropdownHeight = 240; // max-h-60 = 15rem = 240px
+  const maxDropdownHeight = 240;
 
   let top: number;
   if (
@@ -76,7 +73,6 @@ function updateDropdownPosition() {
   ) {
     top = rect.bottom + vpOffsetTop + 4;
   } else {
-    // Open upward
     top = rect.top + vpOffsetTop - Math.min(maxDropdownHeight, spaceAbove) - 4;
   }
 
@@ -114,13 +110,12 @@ const filteredOptions = computed(() => {
   return props.options.filter((o) => o.label.toLowerCase().includes(q));
 });
 
-// Close when clicking outside both trigger and teleported dropdown
 useEventListener(document, "mousedown", (e: MouseEvent) => {
   if (!isOpen.value) return;
   const target = e.target as Node;
   if (containerRef.value?.contains(target)) return;
   if (dropdownRef.value?.contains(target)) return;
-  // Don't close if click is inside a modal/dialog (another stacking context)
+
   const inModal = (target as Element).closest?.(
     '[role="dialog"], .modal-overlay, [data-modal]',
   );
@@ -141,7 +136,6 @@ useEventListener(window, "resize", () => {
   if (isOpen.value) updateDropdownPosition();
 });
 
-// Handle mobile keyboard resize via visualViewport API
 if (typeof window !== "undefined" && window.visualViewport) {
   useEventListener(window.visualViewport, "resize", () => {
     if (isOpen.value) updateDropdownPosition();
@@ -218,7 +212,6 @@ function onKeydown(e: KeyboardEvent) {
       <span v-if="required" class="text-red-500 ml-0.5">*</span>
     </label>
 
-    <!-- Trigger -->
     <div
       ref="triggerRef"
       class="input flex items-center gap-2 cursor-pointer"
@@ -257,7 +250,6 @@ function onKeydown(e: KeyboardEvent) {
         {{ selectedLabel || placeholder }}
       </span>
 
-      <!-- Right icons -->
       <div class="flex items-center gap-1 shrink-0 ml-auto">
         <button
           v-if="
@@ -285,7 +277,6 @@ function onKeydown(e: KeyboardEvent) {
       </div>
     </div>
 
-    <!-- Teleport to body — escapes overflow:hidden / stacking context of any parent -->
     <Teleport to="body">
       <Transition name="slide-up">
         <div

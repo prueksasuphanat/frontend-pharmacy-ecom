@@ -1,8 +1,3 @@
-// Product Price type definitions
-
-// ==========================================
-// User price entry ใน unit-level pricing
-// ==========================================
 export interface UserUnitPrice {
   user_id: number;
   first_name: string | null;
@@ -16,9 +11,6 @@ export interface UserUnitPrice {
   is_special: boolean;
 }
 
-// ==========================================
-// Unit-level pricing data
-// ==========================================
 export interface ProductUnitPriceData {
   product_unit_id: number;
   unit_id: number;
@@ -28,9 +20,6 @@ export interface ProductUnitPriceData {
   users: UserUnitPrice[];
 }
 
-// ==========================================
-// Product-level pricing data (new structure)
-// ==========================================
 export interface ProductPriceData {
   product_id: number;
   is_special_pricing_enabled: boolean;
@@ -46,9 +35,6 @@ export interface GetProductPricesPayload {
   product_ids: number[];
 }
 
-// ==========================================
-// Update payload (ใช้ product_unit_id แทน product_id)
-// ==========================================
 export interface UpdateProductPricePayload {
   product_unit_id: number;
   user_id: number;

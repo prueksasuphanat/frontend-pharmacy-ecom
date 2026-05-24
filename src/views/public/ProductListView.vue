@@ -29,7 +29,6 @@ const PAGE_SIZE = 12;
 
 const selectedProductId = ref<number | null>(null);
 
-// debounce search
 let searchTimer: ReturnType<typeof setTimeout> | null = null;
 function onSearchInput() {
   if (searchTimer) clearTimeout(searchTimer);
@@ -48,7 +47,6 @@ const pagination = computed(() => productStore.pagination);
 const totalPages = computed(() => pagination.value?.totalPages ?? 1);
 const totalItems = computed(() => pagination.value?.total ?? 0);
 
-// Pagination page numbers
 const pageNumbers = computed(() => {
   const total = totalPages.value;
   const current = page.value;
@@ -106,9 +104,6 @@ function goToProduct(id: number) {
   }
 }
 
-// ราคาเริ่มต้น (unit แรก) สำหรับแสดงใน card — ยังไม่มีราคาใน list
-// แสดงแค่ "ดูรายละเอียด" แทน
-
 onMounted(() => {
   fetchProducts();
   categoryStore.fetchCategories();
@@ -119,7 +114,6 @@ onMounted(() => {
   <div class="flex flex-col min-h-screen">
     <Navbar />
     <div class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <!-- Hero banner -->
       <div
         class="bg-gradient-to-r from-primary-600 to-teal-500 rounded-2xl p-8 mb-8 text-white"
       >
@@ -139,7 +133,6 @@ onMounted(() => {
         </div>
       </div>
 
-      <!-- Filters bar -->
       <div
         class="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-6"
       >
@@ -156,12 +149,10 @@ onMounted(() => {
         </div>
       </div>
 
-      <!-- Count -->
       <p class="text-sm text-secondary-500 mb-4">
         พบ <strong class="text-secondary-900">{{ totalItems }}</strong> รายการ
       </p>
 
-      <!-- Loading skeleton -->
       <div v-if="productStore.isLoading" class="min-h-[600px]">
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
           <div
@@ -169,36 +160,32 @@ onMounted(() => {
             :key="n"
             class="rounded-2xl overflow-hidden border border-secondary-100 bg-white animate-pulse"
           >
-            <!-- Image area -->
             <div
               class="w-full h-40 bg-gradient-to-br from-secondary-100 to-secondary-50 relative"
             >
-              <!-- category badge placeholder -->
               <div
                 class="absolute top-2 left-2 h-5 w-16 bg-secondary-200 rounded-full"
               />
             </div>
-            <!-- Info area -->
+
             <div class="p-3 space-y-2">
-              <!-- generic_name -->
               <div class="h-3 bg-secondary-100 rounded w-2/5" />
-              <!-- name line 1 -->
+
               <div class="h-4 bg-secondary-150 rounded w-full" />
-              <!-- name line 2 -->
+
               <div class="h-4 bg-secondary-100 rounded w-3/4" />
-              <!-- unit badges -->
+
               <div class="flex gap-1 pt-0.5">
                 <div class="h-5 w-10 bg-secondary-100 rounded" />
                 <div class="h-5 w-12 bg-secondary-100 rounded" />
               </div>
-              <!-- bottom action -->
+
               <div class="h-8 bg-secondary-100 rounded-lg w-full mt-1" />
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Error state -->
       <div v-else-if="productStore.error" class="text-center py-20">
         <Package class="w-14 h-14 text-secondary-200 mx-auto mb-4" />
         <p class="text-secondary-400">{{ productStore.error }}</p>
@@ -207,7 +194,6 @@ onMounted(() => {
         </button>
       </div>
 
-      <!-- Product grid -->
       <div v-else-if="productStore.products.length > 0" class="min-h-[600px]">
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
           <div
@@ -216,7 +202,6 @@ onMounted(() => {
             @click="goToProduct(product.id)"
             class="card-hover p-0 overflow-hidden group cursor-pointer"
           >
-            <!-- Image / Placeholder -->
             <div class="relative">
               <ProductImage
                 :attachments="product.attachments"
@@ -224,14 +209,14 @@ onMounted(() => {
                 img-class="w-full h-40 object-cover group-hover:scale-105 transition-transform duration-300"
                 class="w-full h-40 overflow-hidden"
               />
-              <!-- Category badge -->
+
               <div
                 v-if="product.categories?.[0]"
                 class="absolute top-2 left-2 bg-white/90 text-primary-700 text-xs font-medium px-2 py-0.5 rounded-full shadow-sm"
               >
                 {{ product.categories[0].category.name }}
               </div>
-              <!-- สินค้าหมด overlay -->
+
               <div
                 v-if="product.quantity === 0"
                 class="absolute inset-0 bg-black/40 flex items-center justify-center rounded-t-2xl"
@@ -244,7 +229,6 @@ onMounted(() => {
               </div>
             </div>
 
-            <!-- Info -->
             <div class="p-3">
               <p class="text-xs text-secondary-400 mb-0.5 truncate">
                 {{ product.generic_name || "—" }}
@@ -255,7 +239,6 @@ onMounted(() => {
                 {{ product.name }}
               </h3>
 
-              <!-- unit badges -->
               <div
                 v-if="product.units?.length"
                 class="flex flex-wrap gap-1 mb-2"
@@ -269,7 +252,6 @@ onMounted(() => {
                 </span>
               </div>
 
-              <!-- ไม่ login -->
               <div
                 v-if="!auth.isLoggedIn"
                 class="bg-secondary-50 border border-secondary-200 rounded-lg px-3 py-2 text-center"
@@ -278,14 +260,14 @@ onMounted(() => {
                   🔒 เข้าสู่ระบบเพื่อดูราคา
                 </p>
               </div>
-              <!-- สินค้าหมด -->
+
               <div
                 v-else-if="product.quantity === 0"
                 class="text-sm font-medium text-secondary-400"
               >
                 สินค้าหมด
               </div>
-              <!-- login แล้ว + มีสินค้า -->
+
               <div v-else class="flex items-center justify-between">
                 <p class="text-xs font-medium text-primary-600">
                   ดูรายละเอียดและราคา
@@ -297,7 +279,6 @@ onMounted(() => {
         </div>
       </div>
 
-      <!-- Empty state -->
       <div v-else class="text-center py-20">
         <Package class="w-14 h-14 text-secondary-200 mx-auto mb-4" />
         <p class="text-secondary-400">ไม่พบสินค้าที่ค้นหา</p>
@@ -314,7 +295,6 @@ onMounted(() => {
         </button>
       </div>
 
-      <!-- Pagination -->
       <div v-if="totalPages > 1 && !productStore.isLoading" class="mt-8">
         <div
           class="flex flex-col sm:flex-row items-center justify-between gap-4"
@@ -405,7 +385,6 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- Product Detail Modal -->
     <ProductDetailModal
       :product-id="selectedProductId"
       @close="selectedProductId = null"

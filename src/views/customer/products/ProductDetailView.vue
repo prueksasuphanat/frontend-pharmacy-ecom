@@ -1,62 +1,80 @@
 <script setup lang="ts">
-import { computed, onMounted } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useRoute, RouterLink } from "vue-router";
-import { MOCK_PRODUCTS, MOCK_PRICES } from "@/__mocks__/products";
+import { useToast } from "vue-toastification";
+import { publicProductsApi } from "@/api/public/products";
 import { useAuthStore } from "@/stores/auth.store";
 import { useCartStore } from "@/stores/customer/cart.store";
-import { DrugTypeBadge } from "@/components/ui";
 import { Navbar, Footer } from "@/components/layout";
 import {
   ShoppingCart,
   Heart,
-  AlertTriangle,
   Package,
   ArrowLeft,
   CheckCircle,
   Clock,
+  Loader2,
 } from "lucide-vue-next";
-import { ref } from "vue";
+import type { Product } from "@/types";
 
 const route = useRoute();
 const auth = useAuthStore();
 const cart = useCartStore();
+const toast = useToast();
 
-const productId = route.params.id as string;
-// TODO: replace with GET /products/:id (triggers view_log server-side)
-const product = computed(() => MOCK_PRODUCTS.find((p) => p.id === productId));
-// TODO: replace with GET /products/:id/price (auth required)
-const price = computed(() => {
-  if (!product.value) return 0;
-  const prices = MOCK_PRICES[productId];
-  const role = auth.roleName as "retail" | "wholesale" | "clinic";
-  return prices?.[role] ?? product.value.base_price;
+const productId = parseInt(route.params.id as string, 10);
+const product = ref<Product | null>(null);
+const loading = ref(true);
+const selectedUnitId = ref<number | null>(null);
+
+onMounted(async () => {
+  try {
+    const res = await publicProductsApi.getById(productId);
+    product.value = res.data.data;
+
+    if (product.value.units && product.value.units.length > 0) {
+      selectedUnitId.value = product.value.units[0].id;
+    }
+  } catch {
+  } finally {
+    loading.value = false;
+  }
 });
 
-const related = computed(() =>
-  MOCK_PRODUCTS.filter(
-    (p) => p.drug_type === product.value?.drug_type && p.id !== productId,
-  ).slice(0, 4),
+const selectedUnit = computed(() => {
+  if (!product.value?.units || !selectedUnitId.value) return null;
+  return product.value.units.find((u) => u.id === selectedUnitId.value) ?? null;
+});
+
+const displayPrice = computed(() => {
+  if (!selectedUnit.value) return 0;
+  return selectedUnit.value.price ?? Number(selectedUnit.value.default_price);
+});
+
+const isSpecialPrice = computed(
+  () => selectedUnit.value?.is_special_price ?? false,
 );
 
-const inWishlist = ref(false); // TODO: check from wishlist store
+const inStock = computed(() => (product.value?.quantity ?? 0) > 0);
+
+const inWishlist = ref(false);
 const qty = ref(1);
 const addedToCart = ref(false);
 
-function addToCart() {
-  if (!product.value || product.value.stock === 0) return;
-  cart.addToCart(productId, qty.value);
-  addedToCart.value = true;
-  setTimeout(() => (addedToCart.value = false), 2000);
+async function addToCart() {
+  if (!product.value || !selectedUnitId.value || !inStock.value) return;
+  try {
+    await cart.addToCart(selectedUnitId.value, qty.value);
+    addedToCart.value = true;
+    setTimeout(() => (addedToCart.value = false), 2000);
+  } catch (err: any) {
+    toast.error(err.response?.data?.message || "ไม่สามารถเพิ่มลงตะกร้าได้");
+  }
 }
 
 function formatPrice(n: number) {
   return n.toLocaleString("th-TH", { minimumFractionDigits: 2 });
 }
-
-// TODO: record view_log via API (fire-and-forget)
-onMounted(() => {
-  console.log("[TODO] POST /view-logs { product_id:", productId, "}");
-});
 </script>
 
 <template>
@@ -70,86 +88,121 @@ onMounted(() => {
         <ArrowLeft class="w-4 h-4" />กลับ
       </RouterLink>
 
-      <div v-if="!product" class="text-center py-20">
+      <div v-if="loading" class="flex justify-center py-20">
+        <Loader2 class="w-8 h-8 text-primary-600 animate-spin" />
+      </div>
+
+      <div v-else-if="!product" class="text-center py-20">
         <Package class="w-14 h-14 text-secondary-200 mx-auto mb-4" />
         <p class="text-secondary-400">ไม่พบสินค้า</p>
       </div>
 
       <div v-else class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <!-- Left: Image -->
         <div class="space-y-4">
           <div class="card p-0 overflow-hidden">
-            <img
-              :src="product.image_url"
-              :alt="product.name"
-              class="w-full h-80 object-cover"
+            <div
+              v-if="product.attachments && product.attachments.length > 0"
+              class="w-full h-80 bg-cover bg-center"
+              :style="{ backgroundImage: `url(${product.attachments[0].url})` }"
             />
+            <div
+              v-else
+              class="w-full h-80 bg-gradient-to-br from-primary-100 to-teal-100 flex items-center justify-center"
+            >
+              <span class="text-3xl font-bold text-primary-400">
+                {{ product.name.slice(0, 2) }}
+              </span>
+            </div>
+          </div>
+
+          <div
+            v-if="product.attachments && product.attachments.length > 1"
+            class="flex gap-2"
+          >
+            <div
+              v-for="(att, i) in product.attachments.slice(0, 5)"
+              :key="att.id"
+              class="w-16 h-16 rounded-lg overflow-hidden border-2 border-secondary-100 cursor-pointer"
+            >
+              <img
+                :src="att.url"
+                :alt="att.name"
+                class="w-full h-full object-cover"
+              />
+            </div>
           </div>
         </div>
 
-        <!-- Right: Details -->
         <div class="space-y-5">
           <div>
-            <DrugTypeBadge :type="product.drug_type" />
+            <span class="badge badge-teal text-xs">{{ product.code }}</span>
             <h1 class="text-2xl font-bold text-secondary-900 mt-2">
               {{ product.name }}
             </h1>
-            <p class="text-secondary-500 text-sm mt-1">
+            <p
+              v-if="product.generic_name"
+              class="text-secondary-500 text-sm mt-1"
+            >
               {{ product.generic_name }}
             </p>
           </div>
 
-          <!-- Prescription alert -->
-          <div
-            v-if="product.drug_type === 'prescription'"
-            class="flex items-start gap-3 bg-yellow-50 border border-yellow-200 rounded-xl p-4"
-          >
-            <AlertTriangle class="w-5 h-5 text-yellow-600 shrink-0 mt-0.5" />
-            <div>
-              <p class="font-semibold text-yellow-800 text-sm">
-                ยานี้ต้องใช้ใบสั่งแพทย์
-              </p>
-              <p class="text-yellow-700 text-xs mt-0.5">
-                กรุณาอัปโหลดใบสั่งแพทย์เมื่อชำระเงิน
-              </p>
+          <div v-if="product.units && product.units.length > 1" class="card">
+            <h3 class="font-semibold text-secondary-900 mb-3 text-sm">
+              เลือกหน่วย
+            </h3>
+            <div class="flex flex-wrap gap-2">
+              <button
+                v-for="unit in product.units"
+                :key="unit.id"
+                @click="selectedUnitId = unit.id"
+                :class="[
+                  'px-4 py-2 rounded-xl text-sm font-medium border transition-colors',
+                  selectedUnitId === unit.id
+                    ? 'border-primary-600 bg-primary-50 text-primary-700'
+                    : 'border-secondary-200 text-secondary-600 hover:border-primary-300',
+                ]"
+              >
+                {{ unit.unit?.name || "หน่วย" }}
+              </button>
             </div>
           </div>
 
-          <!-- Controlled drug alert -->
-          <div
-            v-if="product.drug_type === 'controlled'"
-            class="flex items-start gap-3 bg-red-50 border border-red-200 rounded-xl p-4"
-          >
-            <AlertTriangle class="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
-            <div>
-              <p class="font-semibold text-red-800 text-sm">ยาควบคุมพิเศษ</p>
-              <p class="text-red-700 text-xs mt-0.5">
-                ต้องผ่านการอนุมัติจากเภสัชกรก่อนจัดส่ง
-              </p>
-            </div>
-          </div>
-
-          <!-- Price & stock -->
           <div class="card bg-primary-50 border-primary-100">
             <div class="flex items-center justify-between">
               <div>
-                <p class="text-xs text-secondary-500 mb-1">
-                  ราคา ({{ auth.currentUser?.role_label }})
+                <p class="text-xs text-secondary-500 mb-1">ราคา</p>
+                <p
+                  v-if="displayPrice > 0"
+                  class="text-3xl font-bold text-primary-700"
+                >
+                  ฿{{ formatPrice(displayPrice) }}
                 </p>
-                <p class="text-3xl font-bold text-primary-700">
-                  ฿{{ formatPrice(price) }}
+                <p v-else class="text-lg font-medium text-secondary-500">
+                  ติดต่อสอบถาม
                 </p>
-                <p class="text-xs text-secondary-400 mt-0.5">
-                  / {{ product.unit }}
+                <p
+                  v-if="isSpecialPrice"
+                  class="text-xs text-primary-600 mt-0.5 font-medium"
+                >
+                  ✨ ราคาพิเศษสำหรับคุณ
+                </p>
+                <p
+                  v-if="selectedUnit"
+                  class="text-xs text-secondary-400 mt-0.5"
+                >
+                  / {{ selectedUnit.unit?.name || "หน่วย" }}
                 </p>
               </div>
               <div class="text-right">
                 <p class="text-xs text-secondary-500 mb-1">สถานะสินค้า</p>
                 <div
-                  v-if="product.stock > 0"
+                  v-if="inStock"
                   class="flex items-center gap-1.5 text-success font-medium text-sm"
                 >
-                  <CheckCircle class="w-4 h-4" /> มีสินค้า
+                  <CheckCircle class="w-4 h-4" /> มีสินค้า ({{
+                    product.quantity
+                  }})
                 </div>
                 <div
                   v-else
@@ -161,7 +214,6 @@ onMounted(() => {
             </div>
           </div>
 
-          <!-- Drug info table -->
           <div class="card">
             <h3 class="font-semibold text-secondary-900 mb-3 text-sm">
               ข้อมูลผลิตภัณฑ์
@@ -169,18 +221,20 @@ onMounted(() => {
             <div class="space-y-2 text-sm">
               <div
                 v-for="row in [
-                  { label: 'ชื่อสามัญทางยา', value: product.generic_name },
-                  { label: 'ชื่อการค้า', value: product.brand_name },
-                  { label: 'รูปแบบยา', value: product.dosage_form },
-                  { label: 'ความแรง', value: product.strength },
-                  { label: 'หน่วย', value: product.unit },
-                  { label: 'เลขทะเบียน อย.', value: product.registration_no },
-                  { label: 'ผู้ผลิต', value: product.manufacturer },
-                ]"
+                  { label: 'รหัสสินค้า', value: product.code },
+                  { label: 'ชื่อสามัญ', value: product.generic_name },
+                  { label: 'ผู้จำหน่าย', value: product.vendor?.name },
+                  {
+                    label: 'หมวดหมู่',
+                    value: product.categories
+                      ?.map((c) => c.category.name)
+                      .join(', '),
+                  },
+                ].filter((r) => r.value)"
                 :key="row.label"
                 class="flex gap-3"
               >
-                <span class="text-secondary-400 w-36 shrink-0">{{
+                <span class="text-secondary-400 w-28 shrink-0">{{
                   row.label
                 }}</span>
                 <span class="text-secondary-700 font-medium">{{
@@ -190,14 +244,25 @@ onMounted(() => {
             </div>
           </div>
 
-          <!-- Description -->
-          <p class="text-secondary-600 text-sm leading-relaxed">
-            {{ product.description }}
+          <p
+            v-if="product.using"
+            class="text-secondary-600 text-sm leading-relaxed"
+          >
+            <span class="font-medium text-secondary-800">วิธีใช้:</span>
+            {{ product.using }}
+          </p>
+          <p
+            v-if="product.warning"
+            class="text-orange-600 text-sm leading-relaxed"
+          >
+            <span class="font-medium">⚠️ คำเตือน:</span> {{ product.warning }}
           </p>
 
-          <!-- Add to cart / Controls -->
-          <div v-if="product.drug_type !== 'controlled'" class="space-y-3">
-            <div v-if="product.stock > 0" class="flex items-center gap-3">
+          <div v-if="auth.isLoggedIn" class="space-y-3">
+            <div
+              v-if="inStock && displayPrice > 0"
+              class="flex items-center gap-3"
+            >
               <div
                 class="flex items-center gap-0 border border-secondary-200 rounded-xl overflow-hidden"
               >
@@ -211,7 +276,7 @@ onMounted(() => {
                   qty
                 }}</span>
                 <button
-                  @click="qty = Math.min(product.stock, qty + 1)"
+                  @click="qty = Math.min(product.quantity, qty + 1)"
                   class="w-10 h-10 flex items-center justify-center hover:bg-secondary-50 text-lg"
                 >
                   +
@@ -240,45 +305,21 @@ onMounted(() => {
                 <Heart :class="['w-5 h-5', inWishlist && 'fill-red-500']" />
               </button>
             </div>
-            <p v-else class="text-sm text-secondary-400 text-center py-2">
+            <p
+              v-else-if="!inStock"
+              class="text-sm text-secondary-400 text-center py-2"
+            >
               สินค้าหมดชั่วคราว
             </p>
           </div>
-
-          <!-- Controlled send request -->
-          <div v-else>
-            <button class="btn-outline w-full">ส่งคำขอซื้อยาควบคุม</button>
-            <!-- TODO: POST /orders with controlled drug approval flow -->
+          <div v-else class="card bg-secondary-50 text-center">
+            <p class="text-sm text-secondary-500 mb-2">
+              เข้าสู่ระบบเพื่อสั่งซื้อ
+            </p>
+            <RouterLink to="/auth/login" class="btn-primary text-sm"
+              >เข้าสู่ระบบ</RouterLink
+            >
           </div>
-        </div>
-      </div>
-
-      <!-- Related Products -->
-      <div v-if="related.length > 0" class="mt-12">
-        <h2 class="text-lg font-bold text-secondary-900 mb-4">
-          สินค้าที่เกี่ยวข้อง
-        </h2>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <RouterLink
-            v-for="p in related"
-            :key="p.id"
-            :to="`/products/${p.id}`"
-            class="card-hover p-0 overflow-hidden"
-          >
-            <img
-              :src="p.image_url"
-              :alt="p.name"
-              class="w-full h-32 object-cover"
-            />
-            <div class="p-3">
-              <p class="text-xs text-secondary-400">{{ p.generic_name }}</p>
-              <p
-                class="text-sm font-medium text-secondary-800 line-clamp-2 mt-0.5"
-              >
-                {{ p.name }}
-              </p>
-            </div>
-          </RouterLink>
         </div>
       </div>
     </div>

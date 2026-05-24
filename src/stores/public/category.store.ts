@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import { publicCategoriesApi } from "@/api/public/categories";
-import type { PublicCategory } from "@/api/public/categories";
+import type { PublicCategory } from "@/types";
 
 interface PublicCategoryState {
   categories: PublicCategory[];
@@ -15,7 +15,7 @@ export const usePublicCategoryStore = defineStore("publicCategory", {
 
   actions: {
     async fetchCategories(): Promise<void> {
-      if (this.categories.length > 0) return; // cache — ไม่ fetch ซ้ำ
+      if (this.categories.length > 0) return;
       this.isLoading = true;
       try {
         const res = await publicCategoriesApi.getAll();

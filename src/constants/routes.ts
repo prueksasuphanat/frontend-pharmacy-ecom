@@ -1,12 +1,4 @@
-/**
- * Application route path constants
- *
- * Centralizes all route paths used in the application.
- * Use these constants instead of hardcoded strings for type safety and maintainability.
- */
-
 export const ROUTES = {
-  // Public routes
   HOME: "/",
   LOGIN: "/login",
   REGISTER: "/register",
@@ -15,7 +7,6 @@ export const ROUTES = {
   RESET_PASSWORD: "/reset-password",
   PRODUCTS: "/products",
 
-  // Customer routes (requires auth)
   PRODUCT_DETAIL: (id: string) => `/products/${id}`,
   CART: "/cart",
   CHECKOUT: "/checkout",
@@ -28,7 +19,6 @@ export const ROUTES = {
   WISHLIST: "/profile/wishlist",
   NOTIFICATIONS: "/notifications",
 
-  // Admin routes (requires admin role)
   ADMIN: "/admin",
   ADMIN_DASHBOARD: "/admin/dashboard",
   ADMIN_ORDERS: "/admin/orders",
@@ -37,7 +27,6 @@ export const ROUTES = {
   ADMIN_LOGS: "/admin/logs",
   ADMIN_SETTINGS: "/admin/settings",
 
-  // Error pages
   FORBIDDEN: "/403",
   NOT_FOUND: "/:pathMatch(.*)*",
 } as const;

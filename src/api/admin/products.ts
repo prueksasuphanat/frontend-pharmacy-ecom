@@ -1,7 +1,3 @@
-/**
- * Products API service
- */
-
 import type { Product, ProductListParams, ProductListResponse } from "@/types";
 import { apiClient } from "../client";
 
@@ -51,9 +47,6 @@ export interface UpdateProductPayload {
   warning?: string;
 }
 
-/**
- * Update product (multipart/form-data — supports file upload)
- */
 export async function updateProduct(
   id: number,
   data: UpdateProductPayload,

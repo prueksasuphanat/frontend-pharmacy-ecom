@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { onMounted } from "vue";
 import Navbar from "@/components/layout/Navbar.vue";
 import { useNotificationStore } from "@/stores/customer/notification.store";
 import {
@@ -29,6 +30,7 @@ const iconMap: Record<string, Component> = {
   prescription_pending: Bell,
   new_order: ShoppingCart,
 };
+
 function formatTime(iso: string) {
   return new Date(iso).toLocaleString("th-TH", {
     year: "numeric",
@@ -38,7 +40,10 @@ function formatTime(iso: string) {
     minute: "2-digit",
   });
 }
-// TODO: GET /notifications (paginated), polling 30s
+
+onMounted(() => {
+  notif.fetchNotifications().catch(() => {});
+});
 </script>
 <template>
   <div>
@@ -62,7 +67,7 @@ function formatTime(iso: string) {
         <RouterLink
           v-for="n in notif.notifications"
           :key="n.id"
-          :to="n.link"
+          :to="n.link || '#'"
           @click="notif.markRead(n.id)"
           :class="[
             'card block hover:shadow-md transition-shadow',

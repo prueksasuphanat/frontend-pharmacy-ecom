@@ -4,7 +4,8 @@ import { useForm } from "vee-validate";
 import { VInput, VTextarea } from "@/components/ui";
 import { useAuthStore } from "@/stores/auth.store";
 import { useToast } from "vue-toastification";
-import dayjs, { formatDate } from "@/utils/dayjs";
+import dayjs from "@/utils/dayjs";
+import { formatDate } from "@/utils/format";
 import "@/utils/validation";
 import {
   Camera,
@@ -177,14 +178,12 @@ const onSubmit = handleSubmit(
             />
           </div>
 
-          <!-- Camera overlay on hover -->
           <div
             class="absolute inset-0 rounded-full bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"
           >
             <Camera class="w-5 h-5 text-white" />
           </div>
 
-          <!-- Clickable label -->
           <label
             class="absolute inset-0 rounded-full cursor-pointer"
             title="เปลี่ยนรูปโปรไฟล์"
@@ -198,7 +197,6 @@ const onSubmit = handleSubmit(
             />
           </label>
 
-          <!-- Remove preview button -->
           <button
             v-if="avatarPreview"
             type="button"
@@ -209,7 +207,6 @@ const onSubmit = handleSubmit(
           </button>
         </div>
 
-        <!-- Name + info -->
         <div class="flex-1 min-w-0 pt-0.5">
           <div class="flex items-center gap-2 flex-wrap">
             <h2 class="text-lg font-bold text-secondary-900 leading-tight">
@@ -228,7 +225,6 @@ const onSubmit = handleSubmit(
           </p>
         </div>
 
-        <!-- Edit button -->
         <button
           v-if="!isEditing"
           @click="startEditing"
@@ -321,7 +317,6 @@ const onSubmit = handleSubmit(
       </div>
 
       <form v-else @submit="onSubmit" novalidate class="space-y-5">
-        <!-- username -->
         <VInput
           name="username"
           label="ชื่อผู้ใช้"
@@ -331,7 +326,6 @@ const onSubmit = handleSubmit(
 
         <div class="border-t border-secondary-100" />
 
-        <!-- ชื่อ + นามสกุล -->
         <div class="grid grid-cols-2 gap-4">
           <VInput
             name="first_name"
@@ -349,7 +343,6 @@ const onSubmit = handleSubmit(
 
         <div class="border-t border-secondary-100" />
 
-        <!-- อีเมล + เบอร์โทร -->
         <div class="grid grid-cols-2 gap-4">
           <div>
             <label class="label">อีเมล</label>
@@ -374,14 +367,8 @@ const onSubmit = handleSubmit(
           />
         </div>
 
-        <!-- วันเกิด -->
         <div class="grid grid-cols-2 gap-4">
-          <VInput
-            name="birthdate"
-            type="date"
-            label="วันเกิด"
-            :icon="Calendar"
-          />
+          <VInput name="birthdate" label="วันเกิด" :icon="Calendar" />
           <div />
         </div>
 

@@ -1,13 +1,12 @@
 import type { RouteRecordRaw } from "vue-router";
 
 export const settingsRoutes: RouteRecordRaw[] = [
-  // Settings index (for mobile navigation)
   {
     path: "settings",
     component: () =>
       import("@/views/admin/settings/AdminSettingsIndexView.vue"),
   },
-  // Settings submenu
+
   {
     path: "settings/users",
     component: () => import("@/views/admin/settings/users/AdminUsersView.vue"),

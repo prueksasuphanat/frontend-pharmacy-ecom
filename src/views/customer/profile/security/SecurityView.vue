@@ -63,18 +63,36 @@ function validateForm(): boolean {
   return true;
 }
 
+import { apiClient } from "@/api/client";
+
 async function onSubmit() {
   errorMsg.value = "";
   success.value = false;
   if (!validateForm()) return;
   isSaving.value = true;
-  // TODO: PATCH /api/v1/customer/profile/password
-  await new Promise((r) => setTimeout(r, 800));
-  isSaving.value = false;
-  success.value = true;
-  currentPassword.value = "";
-  newPassword.value = "";
-  confirmPassword.value = "";
+
+  try {
+    const res = await apiClient.patch<{ success: boolean; message: string }>(
+      "/customer/profile/password",
+      {
+        old_password: currentPassword.value,
+        new_password: newPassword.value,
+      },
+    );
+
+    if (res.data.success) {
+      success.value = true;
+      currentPassword.value = "";
+      newPassword.value = "";
+      confirmPassword.value = "";
+    }
+  } catch (err: any) {
+    errorMsg.value =
+      err.response?.data?.message ||
+      "ไม่สามารถเปลี่ยนรหัสผ่านได้ กรุณาลองใหม่อีกครั้ง";
+  } finally {
+    isSaving.value = false;
+  }
 }
 
 function resetForm() {
