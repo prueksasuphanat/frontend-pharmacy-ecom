@@ -1,0 +1,49 @@
+name: Discord Notification
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Smart Embed notification to Discord
+        env:
+          WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK }}
+          ACTOR: ${{ github.actor }}
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+          COMMIT_URL: ${{ github.event.head_commit.url }}
+          REPO_NAME: ${{ github.event.repository.name }} # ดึงชื่อ Repo ปัจจุบันมาใช้
+        run: |
+          COLOR=3447003
+          
+          if [[ "$COMMIT_MESSAGE" == *"feat 🚀"* ]]; then
+            COLOR=3066993
+          elif [[ "$COMMIT_MESSAGE" == *"fix 🐛"* ]]; then
+            COLOR=15158332
+          elif [[ "$COMMIT_MESSAGE" == *"fix 🔨"* ]]; then
+            COLOR=15105570
+          elif [[ "$COMMIT_MESSAGE" == *"refactor ♻️"* ]]; then
+            COLOR=10181046
+          fi
+
+          # เพิ่มชื่อ Repo เข้าไปในข้อความ content
+          PAYLOAD=$(jq -n \
+            --arg actor "$ACTOR" \
+            --arg msg "$COMMIT_MESSAGE" \
+            --arg url "$COMMIT_URL" \
+            --arg repo "$REPO_NAME" \
+            --argjson color "$COLOR" \
+            '{
+              content: "📦 **\($actor)** ได้อัปเดตโค้ดในโปรเจกต์ **\($repo)** (branch `main`)",
+              embeds: [{
+                title: "🔍 ดูรายละเอียดการเปลี่ยนแปลง (คลิกเพื่อดู Diff)",
+                url: $url,
+                description: $msg,
+                color: $color
+              }]
+            }')
+          
+          curl -H "Content-Type: application/json" -d "$PAYLOAD" "$WEBHOOK_URL"
