@@ -1,7 +1,63 @@
 <script setup lang="ts">
+import { watch } from "vue";
 import { RouterView } from "vue-router";
+import { useAuthStore } from "@/stores/auth.store";
+
+const authStore = useAuthStore();
+
+// Configuration for Buglense
+const BUGLENSE_KEY = import.meta.env.VITE_BUGLENSE_API_KEY || "bl_oun620fcps04yc5zqpibdj";
+const BUGLENSE_URL = import.meta.env.VITE_BUGLENSE_API_URL || "https://api.buglense.phanadrug.com";
+
+function loadBuglense() {
+  if (typeof window === "undefined" || typeof document === "undefined") return;
+
+  // 1. Prevent duplicate widget elements
+  if (document.querySelector("buglense-widget")) return;
+
+  // 2. Check if the Buglense script is already present in the DOM
+  const existingScript = document.querySelector('script[src*="buglense.js"]') || document.querySelector('script[data-api-key]');
+
+  if (existingScript) {
+    // If script is already loaded (custom element class is defined), just create and append the element
+    const widget = document.createElement("buglense-widget");
+    widget.setAttribute("api-key", BUGLENSE_KEY);
+    widget.setAttribute("api-url", BUGLENSE_URL);
+    document.body.appendChild(widget);
+  } else {
+    // Create and append the script tag which auto-initializes the widget element
+    const script = document.createElement("script");
+    script.src = `${BUGLENSE_URL}/buglense.js`;
+    script.setAttribute("data-api-key", BUGLENSE_KEY);
+    script.setAttribute("data-api-url", BUGLENSE_URL);
+    script.async = true;
+    document.body.appendChild(script);
+  }
+}
+
+function unloadBuglense() {
+  if (typeof document === "undefined") return;
+  const widget = document.querySelector("buglense-widget");
+  if (widget) {
+    widget.remove();
+  }
+}
+
+// Watch the isAdmin getter to dynamically add/remove the widget
+watch(
+  () => authStore.isAdmin,
+  (isAdmin) => {
+    if (isAdmin) {
+      loadBuglense();
+    } else {
+      unloadBuglense();
+    }
+  },
+  { immediate: true }
+);
 </script>
 
 <template>
   <RouterView />
 </template>
+
