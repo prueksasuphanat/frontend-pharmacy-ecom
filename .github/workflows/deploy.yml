@@ -35,8 +35,74 @@ jobs:
         with:
           server: ${{ secrets.FTP_SERVER }} # ใส่เป็น IP Address ของ Hostinger
           username: ${{ secrets.FTP_USERNAME }} # ชื่อผู้ใช้ SSH
-          password: ${{ secrets.FTP_PASSWORD }} # รหัสผ่าน SSH
+          password: ${{ secrets.FTP_PASSWORD }} # รหัสผ่าน SSH (ใช้เป็นตัวเลือกหลัก)
+          ssh_private_key: ${{ secrets.FTP_SSH_KEY || secrets.HOSTINGER_SSH_KEY }} # รองรับการเชื่อมต่อผ่าน SSH Key หากเซิร์ฟเวอร์ปิดระบบรหัสผ่าน
           port: 65002
           local_path: "./dist/*" # ไฟล์จากโฟลเดอร์ dist
           remote_path: "/home/u559164242/domains/phanadrug.com/public_html/"
           sftp_only: true
+
+      # ----------------------------------------------------
+      # Discord Notifications
+      # ----------------------------------------------------
+      - name: Send Discord Notification on Success
+        if: success()
+        env:
+          WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK }}
+          ACTOR: ${{ github.actor }}
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+          COMMIT_URL: ${{ github.event.head_commit.url }}
+          REPO_NAME: ${{ github.event.repository.name }}
+        run: |
+          if [[ "$COMMIT_MESSAGE" =~ ^[Cc][Ii] ]] || [[ "$COMMIT_MESSAGE" == *"[CI]"* ]] || [[ "$COMMIT_MESSAGE" == *"[ci]"* ]]; then
+            echo "CI commit detected. Skipping Discord notification."
+            exit 0
+          fi
+
+          COLOR=3066993 # Default to Green for Success
+          if [[ "$COMMIT_MESSAGE" == *"feat 🚀"* ]]; then COLOR=3066993;
+          elif [[ "$COMMIT_MESSAGE" == *"fix 🐛"* ]]; then COLOR=15158332;
+          elif [[ "$COMMIT_MESSAGE" == *"fix 🔨"* ]]; then COLOR=15105570;
+          elif [[ "$COMMIT_MESSAGE" == *"refactor ♻️"* ]]; then COLOR=10181046; fi
+
+          PAYLOAD=$(jq -n \
+            --arg actor "$ACTOR" \
+            --arg msg "$COMMIT_MESSAGE" \
+            --arg url "$COMMIT_URL" \
+            --arg repo "$REPO_NAME" \
+            --argjson color "$COLOR" \
+            '{
+              content: "✅ **\($actor)** Deploy โปรเจกต์ **\($repo)** (branch `main`) ขึ้น Production สำเร็จแล้ว!",
+              embeds: [{
+                title: "🚀 ดูรายละเอียดการเปลี่ยนแปลง (คลิกเพื่อดู Diff)",
+                url: $url,
+                description: $msg,
+                color: $color
+              }]
+            }')
+          curl -H "Content-Type: application/json" -d "$PAYLOAD" "$WEBHOOK_URL"
+
+      - name: Send Discord Notification on Failure
+        if: failure()
+        env:
+          WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK }}
+          ACTOR: ${{ github.actor }}
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+          REPO_NAME: ${{ github.event.repository.name }}
+          RUN_URL: "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        run: |
+          PAYLOAD=$(jq -n \
+            --arg actor "$ACTOR" \
+            --arg msg "$COMMIT_MESSAGE" \
+            --arg url "$RUN_URL" \
+            --arg repo "$REPO_NAME" \
+            '{
+              content: "❌ **\($actor)** Deploy โปรเจกต์ **\($repo)** (branch `main`) ล้มเหลว! โปรดตรวจสอบสถานะการรัน",
+              embeds: [{
+                title: "⚠️ คลิกเพื่อดูสาเหตุและรายละเอียดความผิดพลาดใน GitHub Actions",
+                url: $url,
+                description: $msg,
+                color: 15158332 # Red for Failure
+              }]
+            }')
+          curl -H "Content-Type: application/json" -d "$PAYLOAD" "$WEBHOOK_URL"
