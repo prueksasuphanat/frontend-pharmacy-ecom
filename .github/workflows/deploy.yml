@@ -35,8 +35,7 @@ jobs:
         with:
           server: ${{ secrets.FTP_SERVER }} # ใส่เป็น IP Address ของ Hostinger
           username: ${{ secrets.FTP_USERNAME }} # ชื่อผู้ใช้ SSH
-          password: ${{ secrets.FTP_PASSWORD }} # รหัสผ่าน SSH (ใช้เป็นตัวเลือกหลัก)
-          ssh_private_key: ${{ secrets.FTP_SSH_KEY || secrets.HOSTINGER_SSH_KEY }} # รองรับการเชื่อมต่อผ่าน SSH Key หากเซิร์ฟเวอร์ปิดระบบรหัสผ่าน
+          ssh_private_key: ${{ secrets.FTP_SSH_KEY || secrets.HOSTINGER_SSH_KEY }} # บังคับใช้ SSH Key เพื่อความเสถียรและป้องกันการบล็อกโดย Hostinger Firewall
           port: 65002
           local_path: "./dist/*" # ไฟล์จากโฟลเดอร์ dist
           remote_path: "/home/u559164242/domains/phanadrug.com/public_html/"
