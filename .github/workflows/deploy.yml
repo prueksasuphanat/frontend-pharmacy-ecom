@@ -26,6 +26,8 @@ jobs:
           VITE_APP_NAME: ${{ secrets.VITE_APP_NAME }}
           VITE_APP_VERSION: ${{ secrets.VITE_APP_VERSION }}
           VITE_S3_BUCKET_URL: ${{ secrets.VITE_S3_BUCKET_URL }}
+          VITE_BUGLENSE_API_KEY: ${{ secrets.VITE_BUGLENSE_API_KEY }}
+          VITE_BUGLENSE_API_URL: ${{ secrets.VITE_BUGLENSE_API_URL }}
 
       - name: Verify Build
         run: npm run check-build
