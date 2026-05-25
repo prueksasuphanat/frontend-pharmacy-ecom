@@ -30,16 +30,16 @@ jobs:
       - name: Verify Build
         run: npm run check-build
 
-      - name: Deploy via SFTP
-        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
-        with:
-          server: ${{ secrets.FTP_SERVER }} # ใส่เป็น IP Address ของ Hostinger
-          username: ${{ secrets.FTP_USERNAME }} # ชื่อผู้ใช้ SSH
-          ssh_private_key: ${{ secrets.FTP_SSH_KEY || secrets.HOSTINGER_SSH_KEY }} # บังคับใช้ SSH Key เพื่อความเสถียรและป้องกันการบล็อกโดย Hostinger Firewall
-          port: 65002
-          local_path: "./dist/*" # ไฟล์จากโฟลเดอร์ dist
-          remote_path: "/home/u559164242/domains/phanadrug.com/public_html/"
-          sftp_only: true
+      - name: Deploy via Rsync (Native SSH)
+        run: |
+          # 1. สร้างโฟลเดอร์ SSH และเซฟกุญแจส่วนตัว (Private Key)
+          mkdir -p ~/.ssh
+          echo "${{ secrets.FTP_SSH_KEY || secrets.HOSTINGER_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          
+          # 2. ดำเนินการส่งไฟล์ขึ้นโฮสต์อย่างแม่นยำและรวดเร็วผ่าน Rsync (พอร์ต 65002)
+          # มีความเสถียรสูงกว่า และช่วยลบไฟล์เก่าที่ตกค้างในเซิร์ฟเวอร์แบบอัตโนมัติ (--delete)
+          rsync -rlgoDzO --delete -e "ssh -i ~/.ssh/deploy_key -p 65002 -o StrictHostKeyChecking=no" ./dist/ ${{ secrets.FTP_USERNAME }}@${{ secrets.FTP_SERVER }}:/home/u559164242/domains/phanadrug.com/public_html/
 
       # ----------------------------------------------------
       # Discord Notifications
