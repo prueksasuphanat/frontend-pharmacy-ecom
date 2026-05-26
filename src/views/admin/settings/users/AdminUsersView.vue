@@ -59,7 +59,8 @@ let searchTimer: ReturnType<typeof setTimeout> | null = null;
 const pagination = computed(() => userStore.pagination);
 
 const columns: Column<User>[] = [
-  { key: "email", label: "อีเมล", minWidth: "20%", align: "left" },
+  { key: "username", label: "Username", width: "150px", align: "left" },
+  { key: "email", label: "อีเมล", width: "20%", align: "left" },
   { key: "full_name", label: "ชื่อ-นามสกุล", width: "18%", align: "left" },
   { key: "role", label: "Role", minWidth: "200px", align: "left" },
   {
@@ -337,6 +338,12 @@ onMounted(() => fetchUsers());
         empty-text="ไม่พบข้อมูลผู้ใช้"
         @page-change="handlePageChange"
       >
+        <template #cell-username="{ row }">
+          <span class="text-sm text-secondary-900 block truncate">
+            {{ row.username }}
+          </span>
+        </template>
+
         <template #cell-email="{ row }">
           <div class="flex items-center gap-2 min-w-0">
             <div

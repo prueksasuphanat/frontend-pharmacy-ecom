@@ -7,7 +7,8 @@
 
 > See root `CLAUDE.md` for full rules, format, types & emojis, and examples.
 
-- Commit freely during active development — batch related changes into logical commits
+- **ยังไม่ต้องทำการ Git Commit ทุกครั้งจนกว่าผู้ใช้จะสั่งโดยตรง** (Do NOT commit automatically; wait for explicit instruction/approval from the user to commit).
+- **หยุดถามเพื่อขอคำยืนยันจากผู้ใช้ก่อนทำการ Commit เสมอ** (Always ask and wait for user confirmation/command before committing).
 - **NEVER `git push` automatically** — only push when explicitly asked/instructed by the user
 - **NEVER touch the `main` branch**
 
