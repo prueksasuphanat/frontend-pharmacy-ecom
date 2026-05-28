@@ -62,6 +62,7 @@ const columns: Column<User>[] = [
   { key: "username", label: "Username", width: "150px", align: "left" },
   { key: "email", label: "อีเมล", width: "20%", align: "left" },
   { key: "full_name", label: "ชื่อ-นามสกุล", width: "18%", align: "left" },
+  { key: "phone", label: "เบอร์โทรศัพท์", width: "130px", align: "left" },
   { key: "role", label: "Role", minWidth: "200px", align: "left" },
   {
     key: "is_verified",
@@ -365,6 +366,12 @@ onMounted(() => fetchUsers());
               row.pmc_name ||
               "-"
             }}
+          </span>
+        </template>
+
+        <template #cell-phone="{ row }">
+          <span class="text-sm text-secondary-600 block truncate">
+            {{ row.phone || "-" }}
           </span>
         </template>
 
