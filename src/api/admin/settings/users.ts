@@ -13,6 +13,7 @@ export interface GetUsersParams {
 }
 
 export interface AdminUpdateUserPayload {
+  username?: string;
   code?: string;
   email?: string;
   title?: string | null;
