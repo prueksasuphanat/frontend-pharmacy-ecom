@@ -151,6 +151,7 @@ const isEditMode = ref(false);
 const modalLoading = ref(false);
 
 const editForm = ref({
+  username: "",
   code: "",
   email: "",
   title: "",
@@ -173,6 +174,7 @@ function editUser(user: User) {
       if (!fresh) return;
       selectedUser.value = fresh;
       editForm.value = {
+        username: fresh.username || "",
         code: fresh.code || "",
         email: fresh.email || "",
         title: fresh.title || "",
@@ -202,6 +204,7 @@ async function saveUserChanges() {
   modalLoading.value = true;
 
   const ok = await userStore.adminUpdateUserById(selectedUser.value.id, {
+    username: editForm.value.username || undefined,
     code: editForm.value.code || undefined,
     email: editForm.value.email || undefined,
     title: editForm.value.title || null,
@@ -546,7 +549,7 @@ onMounted(() => fetchUsers());
             <div>
               <p class="text-xs text-secondary-400 mb-0.5">สร้างเมื่อ</p>
               <p class="font-medium text-secondary-900">
-                {{ formatDate(selectedUser.created_at, "DD MMM BBBB") }}
+                {{ formatDate(selectedUser.created_at, "DD MMM BBBB HH:mm") }}
               </p>
             </div>
             <div>
@@ -619,18 +622,12 @@ onMounted(() => fetchUsers());
               </p>
             </div>
             <div>
-              <p class="text-secondary-400 text-xs mb-0.5">Username</p>
-              <p class="text-secondary-900 font-medium">
-                {{ selectedUser.username }}
-              </p>
-            </div>
-            <div>
               <p class="text-secondary-400 text-xs mb-0.5">Role</p>
               <p class="text-secondary-900 font-medium">
                 {{ selectedUser.role }}
               </p>
             </div>
-            <div>
+            <div class="col-span-2">
               <p class="text-secondary-400 text-xs mb-0.5">สร้างเมื่อ</p>
               <p class="text-secondary-900 font-medium">
                 {{ formatDate(selectedUser.created_at, "DD/MM/BBBB HH:mm") }}
@@ -638,6 +635,11 @@ onMounted(() => fetchUsers());
             </div>
           </div>
 
+          <BaseInput
+            v-model="editForm.username"
+            label="Username *"
+            placeholder="กรอก Username"
+          />
           <BaseInput
             v-model="editForm.code"
             label="รหัสผู้ใช้"

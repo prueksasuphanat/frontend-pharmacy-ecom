@@ -1,5 +1,6 @@
 import { authApi } from "@/api";
 import { apiClient } from "@/api/client";
+import { env } from "@/utils/env";
 import {
   customerProfileApi,
   type UpdateProfileData,
@@ -76,6 +77,8 @@ export const useAuthStore = defineStore("auth", {
           await import("@/stores/customer/notification.store");
         useNotificationStore().startWs(response.data.data.accessToken);
 
+        this.startSessionPing();
+
         return true;
       } catch (err: unknown) {
         this.error = (err as any).response?.data?.message || "เข้าสู่ระบบไม่สำเร็จ";
@@ -101,6 +104,8 @@ export const useAuthStore = defineStore("auth", {
           const { useNotificationStore } =
             await import("@/stores/customer/notification.store");
           useNotificationStore().startWs(this.accessToken);
+
+          this.startSessionPing();
         }
 
         return true;
@@ -169,6 +174,7 @@ export const useAuthStore = defineStore("auth", {
           useNotificationStore().reset();
         },
       );
+      this.stopSessionPing();
       this.currentUser = null;
       this.accessToken = null;
       this.refreshToken = null;
@@ -187,6 +193,7 @@ export const useAuthStore = defineStore("auth", {
         await authApi.logout();
       } catch {
       } finally {
+        this.stopSessionPing();
         this.currentUser = null;
         this.accessToken = null;
         this.refreshToken = null;
@@ -239,6 +246,70 @@ export const useAuthStore = defineStore("auth", {
         return { success: false, message };
       } finally {
         this.isLoading = false;
+      }
+    },
+
+    startSessionPing() {
+      if ((this as any)._pingInterval) {
+        clearInterval((this as any)._pingInterval);
+      }
+
+      this.pingSession(false);
+
+      (this as any)._pingInterval = setInterval(() => {
+        if (this.isLoggedIn) {
+          this.pingSession(false);
+        } else {
+          this.stopSessionPing();
+        }
+      }, 60000);
+
+      (this as any)._unloadHandler = () => {
+        if (this.isLoggedIn && this.accessToken) {
+          const url = `${env.apiBaseUrl}/auth/ping`;
+          fetch(url, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${this.accessToken}`,
+            },
+            body: JSON.stringify({ isClose: true }),
+            keepalive: true,
+          });
+        }
+      };
+
+      window.addEventListener("beforeunload", (this as any)._unloadHandler);
+
+      (this as any)._visibilityHandler = () => {
+        if (document.visibilityState === "hidden" && this.isLoggedIn) {
+          this.pingSession(false);
+        }
+      };
+      document.addEventListener("visibilitychange", (this as any)._visibilityHandler);
+    },
+
+    stopSessionPing() {
+      if ((this as any)._pingInterval) {
+        clearInterval((this as any)._pingInterval);
+        (this as any)._pingInterval = null;
+      }
+      if ((this as any)._unloadHandler) {
+        window.removeEventListener("beforeunload", (this as any)._unloadHandler);
+        (this as any)._unloadHandler = null;
+      }
+      if ((this as any)._visibilityHandler) {
+        document.removeEventListener("visibilitychange", (this as any)._visibilityHandler);
+        (this as any)._visibilityHandler = null;
+      }
+    },
+
+    async pingSession(isClose = false) {
+      if (!this.accessToken) return;
+      try {
+        await apiClient.post("/auth/ping", { isClose });
+      } catch (err) {
+        console.error("Session ping failed:", err);
       }
     },
   },

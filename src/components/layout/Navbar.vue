@@ -76,28 +76,6 @@ async function logout() {
           >
         </RouterLink>
 
-        <div class="hidden md:flex flex-1 max-w-md mx-6">
-          <RouterLink
-            to="/products"
-            class="w-full flex items-center gap-2 px-4 py-2 bg-secondary-50 border border-secondary-200 rounded-xl text-sm text-secondary-400 hover:border-primary-400 transition-colors"
-          >
-            <svg
-              class="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
-            ค้นหายา...
-          </RouterLink>
-        </div>
-
         <div class="flex items-center gap-1">
           <RouterLink
             v-if="auth.isAdmin || auth.userRole === 'DEMO'"

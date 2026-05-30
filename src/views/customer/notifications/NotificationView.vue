@@ -13,6 +13,7 @@ import {
   AlertTriangle,
   Calendar,
   ShoppingCart,
+  Users,
 } from "lucide-vue-next";
 import { RouterLink } from "vue-router";
 import type { Component } from "vue";
@@ -29,6 +30,7 @@ const iconMap: Record<string, Component> = {
   expiry_alert: Calendar,
   prescription_pending: Bell,
   new_order: ShoppingCart,
+  new_user_registration: Users,
 };
 
 function formatTime(iso: string) {
