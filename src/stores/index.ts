@@ -5,6 +5,7 @@ export { useProductPriceStore } from "./admin/productPrice.store";
 export { useCategoryStore } from "./admin/settings/category.store";
 export { useUnitStore } from "./admin/settings/unit.store";
 export { useUsersStore } from "./admin/settings/users.store";
+export { useVendorStore } from "./admin/settings/vendor.store";
 export { useAuthStore } from "./auth.store";
 export { useCartStore } from "./customer/cart.store";
 export { useNotificationStore } from "./customer/notification.store";

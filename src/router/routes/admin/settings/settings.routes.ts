@@ -25,4 +25,14 @@ export const settingsRoutes: RouteRecordRaw[] = [
     component: () =>
       import("@/views/admin/settings/product-price/AdminProductPriceView.vue"),
   },
+  {
+    path: "settings/products",
+    component: () =>
+      import("@/views/admin/settings/products/AdminProductsView.vue"),
+  },
+  {
+    path: "settings/vendor",
+    component: () =>
+      import("@/views/admin/settings/vendors/AdminVendorView.vue"),
+  },
 ];

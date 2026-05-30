@@ -33,6 +33,7 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   pageChange: [page: number];
   sort: [column: keyof T | string, direction: "asc" | "desc"];
+  rowClick: [row: T];
 }>();
 
 const totalPages = computed(() => {
@@ -208,7 +209,13 @@ function isFixed(column: Column<T>) {
             </td>
           </tr>
 
-          <tr v-else v-for="(row, index) in data" :key="index">
+          <tr
+            v-else
+            v-for="(row, index) in data"
+            :key="index"
+            @click="$emit('rowClick', row)"
+            :class="['transition-colors', { 'cursor-pointer hover:bg-secondary-50/80': hoverable }]"
+          >
             <td
               v-for="column in columns"
               :key="String(column.key)"

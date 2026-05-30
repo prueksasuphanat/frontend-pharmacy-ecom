@@ -1,21 +1,35 @@
 <script setup lang="ts">
 import { RouterLink } from "vue-router";
-import { Users, DollarSign, ChevronRight, CirclePile } from "lucide-vue-next";
+import { Users, DollarSign, ChevronRight, CirclePile, Package, Store } from "lucide-vue-next";
 
 const settingsMenuItems = [
   {
+    to: "/admin/settings/products",
+    label: "สินค้า",
+    description: "จัดการข้อมูลสินค้าและราคาสินค้าหลัก",
+    icon: Package,
+    color: "bg-teal-100 text-teal-600",
+  },
+  {
     to: "/admin/settings/category",
     label: "ประเภทสินค้า",
-    description: "",
+    description: "จัดการหมวดหมู่และประเภทสินค้าต่างๆ",
     icon: CirclePile,
     color: "bg-green-100 text-green-600",
+  },
+  {
+    to: "/admin/settings/vendor",
+    label: "ผู้จำหน่าย",
+    description: "จัดการข้อมูลผู้จำหน่ายและรหัสผู้จัดหา",
+    icon: Store,
+    color: "bg-yellow-100 text-yellow-600",
   },
   {
     to: "/admin/settings/product-price",
     label: "ราคาสินค้า",
     description: "กำหนดราคาสินค้าตาม Role และส่วนลด",
     icon: DollarSign,
-    color: "bg-green-100 text-green-600",
+    color: "bg-indigo-100 text-indigo-600",
   },
   {
     to: "/admin/settings/users",

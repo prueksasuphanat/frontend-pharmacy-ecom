@@ -4,6 +4,7 @@ export * from "./admin/settings/categories";
 export * from "./admin/settings/productPrices";
 export * from "./admin/settings/units";
 export * from "./admin/settings/users";
+export * from "./admin/settings/vendors";
 export * from "./auth";
 export * from "./cart";
 export * from "./client";

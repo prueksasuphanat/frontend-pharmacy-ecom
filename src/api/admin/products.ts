@@ -39,6 +39,7 @@ export async function getProductById(id: number): Promise<Product> {
 export interface UpdateProductPayload {
   name?: string;
   base_unit_id?: number | null;
+  vendor_id?: number | null;
   quantity?: number;
   is_special_pricing_enabled?: boolean;
   category_ids?: number[] | null;
@@ -60,6 +61,11 @@ export async function updateProduct(
     formData.append(
       "base_unit_id",
       data.base_unit_id === null ? "null" : String(data.base_unit_id),
+    );
+  if (data.vendor_id !== undefined)
+    formData.append(
+      "vendor_id",
+      data.vendor_id === null ? "null" : String(data.vendor_id),
     );
   if (data.quantity !== undefined)
     formData.append("quantity", String(data.quantity));

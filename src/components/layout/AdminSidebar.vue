@@ -22,7 +22,6 @@ const logsExpanded = ref(false);
 const links = [
   { to: "/admin/dashboard", label: "แดชบอร์ด", icon: LayoutDashboard },
   { to: "/admin/orders", label: "คำสั่งซื้อ", icon: ShoppingBag },
-  { to: "/admin/products", label: "สินค้า", icon: Package },
 ];
 
 const logsMenu = {
@@ -52,6 +51,11 @@ const settingsMenu = {
   icon: Settings,
   children: [
     {
+      to: "/admin/settings/products",
+      label: "สินค้า",
+      icon: Package,
+    },
+    {
       to: "/admin/settings/category",
       label: "ประเภทสินค้า",
       icon: CirclePile,
@@ -61,7 +65,11 @@ const settingsMenu = {
       label: "หน่วยสินค้า",
       icon: Ruler,
     },
-
+    {
+      to: "/admin/settings/vendor",
+      label: "ผู้จำหน่าย",
+      icon: Users,
+    },
     {
       to: "/admin/settings/product-price",
       label: "ราคาสินค้า",

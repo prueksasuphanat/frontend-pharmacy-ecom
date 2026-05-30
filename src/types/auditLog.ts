@@ -50,6 +50,8 @@ export interface UserSessionLogParams {
   search?: string;
   login_at?: string;
   role?: string;
+  user_id?: number;
+  groupByUser?: boolean;
 }
 
 export interface ProductViewLogParams {

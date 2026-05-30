@@ -107,7 +107,7 @@ export const pricingLogsApi = {
 
 export const auditLogsApi = {
   getUserSessionLogs: (params: UserSessionLogParams = {}) => {
-    const { page = 1, limit = 10, search, login_at, role } = params;
+    const { page = 1, limit = 10, search, login_at, role, user_id, groupByUser } = params;
     return apiClient.get<UserSessionLogResponse>("/admin/logs/user-sessions", {
       params: {
         page,
@@ -115,6 +115,8 @@ export const auditLogsApi = {
         ...(search && { search }),
         ...(login_at && { login_at }),
         ...(role && { role }),
+        ...(user_id !== undefined && { user_id }),
+        ...(groupByUser !== undefined && { groupByUser }),
       },
     });
   },

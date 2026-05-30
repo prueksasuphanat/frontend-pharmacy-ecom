@@ -222,6 +222,15 @@ async function saveAllPrices() {
   await productPriceStore.updateProductPrices(prices);
 }
 
+function getProductGroupAndIndex(productUnitId: number) {
+  const group = groupedColumns.value.find((g) =>
+    g.units.some((u) => u.product_unit_id === productUnitId)
+  );
+  if (!group) return { group: null, index: -1 };
+  const index = group.units.findIndex((u) => u.product_unit_id === productUnitId);
+  return { group, index };
+}
+
 onMounted(async () => {
   isLoading.value = true;
   await Promise.all([fetchUsers(), fetchProducts()]);
@@ -517,9 +526,10 @@ onMounted(async () => {
             <thead>
               <tr class="border-b-2 border-secondary-200">
                 <th
-                  class="sticky left-0 z-10 bg-white px-4 py-3 text-left text-sm font-semibold text-secondary-900 w-[160px] sm:min-w-[200px] border-r border-secondary-200"
+                  class="sticky left-0 z-10 bg-white px-4 py-3 text-left text-sm font-semibold text-secondary-900 w-[200px] sm:min-w-[240px] border-r border-secondary-200"
+                  colspan="2"
                 >
-                  สินค้า
+                  สินค้า / หน่วย
                 </th>
                 <th
                   v-for="user in users"
@@ -566,27 +576,31 @@ onMounted(async () => {
                 :key="unit.product_unit_id"
                 class="border-b border-secondary-100 hover:bg-secondary-50 transition-colors"
               >
+                <!-- Product Spanned Cell -->
                 <td
-                  class="sticky left-0 z-10 bg-white px-4 py-3 text-sm font-medium text-secondary-900 border-r border-secondary-200 hover:bg-secondary-50"
+                  v-if="getProductGroupAndIndex(unit.product_unit_id).index === 0"
+                  :rowspan="getProductGroupAndIndex(unit.product_unit_id).group?.units.length || 1"
+                  class="sticky left-0 z-10 bg-white px-4 py-3 text-sm font-medium text-secondary-900 border-r border-secondary-200 hover:bg-secondary-50 align-top max-w-[140px] sm:max-w-[180px]"
                 >
                   <div class="min-w-0">
-                    <div
-                      class="font-medium truncate max-w-[140px] sm:max-w-none"
-                    >
-                      {{
-                        groupedColumns.find((g) =>
-                          g.units.some(
-                            (u) => u.product_unit_id === unit.product_unit_id,
-                          ),
-                        )?.product.name
-                      }}
+                    <div class="font-semibold text-secondary-900 truncate">
+                      {{ getProductGroupAndIndex(unit.product_unit_id).group?.product.name }}
                     </div>
                     <div class="text-xs text-secondary-500 mt-0.5">
-                      {{ unit.unit_name }}
+                      {{ getProductGroupAndIndex(unit.product_unit_id).group?.product.code }}
                     </div>
-                    <div class="text-xs text-secondary-400">
-                      ฿{{ unit.default_price }}
-                    </div>
+                  </div>
+                </td>
+
+                <!-- Unit Cell -->
+                <td
+                  class="px-4 py-3 text-sm font-medium text-secondary-700 border-r border-secondary-200 bg-white w-[100px] sm:w-[120px]"
+                >
+                  <div class="font-semibold text-secondary-900">
+                    {{ unit.unit_name }}
+                  </div>
+                  <div class="text-xs text-secondary-400 mt-0.5">
+                    ฿{{ unit.default_price }}
                   </div>
                 </td>
                 <td
