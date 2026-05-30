@@ -14,7 +14,7 @@ import {
 } from "@/components/ui";
 import type { Column } from "@/components/ui/BaseTable.vue";
 import type { Product, Unit } from "@/types";
-import { useProductStore, useCategoryStore } from "@/stores";
+import { useProductStore, useCategoryStore, useVendorStore } from "@/stores";
 import { unitsApi } from "@/api";
 import { formatDate, formatPrice } from "@/utils";
 import AdminProductUnitView from "@/views/admin/settings/product-units/AdminProductUnitView.vue";
@@ -22,6 +22,7 @@ import { useToast } from "@/composables";
 
 const productStore = useProductStore();
 const categoryStore = useCategoryStore();
+const vendorStore = useVendorStore();
 const toast = useToast();
 
 const allUnits = ref<Unit[]>([]);
@@ -46,12 +47,14 @@ const productForm = ref({
   category_ids: [] as number[],
   is_special_pricing_enabled: false,
   base_unit_id: null as number | null,
+  vendor_id: null as number | null,
 });
 
 const products = computed(() => productStore.products);
 const loading = computed(() => productStore.isLoading);
 const pagination = computed(() => productStore.pagination);
 const categories = computed(() => categoryStore.categories);
+const allVendors = computed(() => vendorStore.vendors);
 
 const currentImageUrl = computed(() => {
   if (removeImage.value) return null;
@@ -108,6 +111,13 @@ const categoryOptionsForForm = computed(() =>
 
 const unitOptions = computed(() =>
   allUnits.value.map((u) => ({ value: u.id, label: u.name })),
+);
+
+const vendorOptions = computed(() =>
+  allVendors.value.map((v) => ({
+    value: v.id,
+    label: `${v.name}${v.seller_code ? ` (${v.seller_code})` : ""}`,
+  })),
 );
 
 async function fetchUnits() {
@@ -177,6 +187,7 @@ async function handleEditProduct(product: Product) {
       category_ids: fresh.categories.map((c) => c.category_id),
       is_special_pricing_enabled: fresh.is_special_pricing_enabled,
       base_unit_id: fresh.base_unit_id ?? null,
+      vendor_id: fresh.vendor_id ?? null,
     };
   }
 }
@@ -196,6 +207,7 @@ function closeEditModal() {
     category_ids: [],
     is_special_pricing_enabled: false,
     base_unit_id: null,
+    vendor_id: null,
   };
 }
 
@@ -219,6 +231,7 @@ async function updateProduct() {
       using: productForm.value.using || undefined,
       warning: productForm.value.warning || undefined,
       base_unit_id: productForm.value.base_unit_id ?? null,
+      vendor_id: productForm.value.vendor_id ?? null,
     },
     imageFile.value,
     removeImage.value,
@@ -258,6 +271,7 @@ async function handleSaveProductFirst() {
       using: productForm.value.using || undefined,
       warning: productForm.value.warning || undefined,
       base_unit_id: productForm.value.base_unit_id ?? null,
+      vendor_id: productForm.value.vendor_id ?? null,
     },
     imageFile.value,
     removeImage.value,
@@ -285,6 +299,7 @@ onMounted(async () => {
   await categoryStore.getCategories({ limit: 100 });
   await fetchProducts();
   await fetchUnits();
+  await vendorStore.getVendors({ limit: 1000, is_active: true });
 });
 </script>
 
@@ -375,7 +390,7 @@ onMounted(async () => {
               ? 'text-red-600'
               : (value as number) < 10
                 ? 'text-yellow-600'
-                : 'text-green-600',
+                 : 'text-green-600',
           ]"
         >
           {{ value }}
@@ -505,6 +520,7 @@ onMounted(async () => {
             placeholder="0"
             :disabled="modalLoading"
           />
+
           <div
             class="flex items-center justify-between border border-secondary-200 rounded-[15px] px-3 mt-6 h-[42px]"
           >
@@ -513,6 +529,18 @@ onMounted(async () => {
               v-model="productForm.is_special_pricing_enabled"
               active-color="primary"
               :disabled="modalLoading"
+            />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-secondary-700 mb-1"
+              >ผู้จำหน่าย (Vendor)</label
+            >
+            <BaseAutocomplete
+              v-model="productForm.vendor_id"
+              :options="vendorOptions"
+              placeholder="เลือกผู้จำหน่าย"
+              clearable
             />
           </div>
 
@@ -558,16 +586,6 @@ onMounted(async () => {
             >
               {{ selectedProduct.is_active ? "ใช้งาน" : "ไม่ใช้งาน" }}
             </span>
-          </div>
-          <div>
-            <p class="text-secondary-400 text-xs mb-0.5">ผู้จำหน่าย (Vendor)</p>
-            <p class="text-secondary-900 font-medium">
-              {{
-                selectedProduct.vendor
-                  ? `${selectedProduct.vendor.name}${selectedProduct.vendor.seller_code ? ` (${selectedProduct.vendor.seller_code})` : ""}`
-                  : "-"
-              }}
-            </p>
           </div>
           <div>
             <p class="text-secondary-400 text-xs mb-0.5">สร้างเมื่อ</p>

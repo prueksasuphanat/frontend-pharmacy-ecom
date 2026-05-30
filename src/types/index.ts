@@ -13,4 +13,5 @@ export * from "./unit";
 export * from "./user";
 export * from "./wishlist";
 export * from "./auditLog";
+export * from "./vendor";
 
