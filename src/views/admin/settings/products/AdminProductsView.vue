@@ -14,7 +14,12 @@ import {
 } from "@/components/ui";
 import type { Column } from "@/components/ui/BaseTable.vue";
 import type { Product, Unit } from "@/types";
-import { useProductStore, useCategoryStore, useVendorStore } from "@/stores";
+import {
+  useProductStore,
+  useCategoryStore,
+  useVendorStore,
+  useUsersStore,
+} from "@/stores";
 import { unitsApi } from "@/api";
 import { formatDate, formatPrice } from "@/utils";
 import AdminProductUnitView from "@/views/admin/settings/product-units/AdminProductUnitView.vue";
@@ -23,6 +28,7 @@ import { useToast } from "@/composables";
 const productStore = useProductStore();
 const categoryStore = useCategoryStore();
 const vendorStore = useVendorStore();
+const usersStore = useUsersStore();
 const toast = useToast();
 
 const allUnits = ref<Unit[]>([]);
@@ -48,7 +54,12 @@ const productForm = ref({
   is_special_pricing_enabled: false,
   base_unit_id: null as number | null,
   vendor_id: null as number | null,
+  visibility: "ALL" as "ALL" | "RESTRICTED",
+  excluded_user_ids: [] as number[],
 });
+
+const activeTab = ref("general");
+const selectedUserToAdd = ref<number | null>(null);
 
 const products = computed(() => productStore.products);
 const loading = computed(() => productStore.isLoading);
@@ -120,6 +131,38 @@ const vendorOptions = computed(() =>
   })),
 );
 
+const userOptions = computed(() =>
+  usersStore.userFullName.map((u) => ({
+    value: u.id,
+    label: `${u.full_name || u.username} (@${u.username})`,
+  })),
+);
+
+const excludedUsersDisplayList = computed(() => {
+  return productForm.value.excluded_user_ids.map((id) => {
+    const foundUser = usersStore.userFullName.find((u) => u.id === id);
+    return {
+      id,
+      username: foundUser?.username ?? "N/A",
+      email: foundUser?.email ?? "N/A",
+      full_name: foundUser?.full_name ?? "N/A",
+    };
+  });
+});
+
+function addUserRestriction() {
+  if (selectedUserToAdd.value === null) return;
+  if (!productForm.value.excluded_user_ids.includes(selectedUserToAdd.value)) {
+    productForm.value.excluded_user_ids.push(selectedUserToAdd.value);
+  }
+  selectedUserToAdd.value = null;
+}
+
+function removeUserRestriction(userId: number) {
+  productForm.value.excluded_user_ids =
+    productForm.value.excluded_user_ids.filter((id) => id !== userId);
+}
+
 async function fetchUnits() {
   if (allUnits.value.length > 0) return;
   try {
@@ -171,6 +214,8 @@ async function handleEditProduct(product: Product) {
   editModalOpen.value = true;
   imageFile.value = null;
   removeImage.value = false;
+  activeTab.value = "general";
+  selectedUserToAdd.value = null;
 
   const fresh = await productStore.getProductById(product.id);
   modalLoading.value = false;
@@ -188,6 +233,8 @@ async function handleEditProduct(product: Product) {
       is_special_pricing_enabled: fresh.is_special_pricing_enabled,
       base_unit_id: fresh.base_unit_id ?? null,
       vendor_id: fresh.vendor_id ?? null,
+      visibility: fresh.visibility ?? "ALL",
+      excluded_user_ids: fresh.excluded_users?.map((au: any) => au.user_id) ?? [],
     };
   }
 }
@@ -197,6 +244,8 @@ function closeEditModal() {
   selectedProduct.value = null;
   imageFile.value = null;
   removeImage.value = false;
+  activeTab.value = "general";
+  selectedUserToAdd.value = null;
   productForm.value = {
     code: "",
     name: "",
@@ -208,6 +257,8 @@ function closeEditModal() {
     is_special_pricing_enabled: false,
     base_unit_id: null,
     vendor_id: null,
+    visibility: "ALL",
+    excluded_user_ids: [],
   };
 }
 
@@ -232,6 +283,11 @@ async function updateProduct() {
       warning: productForm.value.warning || undefined,
       base_unit_id: productForm.value.base_unit_id ?? null,
       vendor_id: productForm.value.vendor_id ?? null,
+      visibility: productForm.value.visibility,
+      excluded_user_ids:
+        productForm.value.visibility === "RESTRICTED"
+          ? productForm.value.excluded_user_ids
+          : [],
     },
     imageFile.value,
     removeImage.value,
@@ -272,6 +328,11 @@ async function handleSaveProductFirst() {
       warning: productForm.value.warning || undefined,
       base_unit_id: productForm.value.base_unit_id ?? null,
       vendor_id: productForm.value.vendor_id ?? null,
+      visibility: productForm.value.visibility,
+      excluded_user_ids:
+        productForm.value.visibility === "RESTRICTED"
+          ? productForm.value.excluded_user_ids
+          : [],
     },
     imageFile.value,
     removeImage.value,
@@ -300,6 +361,7 @@ onMounted(async () => {
   await fetchProducts();
   await fetchUnits();
   await vendorStore.getVendors({ limit: 1000, is_active: true });
+  await usersStore.getUserFullName();
 });
 </script>
 
@@ -390,7 +452,7 @@ onMounted(async () => {
               ? 'text-red-600'
               : (value as number) < 10
                 ? 'text-yellow-600'
-                 : 'text-green-600',
+                : 'text-green-600',
           ]"
         >
           {{ value }}
@@ -447,7 +509,39 @@ onMounted(async () => {
       <div class="relative min-h-[200px]">
         <LoadingOverlay :loading="modalLoading" text="กำลังโหลดข้อมูล..." />
 
-        <div class="grid grid-cols-2 gap-5 py-2">
+        <!-- Tabs Header -->
+        <div class="flex border-b border-secondary-200 mb-5">
+          <button
+            type="button"
+            class="px-4 py-2 text-sm font-semibold border-b-2 transition-all duration-200"
+            :class="[
+              activeTab === 'general'
+                ? 'border-primary-600 text-primary-600'
+                : 'border-transparent text-secondary-500 hover:text-secondary-700 hover:border-secondary-300',
+            ]"
+            @click="activeTab = 'general'"
+          >
+            ข้อมูลทั่วไป
+          </button>
+          <button
+            type="button"
+            class="px-4 py-2 text-sm font-semibold border-b-2 transition-all duration-200"
+            :class="[
+              activeTab === 'visibility'
+                ? 'border-primary-600 text-primary-600'
+                : 'border-transparent text-secondary-500 hover:text-secondary-700 hover:border-secondary-300',
+            ]"
+            @click="activeTab = 'visibility'"
+          >
+            สิทธิ์การเข้าถึงสินค้า
+          </button>
+        </div>
+
+        <!-- Tab 1: ข้อมูลทั่วไป -->
+        <div
+          v-show="activeTab === 'general'"
+          class="grid grid-cols-2 gap-5 py-2"
+        >
           <div class="">
             <ImageUploader
               class="w-[300px] h-[300px]"
@@ -573,7 +667,147 @@ onMounted(async () => {
             />
             <div class="border-t border-secondary-200 my-4"></div>
           </div>
+        </div>
 
+        <!-- Tab 2: สิทธิ์การเข้าถึงสินค้า -->
+        <div v-show="activeTab === 'visibility'" class="space-y-5 py-2">
+          <div>
+            <label class="block text-sm font-medium text-secondary-700 mb-2"
+              >ขอบเขตการมองเห็นสินค้า</label
+            >
+            <div class="grid grid-cols-2 gap-4">
+              <label
+                class="flex items-start gap-3 p-4 rounded-2xl border cursor-pointer transition-all duration-200"
+                :class="[
+                  productForm.visibility === 'ALL'
+                    ? 'border-primary-500 bg-primary-50/40 text-primary-900 ring-2 ring-primary-100'
+                    : 'border-secondary-200 bg-white text-secondary-700 hover:border-secondary-300',
+                ]"
+              >
+                <input
+                  type="radio"
+                  value="ALL"
+                  v-model="productForm.visibility"
+                  class="h-4.5 w-4.5 mt-0.5 text-primary-600 border-secondary-300 focus:ring-primary-500 shrink-0"
+                />
+                <div class="min-w-0">
+                  <p class="text-sm font-semibold">เปิดเผยสาธารณะ (ALL)</p>
+                  <p class="text-xs text-secondary-500 mt-0.5">
+                    ทุกคนรวมถึงผู้ที่ไม่ได้ล็อกอินสามารถมองเห็นสินค้านี้ได้
+                  </p>
+                </div>
+              </label>
+
+              <label
+                class="flex items-start gap-3 p-4 rounded-2xl border cursor-pointer transition-all duration-200"
+                :class="[
+                  productForm.visibility === 'RESTRICTED'
+                    ? 'border-primary-500 bg-primary-50/40 text-primary-900 ring-2 ring-primary-100'
+                    : 'border-secondary-200 bg-white text-secondary-700 hover:border-secondary-300',
+                ]"
+              >
+                <input
+                  type="radio"
+                  value="RESTRICTED"
+                  v-model="productForm.visibility"
+                  class="h-4.5 w-4.5 mt-0.5 text-primary-600 border-secondary-300 focus:ring-primary-500 shrink-0"
+                />
+                <div class="min-w-0">
+                  <p class="text-sm font-semibold">
+                    เลือกว่าจะไม่ให้ใครเห็นบ้าง (RESTRICTED)
+                  </p>
+                  <p class="text-xs text-secondary-500 mt-0.5">
+                    ซ่อนสินค้านี้จากผู้ใช้งานบางคน ส่วนบุคคลอื่นจะเห็นได้ตามปกติ
+                  </p>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Restricted User Selection -->
+          <div
+            v-if="productForm.visibility === 'RESTRICTED'"
+            class="space-y-4 pt-2"
+          >
+            <div class="flex items-end gap-2.5">
+              <div class="flex-1">
+                <label class="block text-sm font-medium text-secondary-700 mb-1"
+                  >ค้นหาและเพิ่มผู้ใช้งานที่ไม่ให้เข้าถึงสินค้า</label
+                >
+                <BaseAutocomplete
+                  v-model="selectedUserToAdd"
+                  :options="userOptions"
+                  placeholder="ค้นหาชื่อผู้ใช้ หรือ Username..."
+                  clearable
+                />
+              </div>
+              <button
+                type="button"
+                class="btn-primary h-[42px] px-5 text-sm font-semibold shrink-0"
+                @click="addUserRestriction"
+                :disabled="selectedUserToAdd === null"
+              >
+                เพิ่มในรายการซ่อน
+              </button>
+            </div>
+
+            <!-- List of Allowed Users -->
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-secondary-700"
+                >ผู้ใช้งานที่ไม่มีสิทธิ์เข้าถึง ({{
+                  productForm.excluded_user_ids.length
+                }}
+                ราย)</label
+              >
+
+              <div
+                v-if="productForm.excluded_user_ids.length === 0"
+                class="flex flex-col items-center justify-center py-10 px-4 border-2 border-dashed border-secondary-200 rounded-2xl bg-secondary-50/50 text-center"
+              >
+                <p class="text-sm text-secondary-400 font-medium">
+                  ยังไม่มีผู้ใช้งานที่ถูกบล็อก/ซ่อนสินค้า
+                </p>
+                <p class="text-xs text-secondary-400 mt-1">
+                  ผู้ใช้งานทุกคนรวมถึงบุคคลทั่วไปจะมองเห็นสินค้านี้ได้ตามปกติ
+                </p>
+              </div>
+
+              <div
+                v-else
+                class="max-h-[220px] overflow-y-auto border border-secondary-200 rounded-2xl divide-y divide-secondary-100 bg-white"
+              >
+                <div
+                  v-for="user in excludedUsersDisplayList"
+                  :key="user.id"
+                  class="flex items-center justify-between px-4 py-3 hover:bg-secondary-50/50 transition-colors"
+                >
+                  <div class="min-w-0 pr-4">
+                    <p
+                      class="text-sm font-semibold text-secondary-900 truncate"
+                    >
+                      {{ user.full_name }}
+                    </p>
+                    <p class="text-xs text-secondary-500 mt-0.5 truncate">
+                      @{{ user.username }} · {{ user.email }}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    class="text-xs text-red-600 hover:text-red-800 font-semibold px-2.5 py-1.5 rounded-lg hover:bg-red-50 transition-colors"
+                    @click="removeUserRestriction(user.id)"
+                  >
+                    ยกเลิกการบล็อก
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Metadata Footer Info -->
+        <div
+          class="grid grid-cols-3 gap-4 border-t border-secondary-100 pt-4 mt-6"
+        >
           <div>
             <p class="text-secondary-400 text-xs mb-0.5">สถานะ</p>
             <span
@@ -589,13 +823,13 @@ onMounted(async () => {
           </div>
           <div>
             <p class="text-secondary-400 text-xs mb-0.5">สร้างเมื่อ</p>
-            <p class="text-secondary-900 font-medium">
+            <p class="text-secondary-900 font-medium text-sm">
               {{ formatDate(selectedProduct.created_at, "DD MMM BBBB") }}
             </p>
           </div>
           <div>
             <p class="text-secondary-400 text-xs mb-0.5">อัปเดตล่าสุด</p>
-            <p class="text-secondary-900 font-medium">
+            <p class="text-secondary-900 font-medium text-sm">
               {{ formatDate(selectedProduct.updated_at, "DD MMM BBBB") }}
             </p>
           </div>

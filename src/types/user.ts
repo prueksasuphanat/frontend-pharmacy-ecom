@@ -37,6 +37,7 @@ export interface User {
   expired_date: string | null;
   profile_image?: UserAttachment | null;
   attachments?: UserAttachment[];
+  excluded_products?: { id: number; code: string; name: string }[];
 }
 
 export interface LoginCredentials {
