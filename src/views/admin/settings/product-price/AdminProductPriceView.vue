@@ -26,46 +26,47 @@ const isTransposed = ref(false);
 
 const isCustomUserMode = ref(false);
 const selectedUsers = ref<User[]>([]);
-const selectedUserId = ref<number | null>(null);
 
 const users = computed(() =>
   isCustomUserMode.value ? selectedUsers.value : allUsers.value,
 );
 
-const availableUsers = computed(() => {
-  const selectedIds = selectedUsers.value.map((u) => u.id);
-  return allUsers.value.filter((u) => !selectedIds.includes(u.id));
+const selectedUserIds = computed({
+  get: () => selectedUsers.value.map((u) => u.id),
+  set: (newIds) => {
+    const currentIds = selectedUsers.value.map((u) => u.id);
+    const addedIds = newIds.filter((id) => !currentIds.includes(Number(id)));
+    const removedIds = currentIds.filter((id) => !newIds.includes(id));
+
+    // Remove
+    selectedUsers.value = selectedUsers.value.filter((u) => !removedIds.includes(u.id));
+
+    // Add
+    addedIds.forEach((id) => {
+      const user = allUsers.value.find((u) => u.id === Number(id));
+      if (user) {
+        selectedUsers.value.push(user);
+        allProductUnits.value.forEach((unit) => {
+          if (!priceMatrix.value[unit.product_unit_id]) {
+            priceMatrix.value[unit.product_unit_id] = {};
+          }
+          if (priceMatrix.value[unit.product_unit_id][user.id] === undefined) {
+            priceMatrix.value[unit.product_unit_id][user.id] = String(
+              unit.default_price,
+            );
+          }
+        });
+      }
+    });
+  },
 });
 
 const userOptions = computed(() =>
-  availableUsers.value.map((u) => ({
+  allUsers.value.map((u) => ({
     value: u.id,
     label: `${getUserFullName(u)} (${u.username})`,
   })),
 );
-
-function addUserRow() {
-  if (!selectedUserId.value) return;
-  const user = allUsers.value.find(
-    (u) => u.id === Number(selectedUserId.value),
-  );
-  if (!user) return;
-
-  selectedUsers.value.push(user);
-
-  allProductUnits.value.forEach((unit) => {
-    if (!priceMatrix.value[unit.product_unit_id]) {
-      priceMatrix.value[unit.product_unit_id] = {};
-    }
-    if (priceMatrix.value[unit.product_unit_id][user.id] === undefined) {
-      priceMatrix.value[unit.product_unit_id][user.id] = String(
-        unit.default_price,
-      );
-    }
-  });
-
-  selectedUserId.value = null;
-}
 
 function removeUserRow(userId: number) {
   if (!isCustomUserMode.value) {
@@ -78,7 +79,6 @@ function removeUserRow(userId: number) {
 
 function onCustomUserModeChange() {
   selectedUsers.value = [];
-  selectedUserId.value = null;
   initializePriceMatrix();
 }
 
@@ -282,6 +282,7 @@ onMounted(async () => {
               :options="productOptions"
               placeholder="ค้นหาและเลือกสินค้า..."
               :disabled="products.length === 0"
+              hide-tags
               class="flex-1 sm:max-w-sm"
             />
           </div>
@@ -305,22 +306,14 @@ onMounted(async () => {
           </div>
           <div class="flex items-center gap-2 flex-1">
             <template v-if="isCustomUserMode">
-              <BaseAutocomplete
-                v-model="selectedUserId"
+              <BaseMultiSelect
+                v-model="selectedUserIds"
                 :options="userOptions"
                 placeholder="ค้นหาและเลือกลูกค้า..."
-                clearable
-                :disabled="availableUsers.length === 0"
+                :disabled="allUsers.length === 0"
+                hide-tags
                 class="flex-1 sm:max-w-sm"
               />
-              <button
-                @click="addUserRow"
-                :disabled="!selectedUserId || availableUsers.length === 0"
-                class="btn btn-primary flex items-center gap-1.5 shrink-0 px-3 py-2 text-sm"
-              >
-                <Plus class="w-3.5 h-3.5" />
-                <span class="hidden xs:inline">เพิ่ม</span>
-              </button>
             </template>
             <span v-else class="text-sm text-secondary-400"
               >แสดงลูกค้าทั้งหมด</span

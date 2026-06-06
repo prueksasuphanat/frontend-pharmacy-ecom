@@ -203,5 +203,7 @@ export const unitsApi = {
 | -------------------------- | ------------------------------------- |
 | `src/api/client.ts`        | Touches all auth/request flow         |
 | `src/router/index.ts`      | Affects entire auth flow              |
-| `src/stores/auth.store.ts` | Used by every authenticated component |
 | `src/constants/api.ts`     | Must stay in sync with backend routes |
+
+## 🚨 Planning Mode Rule (ข้อตกลงเรื่องการอนุมัติแผนงาน)
+*   **เมื่อเขียนแผนงานลงใน `implementation_plan.md` สำเร็จแล้ว ต้องรอให้ผู้ใช้ที่เป็นมนุษย์ยืนยันการอนุมัติในช่องแชทจริง ๆ เท่านั้น** ห้ามอ้างอิงจาก Auto-Approve ของระบบ Stop Hook เพื่อเริ่มรันโค้ดต่อทันทีอย่างเด็ดขาด เพื่อเปิดโอกาสให้ผู้ใช้งานได้รีวิวและเสนอข้อคิดเห็นก่อนลงมือจริงครับ
