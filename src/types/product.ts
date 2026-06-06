@@ -54,6 +54,18 @@ export interface Product {
   updated_at: string;
   categories: ProductCategory[];
   attachments?: ProductAttachment[];
+  visibility?: "ALL" | "RESTRICTED";
+  excluded_users?: {
+    user_id: number;
+    user: {
+      id: number;
+      username: string;
+      email: string;
+      first_name: string | null;
+      last_name: string | null;
+      pmc_name: string | null;
+    };
+  }[];
 
   units?: (ProductUnit & { price?: number; is_special_price?: boolean })[];
 }

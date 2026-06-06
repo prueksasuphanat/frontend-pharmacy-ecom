@@ -46,6 +46,8 @@ export interface UpdateProductPayload {
   generic_name?: string;
   using?: string;
   warning?: string;
+  visibility?: "ALL" | "RESTRICTED";
+  excluded_user_ids?: number[] | null;
 }
 
 export async function updateProduct(
@@ -83,6 +85,15 @@ export async function updateProduct(
     formData.append("generic_name", data.generic_name);
   if (data.using !== undefined) formData.append("using", data.using);
   if (data.warning !== undefined) formData.append("warning", data.warning);
+  if (data.visibility !== undefined)
+    formData.append("visibility", data.visibility);
+  if (data.excluded_user_ids !== undefined)
+    formData.append(
+      "excluded_user_ids",
+      data.excluded_user_ids === null
+        ? "null"
+        : JSON.stringify(data.excluded_user_ids),
+    );
   if (imageFile) formData.append("file", imageFile);
   if (removeAttachments && !imageFile) formData.append("attachments", "[]");
 

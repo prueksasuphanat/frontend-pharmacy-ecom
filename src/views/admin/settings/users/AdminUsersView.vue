@@ -159,7 +159,32 @@ const editForm = ref({
   last_name: "",
   phone: "",
   expired_date: "",
+  excluded_product_ids: [] as number[],
 });
+
+const activeTab = ref("info");
+const selectedProductToAdd = ref<number | null>(null);
+const allProductsList = ref<{ id: number; name: string; code: string }[]>([]);
+
+async function fetchAllProductsForSelect() {
+  try {
+    const res = await productsApi.getProducts({ limit: 1000, is_active: true });
+    allProductsList.value = res.data.map((p: any) => ({
+      id: p.id,
+      name: p.name,
+      code: p.code,
+    }));
+  } catch (e) {
+    console.error("Failed to load products for visibility settings", e);
+  }
+}
+
+const productOptions = computed(() =>
+  allProductsList.value.map((p) => ({
+    value: p.id,
+    label: `${p.name} (${p.code})`,
+  })),
+);
 
 function editUser(user: User) {
   console.log("Selected user:", user);
@@ -167,6 +192,8 @@ function editUser(user: User) {
   isEditMode.value = false;
   editModalOpen.value = true;
   modalLoading.value = true;
+  activeTab.value = "info";
+  selectedProductToAdd.value = null;
 
   userStore
     .adminGetUserById(user.id)
@@ -182,6 +209,7 @@ function editUser(user: User) {
         last_name: fresh.last_name || "",
         phone: fresh.phone || "",
         expired_date: fresh.expired_date ? fresh.expired_date.slice(0, 10) : "",
+        excluded_product_ids: fresh.excluded_products?.map((ap: any) => ap.id) ?? [],
       };
     })
     .finally(() => {
@@ -189,10 +217,36 @@ function editUser(user: User) {
     });
 }
 
+const excludedProductsDisplayList = computed(() => {
+  return editForm.value.excluded_product_ids.map((id) => {
+    const foundProduct = allProductsList.value.find((p) => p.id === id);
+    return {
+      id,
+      code: foundProduct?.code ?? "N/A",
+      name: foundProduct?.name ?? "N/A",
+    };
+  });
+});
+
+function addProductRestriction() {
+  if (selectedProductToAdd.value === null) return;
+  if (!editForm.value.excluded_product_ids.includes(selectedProductToAdd.value)) {
+    editForm.value.excluded_product_ids.push(selectedProductToAdd.value);
+  }
+  selectedProductToAdd.value = null;
+}
+
+function removeProductRestriction(productId: number) {
+  editForm.value.excluded_product_ids = editForm.value.excluded_product_ids.filter(
+    (id) => id !== productId,
+  );
+}
+
 function closeEditModal() {
   editModalOpen.value = false;
   selectedUser.value = null;
   isEditMode.value = false;
+  activeTab.value = 'info';
 }
 
 function toggleEditMode() {
@@ -212,6 +266,7 @@ async function saveUserChanges() {
     last_name: editForm.value.last_name || undefined,
     phone: editForm.value.phone || undefined,
     expired_date: editForm.value.expired_date || null,
+    excluded_product_ids: selectedUser.value.role === "CUSTOMER" || selectedUser.value.role === "PHARMACIST" ? editForm.value.excluded_product_ids : undefined,
   });
 
   if (ok) {
@@ -247,7 +302,10 @@ watch(searchQuery, () => {
   searchTimer = setTimeout(() => fetchUsers(1), 400);
 });
 
-onMounted(() => fetchUsers());
+onMounted(() => {
+  fetchUsers();
+  fetchAllProductsForSelect();
+});
 </script>
 
 <template>
@@ -504,7 +562,34 @@ onMounted(() => fetchUsers());
           </div>
         </div>
 
-        <div v-if="!isEditMode" class="space-y-4">
+        <div class="flex border-b border-secondary-200 mb-6">
+          <button
+            type="button"
+            class="px-4 py-2 text-sm font-semibold border-b-2 transition-all duration-200"
+            :class="[
+              activeTab === 'info'
+                ? 'border-primary-600 text-primary-600'
+                : 'border-transparent text-secondary-500 hover:text-secondary-700 hover:border-secondary-300'
+            ]"
+            @click="activeTab = 'info'"
+          >
+            ข้อมูลทั่วไป
+          </button>
+          <button
+            type="button"
+            class="px-4 py-2 text-sm font-semibold border-b-2 transition-all duration-200"
+            :class="[
+              activeTab === 'visibility'
+                ? 'border-primary-600 text-primary-600'
+                : 'border-transparent text-secondary-500 hover:text-secondary-700 hover:border-secondary-300'
+            ]"
+            @click="activeTab = 'visibility'"
+          >
+            สินค้าที่ถูกซ่อน
+          </button>
+        </div>
+
+        <div v-show="activeTab === 'info'" class="space-y-4">
           <div
             class="bg-secondary-50 rounded-xl p-4 grid grid-cols-2 gap-x-6 gap-y-3 text-sm"
           >
@@ -612,29 +697,6 @@ onMounted(() => fetchUsers());
         </div>
 
         <div v-else class="space-y-3">
-          <div
-            class="bg-secondary-50 rounded-xl px-4 py-3 grid grid-cols-2 gap-x-4 gap-y-2 text-sm"
-          >
-            <div>
-              <p class="text-secondary-400 text-xs mb-0.5">ID</p>
-              <p class="text-secondary-900 font-medium">
-                {{ selectedUser.id }}
-              </p>
-            </div>
-            <div>
-              <p class="text-secondary-400 text-xs mb-0.5">Role</p>
-              <p class="text-secondary-900 font-medium">
-                {{ selectedUser.role }}
-              </p>
-            </div>
-            <div class="col-span-2">
-              <p class="text-secondary-400 text-xs mb-0.5">สร้างเมื่อ</p>
-              <p class="text-secondary-900 font-medium">
-                {{ formatDate(selectedUser.created_at, "DD/MM/BBBB HH:mm") }}
-              </p>
-            </div>
-          </div>
-
           <BaseInput
             v-model="editForm.username"
             label="Username *"
@@ -686,6 +748,69 @@ onMounted(() => fetchUsers());
             placeholder="เลือกวันหมดอายุ"
           />
         </div>
+
+        <!-- Tab 2: สินค้าที่ถูกซ่อน -->
+        <div v-show="activeTab === 'visibility'" class="space-y-4">
+          <div class="flex items-end gap-2.5">
+            <div class="flex-1">
+              <label class="block text-sm font-medium text-secondary-700 mb-1">ค้นหาและเพิ่มสินค้าที่ต้องการซ่อน</label>
+              <BaseAutocomplete
+                v-model="selectedProductToAdd"
+                :options="productOptions"
+                placeholder="ค้นหาชื่อสินค้า หรือ รหัสสินค้า..."
+                clearable
+              />
+            </div>
+            <button
+              type="button"
+              class="btn-primary h-[42px] px-5 text-sm font-semibold shrink-0"
+              @click="addProductRestriction"
+              :disabled="selectedProductToAdd === null"
+            >
+              ซ่อนสินค้านี้
+            </button>
+          </div>
+
+          <div class="space-y-2">
+            <label class="block text-sm font-medium text-secondary-700">สินค้าที่ถูกซ่อนจากผู้ใช้นี้ ({{ editForm.excluded_product_ids.length }} รายการ)</label>
+            
+            <div
+              v-if="editForm.excluded_product_ids.length === 0"
+              class="flex flex-col items-center justify-center py-10 px-4 border-2 border-dashed border-secondary-200 rounded-2xl bg-secondary-50/50 text-center"
+            >
+              <p class="text-sm text-secondary-400 font-medium">ยังไม่มีการซ่อนสินค้าแบบเฉพาะเจาะจง</p>
+              <p class="text-xs text-secondary-400 mt-1">ผู้ใช้รายนี้สามารถมองเห็นสินค้าทั้งหมดได้ตามปกติ</p>
+            </div>
+
+            <div
+              v-else
+              class="max-h-[300px] overflow-y-auto border border-secondary-200 rounded-2xl divide-y divide-secondary-100 bg-white"
+            >
+              <div
+                v-for="product in excludedProductsDisplayList"
+                :key="product.id"
+                class="flex items-center justify-between px-4 py-3 hover:bg-secondary-50/50 transition-colors"
+              >
+                <div class="min-w-0 pr-4">
+                  <p class="text-sm font-semibold text-secondary-900 truncate">
+                    {{ product.name }}
+                  </p>
+                  <p class="text-xs text-secondary-500 mt-0.5 truncate">
+                    รหัสสินค้า: {{ product.code }}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  class="text-xs text-red-600 hover:text-red-800 font-semibold px-2.5 py-1.5 rounded-lg hover:bg-red-50 transition-colors"
+                  @click="removeProductRestriction(product.id)"
+                >
+                  ยกเลิกการซ่อน
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
 
       <template #footer>

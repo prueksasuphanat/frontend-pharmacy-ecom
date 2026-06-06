@@ -1,6 +1,11 @@
 import { apiClient } from "../../client";
 import { API_ENDPOINTS } from "@/constants";
-import type { User, Pagination, ApiResponse, PaginatedApiResponse } from "@/types";
+import type {
+  User,
+  Pagination,
+  ApiResponse,
+  PaginatedApiResponse,
+} from "@/types";
 
 export interface GetUsersParams {
   page?: number;
@@ -21,6 +26,7 @@ export interface AdminUpdateUserPayload {
   last_name?: string;
   phone?: string;
   expired_date?: string | null;
+  excluded_product_ids?: number[];
 }
 
 export const usersApi = {
