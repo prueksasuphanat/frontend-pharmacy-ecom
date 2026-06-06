@@ -570,13 +570,22 @@ onMounted(async () => {
                   :rowspan="getProductGroupAndIndex(unit.product_unit_id).group?.units.length || 1"
                   class="sticky left-0 z-10 bg-white px-4 py-3 text-sm font-medium text-secondary-900 border-r border-secondary-200 hover:bg-secondary-50 align-top max-w-[140px] sm:max-w-[180px]"
                 >
-                  <div class="min-w-0">
-                    <div class="font-semibold text-secondary-900 truncate">
-                      {{ getProductGroupAndIndex(unit.product_unit_id).group?.product.name }}
+                  <div class="flex items-start justify-between gap-1">
+                    <div class="min-w-0 flex-1">
+                      <div class="font-semibold text-secondary-900 truncate">
+                        {{ getProductGroupAndIndex(unit.product_unit_id).group?.product.name }}
+                      </div>
+                      <div class="text-xs text-secondary-500 mt-0.5">
+                        {{ getProductGroupAndIndex(unit.product_unit_id).group?.product.code }}
+                      </div>
                     </div>
-                    <div class="text-xs text-secondary-500 mt-0.5">
-                      {{ getProductGroupAndIndex(unit.product_unit_id).group?.product.code }}
-                    </div>
+                    <button
+                      @click="removeProductColumn(getProductGroupAndIndex(unit.product_unit_id).group!.product.id)"
+                      class="flex-shrink-0 p-1 text-secondary-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                      title="ลบสินค้า"
+                    >
+                      <X class="w-4 h-4" />
+                    </button>
                   </div>
                 </td>
 
