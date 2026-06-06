@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref } from "vue";
 
 interface Props {
   modelValue?: string | number | null;
@@ -12,6 +12,8 @@ interface Props {
   icon?: any;
   iconRight?: any;
   readonly?: boolean;
+  /** อนุญาตให้กรอกค่าติดลบได้ (ใช้เฉพาะ type="number") */
+  allowNegative?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -19,6 +21,7 @@ const props = withDefaults(defineProps<Props>(), {
   disabled: false,
   required: false,
   readonly: false,
+  allowNegative: false,
 });
 
 const emit = defineEmits<{
@@ -34,13 +37,110 @@ const inputClasses = computed(() => [
     "pl-9": props.icon,
     "pr-10": props.iconRight,
     "border-red-300 focus:border-red-500 focus:ring-red-500": props.error,
+    "no-spinner": props.type === "number",
   },
 ]);
 
+/** ค่าที่แสดงใน input (เป็น string เพื่อ format ทศนิยม) */
+const displayValue = ref<string>(
+  props.modelValue != null && props.modelValue !== "" && props.type === "number"
+    ? Number(props.modelValue).toFixed(2)
+    : (props.modelValue ?? "")?.toString() ?? ""
+);
+
+/** เมื่อ props เปลี่ยนจากข้างนอก (ไม่ได้ focus อยู่) */
+const isFocused = ref(false);
+
 function handleInput(event: Event) {
   const target = event.target as HTMLInputElement;
-  emit("update:modelValue", target.value);
+  const raw = target.value;
+
+  if (props.type === "number") {
+    // อัปเดต displayValue ทุกครั้งที่ user พิม เพื่อให้ boundValue สะท้อนค่าล่าสุด
+    displayValue.value = raw;
+
+    if (raw === "" || raw === "-") {
+      emit("update:modelValue", raw === "" ? null : raw);
+      return;
+    }
+    const num = parseFloat(raw);
+    if (!isNaN(num)) {
+      emit("update:modelValue", num);
+    }
+  } else {
+    emit("update:modelValue", raw);
+  }
 }
+
+function handleFocus(event: FocusEvent) {
+  isFocused.value = true;
+  if (props.type === "number") {
+    // แสดงค่าดิบขณะกรอก (ไม่ format)
+    const raw = props.modelValue;
+    displayValue.value =
+      raw != null && raw !== "" ? String(raw) : "";
+  }
+  emit("focus", event);
+}
+
+function handleBlur(event: FocusEvent) {
+  isFocused.value = false;
+  if (props.type === "number") {
+    // Format ทศนิยม 2 ตำแหน่งเมื่อออกจาก input
+    const num = parseFloat(String(props.modelValue ?? ""));
+    if (!isNaN(num)) {
+      displayValue.value = num.toFixed(2);
+      emit("update:modelValue", num);
+    } else {
+      displayValue.value = "";
+      emit("update:modelValue", null);
+    }
+  }
+  emit("blur", event);
+}
+
+function handleKeydown(event: KeyboardEvent) {
+  if (props.type !== "number") return;
+
+  const input = event.target as HTMLInputElement;
+  const isDigit = event.key >= "0" && event.key <= "9";
+  const isMinus = event.key === "-" && props.allowNegative;
+  const isCtrlCmd = event.ctrlKey || event.metaKey; // copy/paste/select-all
+  const allowedKeys = [
+    "Backspace", "Delete", "ArrowLeft", "ArrowRight",
+    "Tab", "Home", "End",
+  ];
+
+  // บล็อกแป้นที่ไม่อนุญาต
+  if (!isDigit && !isMinus && event.key !== "." && !allowedKeys.includes(event.key) && !isCtrlCmd) {
+    event.preventDefault();
+    return;
+  }
+
+  // ป้องกันกด "." ซ้ำ (มี . อยู่แล้ว)
+  if (event.key === ".") {
+    if (input.value.includes(".")) {
+      event.preventDefault();
+      return;
+    }
+  }
+
+  // ป้องกันกด "-" ซ้ำ หรือกด "-" ที่ไม่ใช่ตำแหน่งแรก
+  if (event.key === "-") {
+    if (!props.allowNegative || input.selectionStart !== 0 || input.value.includes("-")) {
+      event.preventDefault();
+    }
+  }
+}
+
+/** Computed value สำหรับ bind กับ input */
+const boundValue = computed(() => {
+  if (props.type !== "number") return props.modelValue ?? "";
+  if (isFocused.value) return displayValue.value;
+  // แสดง format ทศนิยม 2 ตำแหน่งขณะไม่ focus
+  const num = parseFloat(String(props.modelValue ?? ""));
+  return !isNaN(num) ? num.toFixed(2) : (props.modelValue ?? "");
+});
 </script>
 
 <template>
@@ -56,16 +156,18 @@ function handleInput(event: Event) {
         class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-secondary-400"
       />
       <input
-        :type="type"
-        :value="modelValue"
+        :type="type === 'number' ? 'text' : type"
+        inputmode="decimal"
+        :value="boundValue"
         :placeholder="placeholder"
         :disabled="disabled"
         :required="required"
         :readonly="readonly"
         :class="inputClasses"
         @input="handleInput"
-        @blur="emit('blur', $event)"
-        @focus="emit('focus', $event)"
+        @focus="handleFocus"
+        @blur="handleBlur"
+        @keydown="handleKeydown"
       />
       <button
         v-if="iconRight"
@@ -79,3 +181,15 @@ function handleInput(event: Event) {
     <p v-if="error" class="error-msg mt-1.5">{{ error }}</p>
   </div>
 </template>
+
+<style scoped>
+/* ซ่อนลูกศรเพิ่มลด (spinner) สำหรับ number input */
+.no-spinner::-webkit-outer-spin-button,
+.no-spinner::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.no-spinner[type="number"] {
+  -moz-appearance: textfield;
+}
+</style>
