@@ -2,7 +2,7 @@
 import { ref, onMounted, computed } from "vue";
 import { useRouter } from "vue-router";
 import { ChevronLeft, Plus, X, Save, ArrowLeftRight } from "lucide-vue-next";
-import { BaseInput, BaseAutocomplete } from "@/components/ui";
+import { BaseInput, BaseAutocomplete, BaseMultiSelect } from "@/components/ui";
 import type { User, Product, UpdateProductPricePayload } from "@/types";
 import { useToast } from "@/composables";
 import { formatUserName } from "@/utils/format";
@@ -26,70 +26,68 @@ const isTransposed = ref(false);
 
 const isCustomUserMode = ref(false);
 const selectedUsers = ref<User[]>([]);
-const selectedUserId = ref<number | null>(null);
 
 const users = computed(() =>
   isCustomUserMode.value ? selectedUsers.value : allUsers.value,
 );
 
-const availableUsers = computed(() => {
-  const selectedIds = selectedUsers.value.map((u) => u.id);
-  return allUsers.value.filter((u) => !selectedIds.includes(u.id));
+const selectedUserIds = computed({
+  get: () => selectedUsers.value.map((u) => u.id),
+  set: (newIds) => {
+    const currentIds = selectedUsers.value.map((u) => u.id);
+    const addedIds = newIds.filter((id) => !currentIds.includes(Number(id)));
+    const removedIds = currentIds.filter((id) => !newIds.includes(id));
+
+    // Remove
+    selectedUsers.value = selectedUsers.value.filter((u) => !removedIds.includes(u.id));
+
+    // Add
+    addedIds.forEach((id) => {
+      const user = allUsers.value.find((u) => u.id === Number(id));
+      if (user) {
+        selectedUsers.value.push(user);
+        allProductUnits.value.forEach((unit) => {
+          if (!priceMatrix.value[unit.product_unit_id]) {
+            priceMatrix.value[unit.product_unit_id] = {};
+          }
+          if (priceMatrix.value[unit.product_unit_id][user.id] === undefined) {
+            priceMatrix.value[unit.product_unit_id][user.id] = String(
+              unit.default_price,
+            );
+          }
+        });
+      }
+    });
+  },
 });
 
 const userOptions = computed(() =>
-  availableUsers.value.map((u) => ({
+  allUsers.value.map((u) => ({
     value: u.id,
     label: `${getUserFullName(u)} (${u.username})`,
   })),
 );
 
-function addUserRow() {
-  if (!selectedUserId.value) return;
-  const user = allUsers.value.find(
-    (u) => u.id === Number(selectedUserId.value),
-  );
-  if (!user) return;
-
-  selectedUsers.value.push(user);
-
-  allProductUnits.value.forEach((unit) => {
-    if (!priceMatrix.value[unit.product_unit_id]) {
-      priceMatrix.value[unit.product_unit_id] = {};
-    }
-    if (priceMatrix.value[unit.product_unit_id][user.id] === undefined) {
-      priceMatrix.value[unit.product_unit_id][user.id] = String(
-        unit.default_price,
-      );
-    }
-  });
-
-  selectedUserId.value = null;
-}
-
 function removeUserRow(userId: number) {
-  selectedUsers.value = selectedUsers.value.filter((u) => u.id !== userId);
+  if (!isCustomUserMode.value) {
+    isCustomUserMode.value = true;
+    selectedUsers.value = allUsers.value.filter((u) => u.id !== userId);
+  } else {
+    selectedUsers.value = selectedUsers.value.filter((u) => u.id !== userId);
+  }
 }
 
 function onCustomUserModeChange() {
   selectedUsers.value = [];
-  selectedUserId.value = null;
   initializePriceMatrix();
 }
 
-const availableProducts = computed(() => {
-  const selectedIds = selectedProducts.value.map((p) => p.id);
-  return products.value.filter((p) => !selectedIds.includes(p.id));
-});
-
 const productOptions = computed(() =>
-  availableProducts.value.map((p) => ({
+  products.value.map((p) => ({
     value: p.id,
     label: `${p.code} - ${p.name}`,
   })),
 );
-
-const selectedProductId = ref<number | null>(null);
 
 const allProductUnits = computed(() => {
   return selectedProducts.value.flatMap((product) => {
@@ -128,22 +126,6 @@ async function fetchProducts() {
 
 function initializePriceMatrix() {}
 
-async function addProductColumn() {
-  if (!selectedProductId.value) {
-    toast.warning("กรุณาเลือกสินค้า");
-    return;
-  }
-
-  const product = products.value.find(
-    (p) => p.id === Number(selectedProductId.value),
-  );
-  if (!product) return;
-
-  selectedProducts.value.push(product);
-  await fetchPricesForProducts();
-  selectedProductId.value = null;
-}
-
 function removeProductColumn(productId: number) {
   const priceData = productPriceStore.productPrices.find(
     (pp) => pp.product_id === productId,
@@ -156,6 +138,30 @@ function removeProductColumn(productId: number) {
     (p) => p.id !== productId,
   );
 }
+
+const selectedProductIds = computed({
+  get: () => selectedProducts.value.map((p) => p.id),
+  set: async (newIds) => {
+    const currentIds = selectedProducts.value.map((p) => p.id);
+    const addedIds = newIds.filter((id) => !currentIds.includes(Number(id)));
+    const removedIds = currentIds.filter((id) => !newIds.includes(id));
+
+    removedIds.forEach((id) => {
+      removeProductColumn(id);
+    });
+
+    addedIds.forEach((id) => {
+      const product = products.value.find((p) => p.id === Number(id));
+      if (product) {
+        selectedProducts.value.push(product);
+      }
+    });
+
+    if (addedIds.length > 0) {
+      await fetchPricesForProducts();
+    }
+  },
+});
 
 function updatePrice(
   userId: number,
@@ -271,22 +277,14 @@ onMounted(async () => {
             >สินค้า</span
           >
           <div class="flex items-center gap-2 flex-1">
-            <BaseAutocomplete
-              v-model="selectedProductId"
+            <BaseMultiSelect
+              v-model="selectedProductIds"
               :options="productOptions"
               placeholder="ค้นหาและเลือกสินค้า..."
-              clearable
-              :disabled="availableProducts.length === 0"
+              :disabled="products.length === 0"
+              hide-tags
               class="flex-1 sm:max-w-sm"
             />
-            <button
-              @click="addProductColumn"
-              :disabled="!selectedProductId || availableProducts.length === 0"
-              class="btn btn-primary flex items-center gap-1.5 shrink-0 px-3 py-2 text-sm"
-            >
-              <Plus class="w-3.5 h-3.5" />
-              <span class="hidden xs:inline">เพิ่ม</span>
-            </button>
           </div>
         </div>
 
@@ -308,22 +306,14 @@ onMounted(async () => {
           </div>
           <div class="flex items-center gap-2 flex-1">
             <template v-if="isCustomUserMode">
-              <BaseAutocomplete
-                v-model="selectedUserId"
+              <BaseMultiSelect
+                v-model="selectedUserIds"
                 :options="userOptions"
                 placeholder="ค้นหาและเลือกลูกค้า..."
-                clearable
-                :disabled="availableUsers.length === 0"
+                :disabled="allUsers.length === 0"
+                hide-tags
                 class="flex-1 sm:max-w-sm"
               />
-              <button
-                @click="addUserRow"
-                :disabled="!selectedUserId || availableUsers.length === 0"
-                class="btn btn-primary flex items-center gap-1.5 shrink-0 px-3 py-2 text-sm"
-              >
-                <Plus class="w-3.5 h-3.5" />
-                <span class="hidden xs:inline">เพิ่ม</span>
-              </button>
             </template>
             <span v-else class="text-sm text-secondary-400"
               >แสดงลูกค้าทั้งหมด</span
@@ -488,7 +478,6 @@ onMounted(async () => {
                       >
                     </div>
                     <button
-                      v-if="isCustomUserMode"
                       @click="removeUserRow(user.id)"
                       class="flex-shrink-0 p-1 text-secondary-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
                       title="ลบลูกค้า"
@@ -559,7 +548,6 @@ onMounted(async () => {
                       >
                     </div>
                     <button
-                      v-if="isCustomUserMode"
                       @click="removeUserRow(user.id)"
                       class="flex-shrink-0 p-1 text-secondary-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
                       title="ลบลูกค้า"

@@ -20,6 +20,9 @@ interface Props {
   icon?: any;
   noResultText?: string;
   max?: number;
+  maxVisibleTags?: number;
+  externalTags?: boolean;
+  hideTags?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -92,6 +95,26 @@ const selectedOptions = computed(
       .map((v) => props.options.find((o) => o.value === v))
       .filter(Boolean) as MultiSelectOption[],
 );
+
+const visibleSelectedOptions = computed(() => {
+  if (props.maxVisibleTags === undefined || props.maxVisibleTags === null) {
+    return selectedOptions.value;
+  }
+  return selectedOptions.value.slice(0, props.maxVisibleTags);
+});
+
+const hiddenTagsCount = computed(() => {
+  if (props.maxVisibleTags === undefined || props.maxVisibleTags === null) {
+    return 0;
+  }
+  return Math.max(0, selectedOptions.value.length - props.maxVisibleTags);
+});
+
+const computedPlaceholder = computed(() => {
+  if (selectedOptions.value.length === 0) return props.placeholder;
+  if ((props.externalTags || props.hideTags) && isOpen.value) return props.placeholder;
+  return "";
+});
 
 const filteredOptions = computed(() => {
   const q = query.value.trim().toLowerCase();
@@ -259,19 +282,38 @@ function onKeydown(e: KeyboardEvent) {
       />
 
       <div class="flex flex-wrap items-center gap-1.5 flex-1 min-w-0">
-        <span
-          v-for="opt in selectedOptions"
-          :key="opt.value"
-          class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-primary-100 text-primary-700 text-xs font-medium"
-        >
-          {{ opt.label }}
-          <button
-            type="button"
-            class="hover:text-primary-900 transition-colors"
-            @click="removeTag(opt.value, $event)"
+        <!-- Render tags ONLY if not externalTags and not hideTags -->
+        <template v-if="!externalTags && !hideTags">
+          <span
+            v-for="opt in visibleSelectedOptions"
+            :key="opt.value"
+            class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-primary-100 text-primary-700 text-xs font-medium"
           >
-            <X class="w-3 h-3" />
-          </button>
+            {{ opt.label }}
+            <button
+              type="button"
+              class="hover:text-primary-900 transition-colors"
+              @click="removeTag(opt.value, $event)"
+            >
+              <X class="w-3 h-3" />
+            </button>
+          </span>
+
+          <span
+            v-if="hiddenTagsCount > 0"
+            class="inline-flex items-center px-2 py-0.5 rounded-lg bg-secondary-100 text-secondary-700 text-xs font-medium cursor-help"
+            :title="selectedOptions.slice(props.maxVisibleTags).map((o) => o.label).join(', ')"
+          >
+            +{{ hiddenTagsCount }} รายการ
+          </span>
+        </template>
+
+        <!-- Summary text when externalTags or hideTags is true and items are selected, and not focused/typing -->
+        <span
+          v-if="(externalTags || hideTags) && selectedOptions.length > 0 && !isOpen && !query"
+          class="text-sm text-secondary-900 truncate pl-1"
+        >
+          เลือกแล้ว {{ selectedOptions.length }} รายการ
         </span>
 
         <input
@@ -283,7 +325,7 @@ function onKeydown(e: KeyboardEvent) {
           :class="{
             'cursor-pointer caret-transparent select-none': isTouchDevice,
           }"
-          :placeholder="selectedOptions.length === 0 ? placeholder : ''"
+          :placeholder="computedPlaceholder"
           :disabled="disabled"
           @input="onInput"
           @keydown="onKeydown"
@@ -367,6 +409,35 @@ function onKeydown(e: KeyboardEvent) {
         </div>
       </Transition>
     </Teleport>
+
+    <!-- External Tags List -->
+    <div
+      v-if="externalTags && !hideTags && selectedOptions.length > 0"
+      class="flex flex-wrap items-center gap-1.5 mt-2"
+    >
+      <span
+        v-for="opt in visibleSelectedOptions"
+        :key="opt.value"
+        class="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-primary-100 text-primary-700 text-xs font-semibold shadow-sm border border-primary-200"
+      >
+        {{ opt.label }}
+        <button
+          type="button"
+          class="hover:text-primary-900 transition-colors ml-0.5"
+          @click="removeTag(opt.value, $event)"
+        >
+          <X class="w-3.5 h-3.5" />
+        </button>
+      </span>
+
+      <span
+        v-if="hiddenTagsCount > 0"
+        class="inline-flex items-center px-2.5 py-1 rounded-xl bg-secondary-100 text-secondary-700 text-xs font-semibold cursor-help"
+        :title="selectedOptions.slice(props.maxVisibleTags).map((o) => o.label).join(', ')"
+      >
+        +{{ hiddenTagsCount }} รายการ
+      </span>
+    </div>
 
     <p v-if="error" class="error-msg mt-1.5">{{ error }}</p>
   </div>
