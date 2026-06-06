@@ -12,6 +12,7 @@ import {
 import { useRouter } from "vue-router";
 import { useUsersStore } from "@/stores";
 import { formatDate } from "@/utils";
+import { productsApi } from "@/api";
 
 import type { GetUsersParams } from "@/api";
 import type { Column } from "@/components/ui/BaseTable.vue";
@@ -596,7 +597,8 @@ onMounted(() => {
           </button>
         </div>
 
-        <div v-show="activeTab === 'info'" class="space-y-4">
+        <div v-show="activeTab === 'info'">
+          <div v-if="!isEditMode" class="space-y-4">
           <div
             class="bg-secondary-50 rounded-xl p-4 grid grid-cols-2 gap-x-6 gap-y-3 text-sm"
           >
@@ -755,6 +757,7 @@ onMounted(() => {
             placeholder="เลือกวันหมดอายุ"
           />
         </div>
+      </div>
 
         <!-- Tab 2: สินค้าที่ถูกซ่อน -->
         <div v-show="activeTab === 'visibility'" class="space-y-4">
