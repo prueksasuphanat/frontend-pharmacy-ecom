@@ -13,12 +13,15 @@ interface Props {
   disabled?: boolean;
   readonly?: boolean;
   modelValue?: string | number | null;
+  /** อนุญาตให้กรอกค่าติดลบได้ (ใช้เฉพาะ type="number") */
+  allowNegative?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   type: "text",
   disabled: false,
   readonly: false,
+  allowNegative: false,
 });
 
 const emit = defineEmits<{
@@ -62,6 +65,7 @@ function onIconRightClick() {
     :disabled="disabled"
     :readonly="readonly"
     :error="displayError"
+    :allow-negative="allowNegative"
     @update:model-value="onInput"
     @blur="handleBlur"
     @icon-right-click="onIconRightClick"
