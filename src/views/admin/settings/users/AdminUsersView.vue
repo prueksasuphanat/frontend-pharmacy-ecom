@@ -12,6 +12,7 @@ import {
 import { useRouter } from "vue-router";
 import { useUsersStore } from "@/stores";
 import { formatDate } from "@/utils";
+import { productsApi } from "@/api";
 
 import type { GetUsersParams } from "@/api";
 import type { Column } from "@/components/ui/BaseTable.vue";
@@ -62,6 +63,7 @@ const columns: Column<User>[] = [
   { key: "username", label: "Username", width: "150px", align: "left" },
   { key: "email", label: "อีเมล", width: "20%", align: "left" },
   { key: "full_name", label: "ชื่อ-นามสกุล", width: "18%", align: "left" },
+  { key: "phone", label: "เบอร์โทรศัพท์", width: "130px", align: "left" },
   { key: "role", label: "Role", minWidth: "200px", align: "left" },
   {
     key: "is_verified",
@@ -429,6 +431,12 @@ onMounted(() => {
           </span>
         </template>
 
+        <template #cell-phone="{ row }">
+          <span class="text-sm text-secondary-600 block truncate">
+            {{ row.phone || "-" }}
+          </span>
+        </template>
+
         <template #cell-role="{ row }">
           <BaseAutocomplete
             :model-value="row.role"
@@ -589,7 +597,8 @@ onMounted(() => {
           </button>
         </div>
 
-        <div v-show="activeTab === 'info'" class="space-y-4">
+        <div v-show="activeTab === 'info'">
+          <div v-if="!isEditMode" class="space-y-4">
           <div
             class="bg-secondary-50 rounded-xl p-4 grid grid-cols-2 gap-x-6 gap-y-3 text-sm"
           >
@@ -748,6 +757,7 @@ onMounted(() => {
             placeholder="เลือกวันหมดอายุ"
           />
         </div>
+      </div>
 
         <!-- Tab 2: สินค้าที่ถูกซ่อน -->
         <div v-show="activeTab === 'visibility'" class="space-y-4">
