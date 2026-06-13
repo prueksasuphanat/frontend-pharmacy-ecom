@@ -38,6 +38,7 @@ const inputClasses = computed(() => [
     "pr-10": props.iconRight,
     "border-red-300 focus:border-red-500 focus:ring-red-500": props.error,
     "no-spinner": props.type === "number",
+    "opacity-50 cursor-not-allowed": props.disabled,
   },
 ]);
 
@@ -157,7 +158,7 @@ const boundValue = computed(() => {
       />
       <input
         :type="type === 'number' ? 'text' : type"
-        inputmode="decimal"
+        :inputmode="type === 'number' ? 'decimal' : undefined"
         :value="boundValue"
         :placeholder="placeholder"
         :disabled="disabled"

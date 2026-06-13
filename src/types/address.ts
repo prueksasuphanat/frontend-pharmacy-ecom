@@ -39,6 +39,7 @@ export interface Address {
   recipient: string;
   phone: string;
   address: string;
+  sub_district: string | null;
   district: string | null;
   province: string;
   postal_code: string;
@@ -52,6 +53,7 @@ export interface AddressBody {
   recipient: string;
   phone: string;
   address: string;
+  sub_district?: string;
   district?: string;
   province: string;
   postal_code: string;
