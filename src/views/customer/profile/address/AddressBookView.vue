@@ -1,13 +1,11 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from "vue";
-import { BaseInput, BaseSelect, BaseModal } from "@/components/ui";
+import { ref, reactive, onMounted, computed, watch } from "vue";
+import { BaseInput, BaseModal } from "@/components/ui";
 import {
   Plus,
   Trash2,
   Check,
   Pencil,
-  Home,
-  Building2,
   MapPin,
   Loader2,
 } from "lucide-vue-next";
@@ -22,17 +20,44 @@ const showModal = ref(false);
 const isEditMode = ref(false);
 const editingId = ref<number | null>(null);
 
-const labelOptions = [
-  { value: "บ้าน", label: "🏠 บ้าน" },
-  { value: "ที่ทำงาน", label: "🏢 ที่ทำงาน" },
-  { value: "อื่นๆ", label: "📍 อื่นๆ" },
-];
+const nextDefaultLabel = computed(() => {
+  const nums = addresses.value
+    .map((a) => a.label?.match(/^ที่อยู่จัดส่ง (\d+)$/)?.at(1))
+    .filter(Boolean)
+    .map(Number);
+  return `ที่อยู่จัดส่ง ${nums.length ? Math.max(...nums) + 1 : 1}`;
+});
 
-const emptyForm: AddressBody = {
-  label: "บ้าน",
+const emptyFormErrors = {
   recipient: "",
   phone: "",
   address: "",
+  province: "",
+  district: "",
+  subDistrict: "",
+};
+const formErrors = reactive({ ...emptyFormErrors });
+
+function validateForm(): boolean {
+  formErrors.recipient = form.recipient.trim() ? "" : "กรุณากรอกชื่อผู้รับ";
+  const phoneTrimmed = form.phone.trim();
+  const phoneOk = /^[0-9\-+\s()]{9,15}$/.test(phoneTrimmed);
+  formErrors.phone = !phoneTrimmed
+    ? "กรุณากรอกเบอร์โทรศัพท์"
+    : !phoneOk ? "รูปแบบเบอร์โทรไม่ถูกต้อง" : "";
+  formErrors.address = form.address.trim() ? "" : "กรุณากรอกที่อยู่";
+  formErrors.province = form.province ? "" : "กรุณาเลือกจังหวัด";
+  formErrors.district = form.district ? "" : "กรุณาเลือกอำเภอ/เขต";
+  formErrors.subDistrict = form.postal_code ? "" : "กรุณาเลือกตำบล/แขวง";
+  return !Object.values(formErrors).some(Boolean);
+}
+
+const emptyForm: AddressBody = {
+  label: "",
+  recipient: "",
+  phone: "",
+  address: "",
+  sub_district: "",
   district: "",
   province: "",
   postal_code: "",
@@ -43,13 +68,14 @@ const form = reactive<AddressBody>({ ...emptyForm });
 const addressFormValue = computed({
   get: () => ({
     address: form.address,
-    subDistrict: "",
+    subDistrict: form.sub_district || "",
     district: form.district || "",
     province: form.province,
     postalCode: form.postal_code,
   }),
   set: (val) => {
     form.address = val.address;
+    form.sub_district = val.subDistrict;
     form.district = val.district;
     form.province = val.province;
     form.postal_code = val.postalCode;
@@ -60,8 +86,17 @@ onMounted(() => {
   addressStore.fetchAddresses();
 });
 
+watch(() => form.recipient, () => { formErrors.recipient = ""; });
+watch(() => form.phone, () => { formErrors.phone = ""; });
+watch(() => form.address, () => { formErrors.address = ""; });
+watch(() => form.province, () => { formErrors.province = ""; });
+watch(() => form.district, () => { formErrors.district = ""; });
+watch(() => form.sub_district, () => { formErrors.subDistrict = ""; });
+watch(() => form.postal_code, () => { formErrors.subDistrict = ""; });
+
 function openAddModal() {
-  Object.assign(form, { ...emptyForm });
+  Object.assign(form, { ...emptyForm, label: nextDefaultLabel.value });
+  Object.assign(formErrors, { ...emptyFormErrors });
   isEditMode.value = false;
   editingId.value = null;
   showModal.value = true;
@@ -69,10 +104,11 @@ function openAddModal() {
 
 function openEditModal(addr: Address) {
   Object.assign(form, {
-    label: addr.label || "บ้าน",
+    label: addr.label || "",
     recipient: addr.recipient,
     phone: addr.phone,
     address: addr.address,
+    sub_district: addr.sub_district || "",
     district: addr.district || "",
     province: addr.province,
     postal_code: addr.postal_code,
@@ -80,10 +116,12 @@ function openEditModal(addr: Address) {
   });
   isEditMode.value = true;
   editingId.value = addr.id;
+  Object.assign(formErrors, { ...emptyFormErrors });
   showModal.value = true;
 }
 
 async function saveAddress() {
+  if (!validateForm()) return;
   let success = false;
   if (isEditMode.value && editingId.value) {
     success = await addressStore.updateAddress(editingId.value, form);
@@ -105,11 +143,6 @@ async function deleteAddress(id: number) {
   await addressStore.deleteAddress(id);
 }
 
-function getLabelIcon(label: string | null) {
-  if (label === "บ้าน") return Home;
-  if (label === "ที่ทำงาน") return Building2;
-  return MapPin;
-}
 </script>
 
 <template>
@@ -153,25 +186,10 @@ function getLabelIcon(label: string | null) {
               : 'border-secondary-200 hover:border-secondary-300',
           ]"
         >
-          <div class="flex gap-3">
-            <div
-              :class="[
-                'w-10 h-10 rounded-lg flex items-center justify-center shrink-0',
-                addr.is_default ? 'bg-primary-100' : 'bg-secondary-100',
-              ]"
-            >
-              <component
-                :is="getLabelIcon(addr.label)"
-                :class="[
-                  'w-5 h-5',
-                  addr.is_default ? 'text-primary-600' : 'text-secondary-500',
-                ]"
-              />
-            </div>
-            <div class="flex-1 min-w-0">
+          <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 mb-1">
                 <span class="font-semibold text-sm text-secondary-900">{{
-                  addr.label
+                  addr.label || 'ที่อยู่จัดส่ง'
                 }}</span>
                 <span v-if="addr.is_default" class="badge badge-teal text-xs"
                   >ค่าเริ่มต้น</span
@@ -206,7 +224,6 @@ function getLabelIcon(label: string | null) {
                   <Trash2 class="w-3 h-3" /> ลบ
                 </button>
               </div>
-            </div>
           </div>
         </div>
       </div>
@@ -219,10 +236,10 @@ function getLabelIcon(label: string | null) {
       @close="showModal = false"
     >
       <form @submit.prevent="saveAddress" class="space-y-4">
-        <BaseSelect
+        <BaseInput
           v-model="form.label"
-          :options="labelOptions"
-          label="ประเภทที่อยู่"
+          label="ชื่อที่อยู่"
+          placeholder="เช่น บ้าน ที่ทำงาน"
         />
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <BaseInput
@@ -230,6 +247,7 @@ function getLabelIcon(label: string | null) {
             label="ชื่อผู้รับ"
             placeholder="ชื่อ-นามสกุล ผู้รับสินค้า"
             required
+            :error="formErrors.recipient"
           />
           <BaseInput
             v-model="form.phone"
@@ -237,10 +255,19 @@ function getLabelIcon(label: string | null) {
             label="เบอร์โทรศัพท์"
             placeholder="0xx-xxx-xxxx"
             required
+            :error="formErrors.phone"
           />
         </div>
 
-        <AddressForm v-model="addressFormValue" />
+        <AddressForm
+          v-model="addressFormValue"
+          :errors="{
+            address: formErrors.address,
+            province: formErrors.province,
+            district: formErrors.district,
+            subDistrict: formErrors.subDistrict,
+          }"
+        />
       </form>
       <template #footer>
         <button @click="showModal = false" class="btn-ghost">ยกเลิก</button>

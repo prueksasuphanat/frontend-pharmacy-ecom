@@ -12,8 +12,16 @@ interface AddressFormValue {
   postalCode: string;
 }
 
+interface AddressFormErrors {
+  address?: string;
+  province?: string;
+  district?: string;
+  subDistrict?: string;
+}
+
 const props = defineProps<{
   modelValue: AddressFormValue;
+  errors?: AddressFormErrors;
 }>();
 
 const emit = defineEmits<{
@@ -138,7 +146,10 @@ const localAddress = computed({
 const localPostalCode = computed({
   get: () => props.modelValue.postalCode,
   set: (val: string) =>
-    emit("update:modelValue", { ...props.modelValue, postalCode: val }),
+    emit("update:modelValue", {
+      ...props.modelValue,
+      postalCode: String(val ?? "").replace(/\D/g, "").slice(0, 5),
+    }),
 });
 </script>
 
@@ -155,41 +166,50 @@ const localPostalCode = computed({
     <template v-else>
       <BaseInput
         v-model="localAddress"
-        label="ที่อยู่ *"
+        label="ที่อยู่"
         placeholder="บ้านเลขที่ ซอย ถนน"
+        required
+        :error="errors?.address"
       />
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <BaseAutocomplete
           v-model="selectedProvinceId"
           :options="provinceStore.provinceOptions"
-          label="จังหวัด *"
+          label="จังหวัด"
           placeholder="เลือกจังหวัด"
+          required
+          :error="errors?.province"
           @update:model-value="onProvinceChange"
         />
 
         <BaseAutocomplete
           v-model="selectedDistrictId"
           :options="districtOptions"
-          label="อำเภอ/เขต *"
+          label="อำเภอ/เขต"
           placeholder="เลือกอำเภอ/เขต"
+          required
           :disabled="!selectedProvinceId"
+          :error="errors?.district"
           @update:model-value="onDistrictChange"
         />
 
         <BaseAutocomplete
           v-model="selectedSubDistrictId"
           :options="subDistrictOptions"
-          label="ตำบล/แขวง *"
+          label="ตำบล/แขวง"
           placeholder="เลือกตำบล/แขวง"
+          required
           :disabled="!selectedDistrictId"
+          :error="errors?.subDistrict"
           @update:model-value="onSubDistrictChange"
         />
 
         <BaseInput
           v-model="localPostalCode"
-          label="รหัสไปรษณีย์ *"
-          placeholder="auto-fill เมื่อเลือกตำบล"
+          label="รหัสไปรษณีย์"
+          placeholder="รหัสไปรษณีย์"
+          required
         />
       </div>
     </template>

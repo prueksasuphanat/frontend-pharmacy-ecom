@@ -19,6 +19,7 @@ const products = ref<Product[]>([]);
 const selectedProducts = ref<Product[]>([]);
 
 const priceMatrix = ref<Record<number, Record<number, string>>>({});
+const autoCalcMatrix = ref<Record<number, Record<number, boolean>>>({});
 
 const specialMatrix = ref<Record<number, Record<number, boolean>>>({});
 const isLoading = ref(false);
@@ -98,6 +99,16 @@ const allProductUnits = computed(() => {
   });
 });
 
+const unitProductMap = computed(() => {
+  const map: Record<number, number> = {};
+  for (const productPrice of productPriceStore.productPrices) {
+    for (const unit of productPrice.units) {
+      map[unit.product_unit_id] = productPrice.product_id;
+    }
+  }
+  return map;
+});
+
 const groupedColumns = computed(() => {
   return selectedProducts.value.map((product) => {
     const priceData = productPriceStore.productPrices.find(
@@ -172,6 +183,48 @@ function updatePrice(
     priceMatrix.value[productUnitId] = {};
   }
   priceMatrix.value[productUnitId][userId] = value != null ? String(value) : "";
+
+  if (!autoCalcMatrix.value[productUnitId]) {
+    autoCalcMatrix.value[productUnitId] = {};
+  }
+  autoCalcMatrix.value[productUnitId][userId] = false;
+}
+
+function handlePriceBlur(userId: number, productUnitId: number) {
+  const editedUnit = allProductUnits.value.find(
+    (u) => u.product_unit_id === productUnitId,
+  );
+  if (!editedUnit || editedUnit.multiplier_to_base !== 1) return;
+
+  const rawVal = priceMatrix.value[productUnitId]?.[userId];
+  if (rawVal == null || rawVal === "") return;
+  const numValue = Number(rawVal);
+
+  const productId = unitProductMap.value[productUnitId];
+  if (!productId) return;
+
+  const siblingUnits = allProductUnits.value.filter(
+    (u) =>
+      unitProductMap.value[u.product_unit_id] === productId &&
+      u.product_unit_id !== productUnitId,
+  );
+
+  for (const sibling of siblingUnits) {
+    const currentVal = priceMatrix.value[sibling.product_unit_id]?.[userId];
+    const wasAutoCalc = autoCalcMatrix.value[sibling.product_unit_id]?.[userId] ?? false;
+    if (currentVal && Number(currentVal) > 0 && !wasAutoCalc) continue;
+
+    if (!priceMatrix.value[sibling.product_unit_id]) {
+      priceMatrix.value[sibling.product_unit_id] = {};
+    }
+    if (!autoCalcMatrix.value[sibling.product_unit_id]) {
+      autoCalcMatrix.value[sibling.product_unit_id] = {};
+    }
+    priceMatrix.value[sibling.product_unit_id][userId] = String(
+      numValue * sibling.multiplier_to_base,
+    );
+    autoCalcMatrix.value[sibling.product_unit_id][userId] = true;
+  }
 }
 
 function getUserFullName(user: User): string {
@@ -500,6 +553,7 @@ onMounted(async () => {
                         (value: string | number | null) =>
                           updatePrice(user.id, unit.product_unit_id, value)
                       "
+                      @blur="handlePriceBlur(user.id, unit.product_unit_id)"
                       type="number"
                       :placeholder="String(unit.default_price)"
                       class="w-full min-w-[120px]"
@@ -620,6 +674,7 @@ onMounted(async () => {
                         (value: string | number | null) =>
                           updatePrice(user.id, unit.product_unit_id, value)
                       "
+                      @blur="handlePriceBlur(user.id, unit.product_unit_id)"
                       type="number"
                       :placeholder="String(unit.default_price)"
                       class="w-full min-w-[120px]"
