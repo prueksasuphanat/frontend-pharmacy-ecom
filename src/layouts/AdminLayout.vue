@@ -11,6 +11,7 @@ import {
 } from "lucide-vue-next";
 import { useRoute } from "vue-router";
 import NotificationBell from "@/components/notification/NotificationBell.vue";
+import AdminBreadcrumb from "@/components/layout/AdminBreadcrumb.vue";
 import { computed, onMounted, onUnmounted } from "vue";
 import { useNotificationStore } from "@/stores/customer/notification.store";
 import { useUsersStore } from "@/stores/admin/settings/users.store";
@@ -83,7 +84,8 @@ onMounted(() => {
 
       <main class="relative flex-1 min-h-0 p-0">
         <LoadingOverlay :loading="usersStore.isLoading" />
-        <div class="h-full overflow-y-auto pt-6 px-6 pb-[100px]">
+        <div class="h-full overflow-y-auto pt-4 px-6 pb-[100px]">
+          <AdminBreadcrumb />
           <RouterView />
         </div>
       </main>

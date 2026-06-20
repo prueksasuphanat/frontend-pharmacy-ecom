@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from "vue";
 import { useProvinceStore } from "@/stores/province.store";
-import { BaseInput, BaseAutocomplete } from "@/components/ui";
-import { Loader2 } from "lucide-vue-next";
+import { BaseInput, BaseAutocomplete, BaseLoading } from "@/components/ui";
 
 interface AddressFormValue {
   address: string;
@@ -159,7 +158,7 @@ const localPostalCode = computed({
       v-if="provinceStore.isLoading"
       class="flex items-center gap-2 text-secondary-400 text-sm py-2"
     >
-      <Loader2 class="w-4 h-4 animate-spin" />
+      <BaseLoading inline class="w-4 h-4" />
       <span>กำลังโหลดข้อมูลที่อยู่...</span>
     </div>
 

@@ -47,6 +47,7 @@ export interface Product {
   vendor_id: number | null;
   vendor: ProductVendor | null;
   is_special_pricing_enabled: boolean;
+  cost_price: number | null;
   quantity: number;
   is_active: boolean;
   is_delete: boolean;

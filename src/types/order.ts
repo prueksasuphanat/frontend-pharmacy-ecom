@@ -1,6 +1,7 @@
 export type OrderStatus =
   | "PENDING"
   | "CONFIRMED"
+  | "PREPARING"
   | "SHIPPED"
   | "COMPLETED"
   | "CANCELLED";
@@ -60,15 +61,8 @@ export interface CreateOrderRequest {
 export interface AdminOrder {
   id: number;
   user_id: number;
-  status: string;
-  shipping_address: {
-    recipient: string;
-    phone: string;
-    address: string;
-    district?: string;
-    province: string;
-    postal_code: string;
-  };
+  status: OrderStatus;
+  shipping_address: OrderShippingAddress;
   shipping_fee: number;
   subtotal: number;
   total_amount: number;
@@ -97,6 +91,10 @@ export interface AdminOrderItem {
   unit_price: number;
   subtotal: number;
   is_special_price: boolean;
+  product_code?: string | null;
+  generic_name?: string | null;
+  current_stock?: number;
+  multiplier_to_base?: number;
 }
 
 export interface AdminStatusLog {

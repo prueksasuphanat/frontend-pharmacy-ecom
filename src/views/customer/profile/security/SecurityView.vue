@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { BaseInput } from "@/components/ui";
+import { BaseInput, BaseLoading } from "@/components/ui";
 import {
   Eye,
   EyeOff,
   CheckCircle,
-  Loader2,
   ShieldCheck,
   AlertCircle,
   Lock,
@@ -238,7 +237,7 @@ function resetForm() {
             "
             class="btn-primary gap-2"
           >
-            <Loader2 v-if="isSaving" class="w-4 h-4 animate-spin" />
+            <BaseLoading v-if="isSaving" inline class="w-4 h-4" />
             <Lock v-else class="w-4 h-4" />
             {{ isSaving ? "กำลังบันทึก..." : "เปลี่ยนรหัสผ่าน" }}
           </button>

@@ -286,10 +286,15 @@ onUnmounted(() => {
                         >
                           −
                         </button>
-                        <span
-                          class="w-12 text-center font-bold text-secondary-900 text-sm"
-                          >{{ qty }}</span
-                        >
+                        <input
+                          type="number"
+                          v-model.number="qty"
+                          min="1"
+                          :max="product.quantity"
+                          @keydown="(e) => ['.', ',', 'e', 'E', '+', '-'].includes(e.key) && e.preventDefault()"
+                          @change="qty = Math.min(product.quantity, Math.max(1, qty || 1))"
+                          class="w-12 text-center font-bold text-secondary-900 text-sm bg-transparent outline-none no-spinner"
+                        />
                         <button
                           @click="qty = Math.min(product.quantity, qty + 1)"
                           class="w-10 h-10 flex items-center justify-center hover:bg-secondary-50 text-lg font-semibold text-secondary-600 transition-colors"
@@ -404,3 +409,9 @@ onUnmounted(() => {
     </Transition>
   </Teleport>
 </template>
+
+<style scoped>
+.no-spinner::-webkit-inner-spin-button,
+.no-spinner::-webkit-outer-spin-button { appearance: none; }
+.no-spinner { -moz-appearance: textfield; }
+</style>

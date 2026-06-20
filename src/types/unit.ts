@@ -45,6 +45,7 @@ export interface ProductUnit {
   unit: { id: number; name: string };
   base_unit: { id: number; name: string } | null;
   _count?: { special_prices: number };
+  computed_cost_price?: number | null;
 }
 
 export interface ProductUnitListResponse {

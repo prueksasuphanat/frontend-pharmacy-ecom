@@ -34,6 +34,7 @@ export { default as BaseToggle } from "./BaseToggle.vue";
 export { default as DrugTypeBadge } from "./DrugTypeBadge.vue";
 export { default as ImageUploader } from "./ImageUploader.vue";
 export { default as LoadingOverlay } from "./LoadingOverlay.vue";
+export { default as BaseLoading } from "./BaseLoading.vue";
 
 export { default as VAutocomplete } from "./VAutocomplete.vue";
 export { default as VCheckbox } from "./VCheckbox.vue";

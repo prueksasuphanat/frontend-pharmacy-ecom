@@ -56,6 +56,7 @@ const productForm = ref({
   vendor_id: null as number | null,
   visibility: "ALL" as "ALL" | "RESTRICTED",
   excluded_user_ids: [] as number[],
+  cost_price: null as number | null,
 });
 
 const activeTab = ref("general");
@@ -235,6 +236,7 @@ async function handleEditProduct(product: Product) {
       vendor_id: fresh.vendor_id ?? null,
       visibility: fresh.visibility ?? "ALL",
       excluded_user_ids: fresh.excluded_users?.map((au: any) => au.user_id) ?? [],
+      cost_price: fresh.cost_price ?? null,
     };
   }
 }
@@ -259,6 +261,7 @@ function closeEditModal() {
     vendor_id: null,
     visibility: "ALL",
     excluded_user_ids: [],
+    cost_price: null,
   };
 }
 
@@ -288,6 +291,7 @@ async function updateProduct() {
         productForm.value.visibility === "RESTRICTED"
           ? productForm.value.excluded_user_ids
           : [],
+      cost_price: productForm.value.cost_price,
     },
     imageFile.value,
     removeImage.value,
@@ -333,6 +337,7 @@ async function handleSaveProductFirst() {
         productForm.value.visibility === "RESTRICTED"
           ? productForm.value.excluded_user_ids
           : [],
+      cost_price: productForm.value.cost_price,
     },
     imageFile.value,
     removeImage.value,
@@ -652,6 +657,20 @@ onMounted(async () => {
             :rows="3"
             :disabled="modalLoading"
           />
+          <div>
+            <BaseInput
+              v-model.number="productForm.cost_price"
+              label="ราคาทุน (หน่วยฐาน)"
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="กรอกราคาทุน (บาท)"
+              :disabled="modalLoading"
+            />
+            <p class="text-xs text-slate-500 mt-1">
+              ราคาทุนต่อหน่วยฐาน — ระบบจะคำนวณราคาทุนหน่วยอื่นๆ อัตโนมัติ
+            </p>
+          </div>
 
           <div class="col-span-2">
             <div class="border-t border-secondary-200 my-4"></div>

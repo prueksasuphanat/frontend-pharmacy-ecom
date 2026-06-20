@@ -1,10 +1,4 @@
-export type OrderStatus =
-  | "PENDING"
-  | "CONFIRMED"
-  | "PREPARING"
-  | "SHIPPED"
-  | "COMPLETED"
-  | "CANCELLED";
+import type { OrderStatus } from "@/types";
 
 export const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
   PENDING: "รอดำเนินการ",

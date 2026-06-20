@@ -4,10 +4,10 @@ import {
   ShoppingBag,
   Package,
   TrendingUp,
-  Loader2,
   BarChart3,
 } from "lucide-vue-next";
 import { RouterLink } from "vue-router";
+import { BaseLoading } from "@/components/ui";
 import VueApexCharts from "vue3-apexcharts";
 import { adminDashboardApi } from "@/api/admin/dashboard";
 import type {
@@ -132,9 +132,8 @@ function orderUser(o: RecentOrder) {
   <div>
     <h1 class="page-title mb-6">แดชบอร์ด</h1>
 
-    <div v-if="loading" class="flex justify-center py-20">
-      <Loader2 class="w-8 h-8 text-primary-600 animate-spin" />
-    </div>
+    <!-- Loading state -->
+    <BaseLoading v-if="loading" :loading="loading" text="กำลังดาวน์โหลดข้อมูลแดชบอร์ด..." />
 
     <template v-else>
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">

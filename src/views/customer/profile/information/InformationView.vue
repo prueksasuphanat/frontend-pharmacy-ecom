@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
 import { useForm } from "vee-validate";
-import { VInput, VTextarea } from "@/components/ui";
+import { VInput, VTextarea, BaseLoading } from "@/components/ui";
 import { useAuthStore } from "@/stores/auth.store";
 import { useToast } from "vue-toastification";
 import dayjs from "@/utils/dayjs";
@@ -10,7 +10,6 @@ import "@/utils/validation";
 import {
   Camera,
   Save,
-  Loader2,
   Mail,
   Phone,
   Calendar,
@@ -384,7 +383,7 @@ const onSubmit = handleSubmit(
 
         <div class="flex items-center gap-3 pt-1">
           <button type="submit" :disabled="isSaving" class="btn-primary gap-2">
-            <Loader2 v-if="isSaving" class="w-4 h-4 animate-spin" />
+            <BaseLoading v-if="isSaving" inline class="w-4 h-4" />
             <Save v-else class="w-4 h-4" />
             {{ isSaving ? "กำลังบันทึก..." : "บันทึกข้อมูล" }}
           </button>

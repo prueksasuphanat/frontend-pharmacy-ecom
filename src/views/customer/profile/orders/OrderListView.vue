@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from "vue";
-import { BaseSelect } from "@/components/ui";
+import { BaseSelect, BaseLoading } from "@/components/ui";
 import { RouterLink } from "vue-router";
 import {
   ShoppingBag,
@@ -9,7 +9,6 @@ import {
   XCircle,
   Clock,
   FileText,
-  Loader2,
 } from "lucide-vue-next";
 import { ordersApi } from "@/api/customer/orders";
 import type { Order, OrderStatus } from "@/types";
@@ -159,9 +158,8 @@ function fmtTime(d: string) {
         />
       </div>
 
-      <div v-if="loading" class="flex justify-center py-16">
-        <Loader2 class="w-8 h-8 text-primary-600 animate-spin" />
-      </div>
+      <!-- Loading state -->
+      <BaseLoading v-if="loading" :loading="loading" text="กำลังดาวน์โหลดรายการคำสั่งซื้อ..." />
 
       <div v-else-if="orders.length === 0" class="text-center py-16">
         <div

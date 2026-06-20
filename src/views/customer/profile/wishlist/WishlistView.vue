@@ -3,8 +3,9 @@ import { onMounted } from "vue";
 import { RouterLink } from "vue-router";
 import { useToast } from "vue-toastification";
 import { useWishlistStore } from "@/stores/customer/wishlist.store";
-import { Heart, ShoppingCart, X, Loader2, ShoppingBag } from "lucide-vue-next";
+import { Heart, ShoppingCart, X, ShoppingBag } from "lucide-vue-next";
 import { formatPrice } from "@/utils/format";
+import { BaseLoading } from "@/components/ui";
 
 const wishlist = useWishlistStore();
 const toast = useToast();
@@ -39,9 +40,8 @@ onMounted(() => {
       </span>
     </div>
 
-    <div v-if="wishlist.isLoading" class="card flex justify-center py-20">
-      <Loader2 class="w-8 h-8 text-primary-600 animate-spin" />
-    </div>
+    <!-- Loading state -->
+    <BaseLoading v-if="wishlist.isLoading" :loading="wishlist.isLoading" text="กำลังดาวน์โหลดรายการที่ถูกใจ..." />
 
     <div v-else-if="wishlist.items.length === 0" class="card text-center py-16">
       <div

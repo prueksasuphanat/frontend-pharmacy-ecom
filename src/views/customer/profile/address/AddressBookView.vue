@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed, watch } from "vue";
-import { BaseInput, BaseModal } from "@/components/ui";
+import { BaseInput, BaseModal, BaseLoading } from "@/components/ui";
 import {
   Plus,
   Trash2,
   Check,
   Pencil,
   MapPin,
-  Loader2,
 } from "lucide-vue-next";
 import { useAddressStore } from "@/stores/customer/address.store";
 import { AddressForm } from "@/components/address";
@@ -276,7 +275,7 @@ async function deleteAddress(id: number) {
           :disabled="addressStore.isLoading"
           class="btn-primary gap-2 ml-auto"
         >
-          <Loader2 v-if="addressStore.isLoading" class="w-4 h-4 animate-spin" />
+          <BaseLoading v-if="addressStore.isLoading" inline class="w-4 h-4" />
           {{
             addressStore.isLoading
               ? "กำลังบันทึก..."

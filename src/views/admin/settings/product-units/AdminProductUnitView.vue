@@ -408,6 +408,15 @@ onMounted(() => {
         </div>
         <div class="flex items-center gap-4">
           <div class="text-right">
+            <p class="text-xs text-secondary-400">ราคาทุน</p>
+            <p class="text-sm font-semibold text-secondary-900">
+              <span v-if="unit.computed_cost_price !== null && unit.computed_cost_price !== undefined">
+                ฿{{ unit.computed_cost_price.toLocaleString("th-TH", { minimumFractionDigits: 2 }) }}
+              </span>
+              <span v-else class="text-secondary-400">—</span>
+            </p>
+          </div>
+          <div class="text-right">
             <p class="text-xs text-secondary-400">ราคากลาง</p>
             <p class="text-sm font-semibold text-secondary-900">
               ฿{{

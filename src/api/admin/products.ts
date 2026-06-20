@@ -48,6 +48,7 @@ export interface UpdateProductPayload {
   warning?: string;
   visibility?: "ALL" | "RESTRICTED";
   excluded_user_ids?: number[] | null;
+  cost_price?: number | null;
 }
 
 export async function updateProduct(
@@ -95,6 +96,11 @@ export async function updateProduct(
         : JSON.stringify(data.excluded_user_ids),
     );
   if (imageFile) formData.append("file", imageFile);
+  if (data.cost_price !== undefined)
+    formData.append(
+      "cost_price",
+      data.cost_price === null ? "null" : String(data.cost_price),
+    );
   if (removeAttachments && !imageFile) formData.append("attachments", "[]");
 
   const response = await apiClient.put<{

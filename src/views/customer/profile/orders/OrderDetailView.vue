@@ -11,9 +11,8 @@ import {
   Clock,
   Truck,
   Package,
-  Loader2,
 } from "lucide-vue-next";
-import { BaseTextarea } from "@/components/ui";
+import { BaseTextarea, BaseLoading } from "@/components/ui";
 import { formatPrice, formatDateTime } from "@/utils/format";
 
 const route = useRoute();
@@ -99,9 +98,8 @@ async function cancelOrder() {
 
 <template>
   <div>
-    <div v-if="loading" class="flex justify-center py-20">
-      <Loader2 class="w-8 h-8 text-primary-600 animate-spin" />
-    </div>
+    <!-- Loading state -->
+    <BaseLoading v-if="loading" :loading="loading" text="กำลังดาวน์โหลดรายละเอียดคำสั่งซื้อ..." />
 
     <div v-else-if="!order" class="text-center py-20">
       <Package class="w-14 h-14 text-secondary-200 mx-auto mb-4" />
@@ -338,7 +336,7 @@ async function cancelOrder() {
             :disabled="isCancelling"
             class="btn-danger flex-1"
           >
-            <Loader2 v-if="isCancelling" class="w-4 h-4 animate-spin mr-1" />
+            <BaseLoading v-if="isCancelling" inline class="w-4 h-4 mr-1" />
             ยืนยันยกเลิก
           </button>
         </div>

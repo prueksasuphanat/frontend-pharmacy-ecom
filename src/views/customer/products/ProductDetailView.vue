@@ -13,8 +13,8 @@ import {
   ArrowLeft,
   CheckCircle,
   Clock,
-  Loader2,
 } from "lucide-vue-next";
+import { BaseLoading } from "@/components/ui";
 import type { Product } from "@/types";
 
 const route = useRoute();
@@ -88,9 +88,8 @@ function formatPrice(n: number) {
         <ArrowLeft class="w-4 h-4" />กลับ
       </RouterLink>
 
-      <div v-if="loading" class="flex justify-center py-20">
-        <Loader2 class="w-8 h-8 text-primary-600 animate-spin" />
-      </div>
+      <!-- Loading state -->
+      <BaseLoading v-if="loading" :loading="loading" text="กำลังดาวน์โหลดรายละเอียดสินค้า..." />
 
       <div v-else-if="!product" class="text-center py-20">
         <Package class="w-14 h-14 text-secondary-200 mx-auto mb-4" />
