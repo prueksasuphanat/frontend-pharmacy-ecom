@@ -410,12 +410,12 @@ onMounted(() => {
                   @click="router.push('/login')"
                   class="group flex items-center gap-2 bg-white/15 hover:bg-white/25 border border-white/30 text-white font-semibold pl-5 pr-2 py-2 rounded-full transition-all text-sm"
                 >
-                  <span class="overflow-hidden h-5 inline-flex items-center">
+                  <span class="overflow-hidden h-6 inline-flex items-center">
                     <span
                       class="flex flex-col group-hover:-translate-y-1/2 transition-transform duration-500 ease-[cubic-bezier(0.25,0.1,0.25,1)]"
                     >
-                      <span class="h-5 flex items-center">เข้าสู่ระบบ</span>
-                      <span class="h-5 flex items-center">เข้าสู่ระบบ</span>
+                      <span class="h-6 flex items-center">เข้าสู่ระบบ</span>
+                      <span class="h-6 flex items-center">เข้าสู่ระบบ</span>
                     </span>
                   </span>
                   <span
