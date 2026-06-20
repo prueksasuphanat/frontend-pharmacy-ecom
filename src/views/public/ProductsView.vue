@@ -80,11 +80,7 @@ const openFaq = ref<number | null>(null);
 const faqs = [
   {
     q: "ต้องสมัครสมาชิกก่อนสั่งซื้อไหม?",
-    a: "ใช่ การสมัครสมาชิกช่วยให้คุณเห็นราคาพิเศษตามกลุ่มลูกค้า ติดตามสถานะคำสั่งซื้อ และรับสิทธิพิเศษต่างๆ สมัครฟรีและใช้เวลาเพียงไม่กี่นาที",
-  },
-  {
-    q: "ราคาแต่ละกลุ่มลูกค้าต่างกันอย่างไร?",
-    a: "ระบบมีหลายกลุ่มราคา เช่น ลูกค้าทั่วไป ร้านขายยา คลินิก และโรงพยาบาล แต่ละกลุ่มจะได้รับราคาที่แตกต่างกันตามปริมาณการสั่งซื้อและประเภทธุรกิจ",
+    a: "ใช่ การสมัครสมาชิกช่วยให้คุณดูราคาสินค้า ติดตามสถานะคำสั่งซื้อ และรับสิทธิพิเศษต่างๆ สมัครฟรีและใช้เวลาเพียงไม่กี่นาที",
   },
   {
     q: "สินค้าผ่านการรับรองจากองค์การอาหารและยา (อย.) ไหม?",
@@ -598,7 +594,7 @@ onMounted(() => {
                 <p class="text-sm font-bold text-secondary-900 line-clamp-2 mb-1 leading-snug">{{ product.name }}</p>
                 <p class="text-xs text-secondary-400 mb-3">{{ product.generic_name || '—' }}</p>
                 <div class="flex items-center justify-between">
-                  <span class="text-xs font-semibold text-primary-600">ดูราคาพิเศษ</span>
+                  <span class="text-xs font-semibold text-primary-600">ดูราคาสินค้า</span>
                   <ChevronRight class="w-3.5 h-3.5 text-primary-500 group-hover:translate-x-0.5 transition-transform" />
                 </div>
               </div>
@@ -928,7 +924,7 @@ onMounted(() => {
           สมัครสมาชิกวันนี้ ฟรี!
         </h2>
         <p class="text-white/75 text-sm mb-7 leading-relaxed">
-          ดูราคาพิเศษตามกลุ่มลูกค้า ติดตามสถานะคำสั่งซื้อ
+          ดูราคาสินค้า ติดตามสถานะคำสั่งซื้อ
           และรับสิทธิพิเศษอีกมากมาย
         </p>
         <div class="flex flex-wrap gap-3 justify-center">

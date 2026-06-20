@@ -51,10 +51,6 @@ const displayPrice = computed(() => {
   return selectedUnit.value.price ?? Number(selectedUnit.value.default_price);
 });
 
-const isSpecialPrice = computed(
-  () => selectedUnit.value?.is_special_price ?? false,
-);
-
 const inStock = computed(() => (product.value?.quantity ?? 0) > 0);
 
 const inWishlist = ref(false);
@@ -179,12 +175,6 @@ function formatPrice(n: number) {
                 </p>
                 <p v-else class="text-lg font-medium text-secondary-500">
                   ติดต่อสอบถาม
-                </p>
-                <p
-                  v-if="isSpecialPrice"
-                  class="text-xs text-primary-600 mt-0.5 font-medium"
-                >
-                  ✨ ราคาพิเศษสำหรับคุณ
                 </p>
                 <p
                   v-if="selectedUnit"

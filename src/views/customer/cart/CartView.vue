@@ -73,11 +73,6 @@ onMounted(() => cart.fetchCart());
               </p>
               <p class="text-xs text-secondary-400 mt-0.5">
                 {{ item.product.code }} · {{ item.unit.name }}
-                <span
-                  v-if="item.is_special_price"
-                  class="ml-1 text-primary-600 font-medium"
-                  >★ ราคาพิเศษ</span
-                >
               </p>
               <div class="flex items-center justify-between mt-3">
                 <div

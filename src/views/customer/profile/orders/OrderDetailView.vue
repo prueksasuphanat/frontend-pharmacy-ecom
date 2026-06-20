@@ -236,11 +236,6 @@ async function cancelOrder() {
                   </p>
                   <p class="text-xs text-secondary-400 mt-0.5">
                     หน่วย: {{ item.unit_name }}
-                    <span
-                      v-if="item.is_special_price"
-                      class="text-primary-600 ml-1"
-                      >(ราคาพิเศษ)</span
-                    >
                   </p>
                   <p class="text-xs text-secondary-500 mt-0.5">
                     x{{ item.quantity }}

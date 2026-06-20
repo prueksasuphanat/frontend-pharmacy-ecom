@@ -4,7 +4,7 @@ import { useRoute, useRouter, RouterLink } from "vue-router";
 import Navbar from "@/components/layout/Navbar.vue";
 import Footer from "@/components/layout/Footer.vue";
 import { useOrderStore } from "@/stores/customer/order.store";
-import { CheckCircle, Package, MapPin, Clock } from "lucide-vue-next";
+import { CheckCircle, Package, MapPin, Clock, Check } from "lucide-vue-next";
 import { formatPrice, formatDateTime } from "@/utils/format";
 
 const route = useRoute();
@@ -27,8 +27,9 @@ function fmt(n: number) {
 </script>
 
 <template>
-  <div class="flex flex-col min-h-screen">
+  <div class="flex flex-col min-h-screen bg-secondary-50/30">
     <Navbar />
+    
     <div class="flex-1 max-w-2xl mx-auto px-4 sm:px-6 py-12 w-full">
       <div v-if="orderStore.isLoading" class="text-center py-20">
         <div
@@ -37,64 +38,72 @@ function fmt(n: number) {
       </div>
 
       <div v-else-if="orderStore.error" class="text-center py-20">
-        <p class="text-secondary-400">{{ orderStore.error }}</p>
-        <RouterLink to="/products" class="btn-primary mt-4 inline-block"
+        <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4 text-red-600">
+          <CheckCircle class="w-8 h-8 rotate-180" />
+        </div>
+        <p class="text-secondary-600 font-medium">{{ orderStore.error }}</p>
+        <RouterLink to="/products" class="btn-primary mt-6 inline-block px-6 py-2.5 rounded-xl shadow-md"
           >กลับหน้าสินค้า</RouterLink
         >
       </div>
 
       <template v-else-if="orderStore.currentOrder">
-        <div class="text-center mb-8">
-          <div
-            class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4"
-          >
-            <CheckCircle class="w-10 h-10 text-green-600" />
+        <!-- Success Hero section -->
+        <div class="text-center mb-10">
+          <div class="pulse-circle w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-5 z-10 relative">
+            <div class="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center text-white shadow-md z-10">
+              <Check class="w-9 h-9 stroke-[3]" />
+            </div>
           </div>
-          <h1 class="text-2xl font-bold text-secondary-900 mb-2">
+          <h1 class="text-3xl font-extrabold text-secondary-900 mb-2 tracking-tight">
             สั่งซื้อสำเร็จ! 🎉
           </h1>
-          <p class="text-secondary-500 text-sm">
-            คำสั่งซื้อ #{{ orderStore.currentOrder.id }} ได้รับการบันทึกแล้ว
+          <p class="text-secondary-500 text-sm font-medium">
+            คำสั่งซื้อ <span class="text-primary-700 font-bold">#{{ orderStore.currentOrder.id }}</span> ได้รับการบันทึกเรียบร้อยแล้ว
           </p>
         </div>
 
-        <div class="card mb-4">
-          <div class="flex items-center gap-2 mb-4">
-            <Package class="w-5 h-5 text-primary-600" />
-            <h2 class="font-bold text-secondary-900">รายการสินค้า</h2>
+        <!-- Ordered Items Summary -->
+        <div class="card mb-6 border border-secondary-100 shadow-sm bg-white rounded-2xl p-6">
+          <div class="flex items-center gap-3 mb-5 pb-4 border-b border-secondary-100">
+            <div class="w-9 h-9 rounded-xl bg-primary-50 flex items-center justify-center text-primary-600">
+              <Package class="w-5 h-5" />
+            </div>
+            <h2 class="text-lg font-bold text-secondary-900">รายการสินค้า</h2>
           </div>
-          <div class="divide-y divide-secondary-50">
+          
+          <div class="divide-y divide-secondary-100">
             <div
               v-for="item in orderStore.currentOrder.items"
               :key="item.id"
-              class="flex justify-between items-center py-2.5 text-sm"
+              class="flex justify-between items-center py-3.5 text-sm"
             >
               <div>
-                <p class="font-medium text-secondary-800">
+                <p class="font-bold text-secondary-800">
                   {{ item.product_name }}
                 </p>
-                <p class="text-xs text-secondary-400">
+                <p class="text-xs text-secondary-400 mt-0.5">
                   {{ item.unit_name }} × {{ item.quantity }}
                 </p>
               </div>
-              <p class="font-semibold text-secondary-900">
+              <p class="font-bold text-secondary-900">
                 ฿{{ fmt(item.unit_price * item.quantity) }}
               </p>
             </div>
           </div>
 
-          <div class="border-t pt-3 mt-1 space-y-1.5 text-sm">
-            <div class="flex justify-between text-secondary-600">
+          <div class="border-t border-secondary-100 pt-4 mt-2 space-y-2 text-sm">
+            <div class="flex justify-between text-secondary-500">
               <span>ยอดสินค้า</span>
-              <span>฿{{ fmt(orderStore.currentOrder.subtotal) }}</span>
+              <span class="font-semibold text-secondary-800">฿{{ fmt(orderStore.currentOrder.subtotal) }}</span>
             </div>
-            <div class="flex justify-between text-secondary-600">
+            <div class="flex justify-between text-secondary-500">
               <span>ค่าจัดส่ง</span>
               <span
                 :class="
                   orderStore.currentOrder.shipping_fee === 0
-                    ? 'text-success font-medium'
-                    : ''
+                    ? 'text-success font-bold bg-green-50 px-2 py-0.5 rounded-full text-xs'
+                    : 'font-semibold text-secondary-800'
                 "
               >
                 {{
@@ -104,72 +113,125 @@ function fmt(n: number) {
                 }}
               </span>
             </div>
-            <div class="flex justify-between font-bold text-base border-t pt-2">
-              <span>รวมทั้งหมด</span>
-              <span class="text-primary-700"
-                >฿{{ fmt(orderStore.currentOrder.total_amount) }}</span
-              >
+            
+            <div class="flex justify-between font-black text-lg border-t border-dashed border-secondary-200 pt-4 mt-2">
+              <span class="text-secondary-800">ยอดชำระสุทธิ</span>
+              <span class="text-xl text-primary-700">฿{{ fmt(orderStore.currentOrder.total_amount) }}</span>
             </div>
           </div>
         </div>
 
-        <div class="card mb-4">
-          <div class="flex items-center gap-2 mb-3">
-            <MapPin class="w-5 h-5 text-primary-600" />
-            <h2 class="font-bold text-secondary-900">ที่อยู่จัดส่ง</h2>
+        <!-- Shipping Address Card -->
+        <div class="card mb-6 border border-secondary-100 shadow-sm bg-white rounded-2xl p-6">
+          <div class="flex items-center gap-3 mb-4">
+            <div class="w-9 h-9 rounded-xl bg-primary-50 flex items-center justify-center text-primary-600">
+              <MapPin class="w-5 h-5" />
+            </div>
+            <h2 class="text-lg font-bold text-secondary-900">ที่อยู่จัดส่ง</h2>
           </div>
-          <div class="text-sm text-secondary-600 space-y-0.5">
-            <p class="font-medium text-secondary-800">
+          
+          <div class="text-sm text-secondary-700 space-y-1.5 bg-secondary-50/50 p-5 rounded-2xl border border-secondary-100">
+            <p class="font-bold text-secondary-900 text-base">
               {{ orderStore.currentOrder.shipping_address.recipient }}
             </p>
-            <p>{{ orderStore.currentOrder.shipping_address.phone }}</p>
-            <p>{{ orderStore.currentOrder.shipping_address.address }}</p>
-            <p>
-              {{ orderStore.currentOrder.shipping_address.province }}
+            <p class="flex items-center gap-2">
+              <span class="text-secondary-400">เบอร์โทรศัพท์:</span>
+              <span class="font-semibold text-secondary-800">{{ orderStore.currentOrder.shipping_address.phone }}</span>
+            </p>
+            <p class="leading-relaxed">
+              {{ orderStore.currentOrder.shipping_address.address }}, 
+              {{ orderStore.currentOrder.shipping_address.province }} 
               {{ orderStore.currentOrder.shipping_address.postal_code }}
             </p>
           </div>
         </div>
 
-        <div class="card mb-6">
-          <div class="flex items-center gap-2 mb-3">
-            <Clock class="w-5 h-5 text-primary-600" />
-            <h2 class="font-bold text-secondary-900">สถานะคำสั่งซื้อ</h2>
+        <!-- Order Status Timeline Tracker -->
+        <div class="card mb-8 border border-secondary-100 shadow-sm bg-white rounded-2xl p-6">
+          <div class="flex items-center gap-3 mb-6">
+            <div class="w-9 h-9 rounded-xl bg-primary-50 flex items-center justify-center text-primary-600">
+              <Clock class="w-5 h-5" />
+            </div>
+            <h2 class="text-lg font-bold text-secondary-900">สถานะคำสั่งซื้อ</h2>
           </div>
-          <div class="space-y-2">
+          
+          <div class="relative pl-6 space-y-6">
+            <!-- Line down the middle of nodes -->
+            <div class="absolute left-[11px] top-2 bottom-2 w-0.5 bg-secondary-200" />
+            
             <div
-              v-for="log in orderStore.currentOrder.status_logs"
+              v-for="(log, idx) in orderStore.currentOrder.status_logs"
               :key="log.id"
-              class="flex items-start gap-3"
+              class="relative flex items-start gap-4"
             >
-              <div
-                class="w-2 h-2 rounded-full bg-primary-500 mt-1.5 shrink-0"
-              />
-              <div>
-                <p class="text-sm font-medium text-secondary-800">
-                  {{ log.note }}
-                </p>
-                <p class="text-xs text-secondary-400">
-                  {{ formatDateTime(log.created_at) }}
-                </p>
+              <!-- Node icon/circle -->
+              <div 
+                :class="[
+                  'w-6 h-6 rounded-full flex items-center justify-center border-2 z-10 shrink-0 transition-all duration-300',
+                  idx === 0
+                    ? 'bg-primary-600 border-primary-600 text-white shadow-sm ring-4 ring-primary-50'
+                    : 'bg-white border-secondary-300 text-secondary-400'
+                ]"
+              >
+                <Check v-if="idx > 0" class="w-3 h-3 stroke-[3]" />
+                <div v-else class="w-2 h-2 rounded-full bg-white animate-pulse" />
+              </div>
+
+              <!-- Node content -->
+              <div class="flex-1 min-w-0">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+                  <p :class="['text-sm font-bold', idx === 0 ? 'text-primary-700 font-extrabold' : 'text-secondary-700']">
+                    {{ log.note }}
+                  </p>
+                  <span class="text-xs text-secondary-400 shrink-0">
+                    {{ formatDateTime(log.created_at) }}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        <div class="flex flex-col sm:flex-row gap-3">
+        <!-- Navigation CTAs -->
+        <div class="flex flex-col sm:flex-row gap-4 pt-2">
           <RouterLink
             to="/profile/orders"
-            class="btn-secondary flex-1 text-center"
+            class="btn-secondary flex-1 text-center py-3.5 rounded-xl transition-all duration-200 active:scale-95 shadow-sm hover:shadow"
           >
             ดูคำสั่งซื้อทั้งหมด
           </RouterLink>
-          <RouterLink to="/products" class="btn-primary flex-1 text-center">
+          <RouterLink 
+            to="/products" 
+            class="btn-primary flex-1 text-center py-3.5 rounded-xl transition-all duration-200 active:scale-95 shadow-md hover:shadow-lg"
+          >
             เลือกสินค้าต่อ
           </RouterLink>
         </div>
       </template>
     </div>
+    
     <Footer />
   </div>
 </template>
+
+<style scoped>
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.95);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.35);
+    opacity: 0;
+  }
+}
+.pulse-circle::before {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 9999px;
+  background-color: rgb(220 252 231); /* bg-green-100 */
+  animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  z-index: 0;
+}
+</style>

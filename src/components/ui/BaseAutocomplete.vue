@@ -216,7 +216,6 @@ function onKeydown(e: KeyboardEvent) {
       ref="triggerRef"
       class="input flex items-center gap-2 cursor-pointer"
       :class="{
-        'pl-9': icon,
         'border-red-300 focus-within:border-red-500 focus-within:ring-red-500':
           error,
         'opacity-50 cursor-not-allowed': disabled,
@@ -226,7 +225,7 @@ function onKeydown(e: KeyboardEvent) {
       <component
         v-if="icon"
         :is="icon"
-        class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-secondary-400 pointer-events-none"
+        class="w-4 h-4 text-secondary-400 pointer-events-none shrink-0"
       />
 
       <input
