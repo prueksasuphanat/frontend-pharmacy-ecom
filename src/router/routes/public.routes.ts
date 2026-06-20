@@ -40,10 +40,6 @@ export const publicRoutes: RouteRecordRaw[] = [
   },
   {
     path: "/products",
-    component: () => import("@/views/public/ProductListView.vue"),
-  },
-  {
-    path: "/test",
-    component: () => import("@/views/public/TestView.vue"),
+    component: () => import("@/views/public/ProductsView.vue"),
   },
 ];

@@ -22,7 +22,6 @@ import {
   BadgeCheck,
   X,
   ChevronDown,
-  Mail,
   Star,
 } from "lucide-vue-next";
 import { Navbar, Footer } from "@/components/layout";
@@ -553,7 +552,7 @@ onMounted(() => {
     </section>
 
     <!-- ─── 5b. สินค้าโปรโมชั่น ─── -->
-    <section class="border-b border-secondary-100 overflow-hidden">
+    <section v-if="false" class="border-b border-secondary-100 overflow-hidden">
       <!-- dark header strip -->
       <div class="bg-primary-800 px-6 py-4 flex items-center justify-between">
         <div class="flex items-center gap-3">
@@ -915,37 +914,37 @@ onMounted(() => {
       </div>
     </section>
 
-    <!-- ─── 9. Newsletter ─── -->
-    <section class="newsletter-section relative overflow-hidden py-16">
+    <!-- ─── 9. Register CTA (guest only) ─── -->
+    <section v-if="!auth.isLoggedIn" class="newsletter-section relative overflow-hidden py-16">
       <div class="newsletter-bg absolute inset-0" />
       <div class="blob blob-1 absolute opacity-20" />
       <div class="relative z-10 max-w-xl mx-auto px-4 text-center">
         <div
           class="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm mb-4"
         >
-          <Mail class="w-6 h-6 text-white" />
+          <UserCheck class="w-6 h-6 text-white" />
         </div>
         <h2 class="text-2xl font-bold text-white mb-2">
-          รับข่าวสารและโปรโมชั่นก่อนใคร
+          สมัครสมาชิกวันนี้ ฟรี!
         </h2>
         <p class="text-white/75 text-sm mb-7 leading-relaxed">
-          สมัครรับจดหมายข่าว ได้รับโปรโมชั่นพิเศษ ข้อมูลสุขภาพ
-          และสินค้าใหม่ก่อนใคร
+          ดูราคาพิเศษตามกลุ่มลูกค้า ติดตามสถานะคำสั่งซื้อ
+          และรับสิทธิพิเศษอีกมากมาย
         </p>
-        <form @submit.prevent class="flex gap-2 max-w-sm mx-auto">
-          <input
-            type="email"
-            placeholder="อีเมลของคุณ..."
-            class="flex-1 px-4 py-3 rounded-full text-sm text-secondary-800 outline-none focus:ring-2 focus:ring-white/50 border-0"
-          />
+        <div class="flex flex-wrap gap-3 justify-center">
           <button
-            type="submit"
-            class="bg-white text-primary-700 font-semibold px-5 py-3 rounded-full text-sm hover:shadow-lg hover:-translate-y-0.5 transition-all shrink-0"
+            @click="router.push('/register')"
+            class="bg-white text-primary-700 font-semibold px-7 py-3 rounded-full text-sm hover:shadow-lg hover:-translate-y-0.5 transition-all"
           >
-            สมัคร
+            สมัครสมาชิก
           </button>
-        </form>
-        <p class="text-white/50 text-xs mt-4">ไม่มีสแปม ยกเลิกได้ทุกเมื่อ</p>
+          <button
+            @click="router.push('/login')"
+            class="bg-white/15 hover:bg-white/25 border border-white/30 text-white font-semibold px-7 py-3 rounded-full text-sm transition-all"
+          >
+            เข้าสู่ระบบ
+          </button>
+        </div>
       </div>
     </section>
 
