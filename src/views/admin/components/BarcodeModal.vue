@@ -16,8 +16,8 @@ function renderAll() {
   nextTick(() => {
     props.items.forEach((item, i) => {
       const el = svgRefs.value[i];
-      if (!el || !item.barcode) return;
-      JsBarcode(el, item.barcode, {
+      if (!el || !item.product_code) return;
+      JsBarcode(el, item.product_code, {
         format: "CODE128",
         displayValue: true,
         fontSize: 12,
@@ -51,13 +51,13 @@ watch(() => props.open, (val) => {
           <p class="text-sm font-medium text-secondary-900">{{ item.product_name }}</p>
           <p class="text-xs text-secondary-400">รหัส: {{ item.product_code || "-" }}</p>
         </div>
-        <template v-if="item.barcode">
+        <template v-if="item.product_code">
           <svg
             :ref="(el) => { if (el) svgRefs[i] = el as SVGElement }"
             class="w-full"
           />
         </template>
-        <p v-else class="text-xs text-secondary-400 italic">ยังไม่มีข้อมูลบาร์โค้ด</p>
+        <p v-else class="text-xs text-secondary-400 italic">ยังไม่มีรหัสสินค้า</p>
       </div>
     </div>
   </BaseModal>

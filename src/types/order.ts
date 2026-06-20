@@ -93,7 +93,6 @@ export interface AdminOrderItem {
   is_special_price: boolean;
   product_code?: string | null;
   generic_name?: string | null;
-  barcode?: string | null;
   current_stock?: number;
   multiplier_to_base?: number;
 }
