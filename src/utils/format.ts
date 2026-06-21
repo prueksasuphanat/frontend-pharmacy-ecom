@@ -20,6 +20,15 @@ export function formatPriceWithSymbol(value: number): string {
   return formatCurrency(value);
 }
 
+export function formatNum(value: number | string | null | undefined, decimals: number = 0): string {
+  const num = typeof value === 'string' ? parseFloat(value) : value
+  if (num === undefined || num === null || isNaN(Number(num))) {
+    return decimals > 0 ? '0.' + '0'.repeat(decimals) : '0'
+  }
+  const fmt = decimals > 0 ? `0,0.${'0'.repeat(decimals)}` : '0,0'
+  return numeral(num).format(fmt)
+}
+
 export const formatDate = (
   date: string | Date | null | undefined,
   formatStr: string = "D MMMM BBBB",

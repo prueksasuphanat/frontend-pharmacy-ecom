@@ -11,7 +11,7 @@ import {
 import type { Column } from "@/components/ui/BaseTable.vue";
 import type { Category } from "@/types";
 import { useCategoryStore } from "@/stores";
-import { formatDate } from "@/utils";
+import { formatDate, formatNum } from "@/utils";
 
 const categoryStore = useCategoryStore();
 
@@ -225,7 +225,7 @@ onMounted(() => {
       </template>
 
       <template #cell-_count="{ value }">
-        {{ (value as { products: number }).products }} รายการ
+        {{ formatNum((value as { products: number }).products) }} รายการ
       </template>
 
       <template #cell-actions="{ row }">

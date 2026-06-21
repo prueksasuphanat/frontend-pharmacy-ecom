@@ -17,7 +17,6 @@ import {
   BaseInput,
   BaseTable,
   BaseDatePicker,
-  LoadingOverlay,
   BaseAutocomplete,
   BaseModal,
 } from "@/components/ui";
@@ -25,7 +24,7 @@ import type { Column } from "@/components/ui/BaseTable.vue";
 import type { UserSessionLogEntry } from "@/types";
 import { useAuditLogStore } from "@/stores";
 import { auditLogsApi } from "@/api";
-import { formatDateTime, formatUserName } from "@/utils";
+import { formatDateTime, formatUserName, formatNum } from "@/utils";
 
 const store = useAuditLogStore();
 
@@ -222,8 +221,6 @@ onMounted(() => {
 
 <template>
   <div class="overflow-y-visible">
-    <LoadingOverlay :loading="loading && logs.length > 0" />
-
     <div class="page-header mb-6">
       <div>
         <h1 class="page-title flex items-center gap-2">
@@ -236,7 +233,7 @@ onMounted(() => {
       </div>
       <div class="flex items-center gap-2">
         <span class="text-sm text-secondary-400">
-          {{ pagination.total }} บัญชีผู้ใช้งาน
+          {{ formatNum(pagination.total) }} บัญชีผู้ใช้งาน
         </span>
         <button
           @click="exportToCSV"
@@ -432,7 +429,7 @@ onMounted(() => {
             </div>
             <div>
               <p class="text-xs text-secondary-400 font-medium">ความถี่การล็อกอินทั้งหมด</p>
-              <p class="text-lg font-bold text-secondary-900">{{ sessionPagination.total }} ครั้ง</p>
+              <p class="text-lg font-bold text-secondary-900">{{ formatNum(sessionPagination.total) }} ครั้ง</p>
             </div>
           </div>
 
@@ -443,7 +440,7 @@ onMounted(() => {
             <div>
               <p class="text-xs text-secondary-400 font-medium">ระยะเวลาใช้งานเฉลี่ยต่อครั้ง</p>
               <p class="text-lg font-bold text-secondary-900">
-                {{ averageDuration }} {{ typeof averageDuration === 'number' ? 'นาที' : '' }}
+                {{ typeof averageDuration === 'number' ? formatNum(averageDuration) : averageDuration }} {{ typeof averageDuration === 'number' ? 'นาที' : '' }}
               </p>
             </div>
           </div>

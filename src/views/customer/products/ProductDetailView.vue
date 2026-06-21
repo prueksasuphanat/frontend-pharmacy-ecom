@@ -15,6 +15,7 @@ import {
   Clock,
 } from "lucide-vue-next";
 import { BaseLoading } from "@/components/ui";
+import { formatNum } from "@/utils";
 import type { Product } from "@/types";
 
 const route = useRoute();
@@ -68,9 +69,6 @@ async function addToCart() {
   }
 }
 
-function formatPrice(n: number) {
-  return n.toLocaleString("th-TH", { minimumFractionDigits: 2 });
-}
 </script>
 
 <template>
@@ -171,7 +169,7 @@ function formatPrice(n: number) {
                   v-if="displayPrice > 0"
                   class="text-3xl font-bold text-primary-700"
                 >
-                  ฿{{ formatPrice(displayPrice) }}
+                  ฿{{ formatNum(displayPrice, 2) }}
                 </p>
                 <p v-else class="text-lg font-medium text-secondary-500">
                   ติดต่อสอบถาม
@@ -190,7 +188,7 @@ function formatPrice(n: number) {
                   class="flex items-center gap-1.5 text-success font-medium text-sm"
                 >
                   <CheckCircle class="w-4 h-4" /> มีสินค้า ({{
-                    product.quantity
+                    formatNum(product.quantity)
                   }})
                 </div>
                 <div

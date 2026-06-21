@@ -26,6 +26,7 @@ import {
 } from "lucide-vue-next";
 import { Navbar, Footer } from "@/components/layout";
 import { BaseSelect } from "@/components/ui";
+import { formatNum } from "@/utils/format";
 
 const auth = useAuthStore();
 const router = useRouter();
@@ -652,7 +653,7 @@ onMounted(() => {
       </div>
 
       <p class="text-sm text-secondary-500 mb-4">
-        พบ <strong class="text-secondary-900">{{ totalItems }}</strong> รายการ
+        พบ <strong class="text-secondary-900">{{ formatNum(totalItems) }}</strong> รายการ
       </p>
 
       <!-- Loading Skeleton -->
@@ -782,9 +783,9 @@ onMounted(() => {
           class="flex flex-col sm:flex-row items-center justify-between gap-4"
         >
           <p class="text-sm text-secondary-500">
-            แสดงหน้า <strong class="text-secondary-900">{{ page }}</strong> จาก
-            <strong class="text-secondary-900">{{ totalPages }}</strong> หน้า
-            ({{ totalItems }} รายการ)
+            แสดงหน้า <strong class="text-secondary-900">{{ formatNum(page) }}</strong> จาก
+            <strong class="text-secondary-900">{{ formatNum(totalPages) }}</strong> หน้า
+            ({{ formatNum(totalItems) }} รายการ)
           </p>
           <div class="flex items-center gap-2">
             <button

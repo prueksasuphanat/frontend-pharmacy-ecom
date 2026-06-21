@@ -2,11 +2,12 @@
 import { ref, onMounted, computed } from "vue";
 import { useRouter } from "vue-router";
 import { ChevronLeft, Plus, X, Save, ArrowLeftRight } from "lucide-vue-next";
-import { BaseInput, BaseAutocomplete, BaseMultiSelect } from "@/components/ui";
+import { BaseInput, BaseMultiSelect, BaseLoading } from "@/components/ui";
 import type { User, Product, UpdateProductPricePayload } from "@/types";
 import { useToast } from "@/composables";
-import { formatUserName } from "@/utils/format";
+import { formatUserName, formatNum } from "@/utils/format";
 import { useProductPriceStore, useUsersStore, useProductStore } from "@/stores";
+import { productsApi, productPricesApi } from "@/api";
 
 const router = useRouter();
 const toast = useToast();
@@ -27,6 +28,9 @@ const isTransposed = ref(false);
 
 const isCustomUserMode = ref(false);
 const selectedUsers = ref<User[]>([]);
+// markupPercent[productId][userId] = "10"
+const markupPercent = ref<Record<number, Record<number, string>>>({});
+const bulkMarkupValues = ref<Record<number, string>>({});
 
 const users = computed(() =>
   isCustomUserMode.value ? selectedUsers.value : allUsers.value,
@@ -40,7 +44,9 @@ const selectedUserIds = computed({
     const removedIds = currentIds.filter((id) => !newIds.includes(id));
 
     // Remove
-    selectedUsers.value = selectedUsers.value.filter((u) => !removedIds.includes(u.id));
+    selectedUsers.value = selectedUsers.value.filter(
+      (u) => !removedIds.includes(u.id),
+    );
 
     // Add
     addedIds.forEach((id) => {
@@ -95,7 +101,87 @@ const allProductUnits = computed(() => {
     const priceData = productPriceStore.productPrices.find(
       (pp) => pp.product_id === product.id,
     );
-    return priceData?.units ?? [];
+    const units = priceData?.units ?? [];
+    return units.map((unit) => ({
+      ...unit,
+      productId: product.id,
+      costPrice: priceData?.cost_price
+        ? parseFloat(priceData.cost_price)
+        : null,
+    }));
+  });
+});
+
+interface TransposedMarkupRow {
+  type: "markup";
+  productId: number;
+  product: Product;
+  costPrice: number | null;
+  isFirstOfProduct: boolean;
+  totalRows: number;
+}
+
+interface TransposedUnitRow {
+  type: "unit";
+  productId: number;
+  product: Product;
+  costPrice: number | null;
+  isFirstUnit: boolean;
+  unitRowspan: number;
+  unit: {
+    product_unit_id: number;
+    unit_name: string;
+    multiplier_to_base: number;
+    default_price: number;
+  };
+}
+
+type TransposedRow = TransposedMarkupRow | TransposedUnitRow;
+
+const transposedRows = computed<TransposedRow[]>(() => {
+  return selectedProducts.value.flatMap((product) => {
+    const priceData = productPriceStore.productPrices.find(
+      (pp) => pp.product_id === product.id,
+    );
+    const units = priceData?.units ?? [];
+    const costPrice = priceData?.cost_price
+      ? parseFloat(priceData.cost_price)
+      : null;
+
+    const rows: TransposedRow[] = [];
+    const totalRows = (units.length > 0 ? 1 : 0) + units.length;
+
+    // 1. % กำไร row first (isFirstOfProduct = true = carries the rowspan sticky cell)
+    if (units.length > 0) {
+      rows.push({
+        type: "markup",
+        productId: product.id,
+        product,
+        costPrice,
+        isFirstOfProduct: true,
+        totalRows,
+      });
+    }
+
+    // 2. Unit rows — sticky product cell only spans unit rows
+    units.forEach((unit, idx) => {
+      rows.push({
+        type: "unit",
+        productId: product.id,
+        product,
+        costPrice,
+        isFirstUnit: idx === 0,
+        unitRowspan: units.length,
+        unit: {
+          product_unit_id: unit.product_unit_id,
+          unit_name: unit.unit_name,
+          multiplier_to_base: unit.multiplier_to_base,
+          default_price: Number(unit.default_price),
+        },
+      });
+    });
+
+    return rows;
   });
 });
 
@@ -117,13 +203,15 @@ const groupedColumns = computed(() => {
     return {
       product,
       units: priceData?.units ?? [],
+      costPrice: priceData?.cost_price
+        ? parseFloat(priceData.cost_price)
+        : null,
     };
   });
 });
 
 async function fetchUsers() {
   await usersStore.getUsers({ is_delete: false, limit: 1000 });
-  initializePriceMatrix();
 }
 
 async function fetchProducts() {
@@ -135,8 +223,6 @@ async function fetchProducts() {
   products.value = productStore.products;
 }
 
-function initializePriceMatrix() {}
-
 function removeProductColumn(productId: number) {
   const priceData = productPriceStore.productPrices.find(
     (pp) => pp.product_id === productId,
@@ -145,6 +231,7 @@ function removeProductColumn(productId: number) {
     delete priceMatrix.value[unit.product_unit_id];
     delete specialMatrix.value[unit.product_unit_id];
   });
+  delete markupPercent.value[productId];
   selectedProducts.value = selectedProducts.value.filter(
     (p) => p.id !== productId,
   );
@@ -203,6 +290,21 @@ function handlePriceBlur(userId: number, productUnitId: number) {
   const productId = unitProductMap.value[productUnitId];
   if (!productId) return;
 
+  // Calculate and update markup percentage if cost is available
+  const group = productPriceStore.productPrices.find(
+    (g) => g.product_id === productId,
+  );
+  if (group) {
+    const costPrice = group.cost_price ? parseFloat(group.cost_price) : null;
+    if (costPrice !== null && costPrice > 0) {
+      const pct = ((numValue - costPrice) / costPrice) * 100;
+      if (!markupPercent.value[productId]) {
+        markupPercent.value[productId] = {};
+      }
+      markupPercent.value[productId][userId] = pct.toFixed(2);
+    }
+  }
+
   const siblingUnits = allProductUnits.value.filter(
     (u) =>
       unitProductMap.value[u.product_unit_id] === productId &&
@@ -211,7 +313,8 @@ function handlePriceBlur(userId: number, productUnitId: number) {
 
   for (const sibling of siblingUnits) {
     const currentVal = priceMatrix.value[sibling.product_unit_id]?.[userId];
-    const wasAutoCalc = autoCalcMatrix.value[sibling.product_unit_id]?.[userId] ?? false;
+    const wasAutoCalc =
+      autoCalcMatrix.value[sibling.product_unit_id]?.[userId] ?? false;
     if (currentVal && Number(currentVal) > 0 && !wasAutoCalc) continue;
 
     if (!priceMatrix.value[sibling.product_unit_id]) {
@@ -227,6 +330,126 @@ function handlePriceBlur(userId: number, productUnitId: number) {
   }
 }
 
+function updateMarkup(
+  productId: number,
+  userId: number,
+  value: string | number | null,
+) {
+  if (!markupPercent.value[productId]) markupPercent.value[productId] = {};
+  markupPercent.value[productId][userId] = value != null ? String(value) : "";
+}
+
+function handleMarkupBlur(userId: number, productId: number) {
+  const pct = parseFloat(markupPercent.value[productId]?.[userId]);
+  if (isNaN(pct) || pct < 0) return;
+
+  const group = productPriceStore.productPrices.find(
+    (g) => g.product_id === productId,
+  );
+  if (!group) return;
+
+  const costPrice = group.cost_price ? parseFloat(group.cost_price) : null;
+  if (costPrice === null) return;
+
+  const baseUnit = group.units.find((u) => u.multiplier_to_base === 1);
+  if (!baseUnit) return;
+
+  for (const unit of group.units) {
+    if (unit.product_unit_id === baseUnit.product_unit_id) continue;
+    if (!autoCalcMatrix.value[unit.product_unit_id])
+      autoCalcMatrix.value[unit.product_unit_id] = {};
+    autoCalcMatrix.value[unit.product_unit_id][userId] = true;
+  }
+
+  const basePrice = costPrice * (1 + pct / 100);
+  if (!priceMatrix.value[baseUnit.product_unit_id])
+    priceMatrix.value[baseUnit.product_unit_id] = {};
+  if (!autoCalcMatrix.value[baseUnit.product_unit_id])
+    autoCalcMatrix.value[baseUnit.product_unit_id] = {};
+  priceMatrix.value[baseUnit.product_unit_id][userId] = basePrice.toFixed(2);
+  autoCalcMatrix.value[baseUnit.product_unit_id][userId] = false;
+  handlePriceBlur(userId, baseUnit.product_unit_id);
+}
+
+function updateLocalCostPrice(
+  productId: number,
+  value: string | number | null,
+) {
+  const pp = productPriceStore.productPrices.find(
+    (p) => p.product_id === productId,
+  );
+  if (!pp) return;
+  pp.cost_price = value === null || value === "" ? null : String(value);
+
+  // Recalculate prices for all users based on this new cost price and their existing markupPercent
+  const costPrice = value != null && value !== "" ? Number(value) : null;
+  if (costPrice !== null && costPrice > 0) {
+    const baseUnit = pp.units.find((u) => u.multiplier_to_base === 1);
+    if (!baseUnit) return;
+
+    users.value.forEach((user) => {
+      const pctStr = markupPercent.value[productId]?.[user.id];
+      if (pctStr !== undefined && pctStr !== "") {
+        const pct = parseFloat(pctStr);
+        if (!isNaN(pct)) {
+          const basePrice = costPrice * (1 + pct / 100);
+          if (!priceMatrix.value[baseUnit.product_unit_id]) {
+            priceMatrix.value[baseUnit.product_unit_id] = {};
+          }
+          priceMatrix.value[baseUnit.product_unit_id][user.id] =
+            basePrice.toFixed(2);
+          handlePriceBlur(user.id, baseUnit.product_unit_id);
+        }
+      }
+    });
+  }
+}
+
+function applyBulkMarkup(productId: number, value: string | number | null) {
+  const pct = value !== null && value !== "" ? parseFloat(String(value)) : null;
+  if (pct === null || isNaN(pct) || pct < 0) return;
+
+  const group = productPriceStore.productPrices.find(
+    (g) => g.product_id === productId,
+  );
+  if (!group) return;
+
+  const costPrice = group.cost_price ? parseFloat(group.cost_price) : null;
+  if (costPrice === null) {
+    toast.warning("กรุณากรอกราคาทุนก่อนตั้ง % กำไร");
+    return;
+  }
+
+  const baseUnit = group.units.find((u) => u.multiplier_to_base === 1);
+  if (!baseUnit) return;
+
+  if (!markupPercent.value[productId]) {
+    markupPercent.value[productId] = {};
+  }
+
+  users.value.forEach((user) => {
+    markupPercent.value[productId][user.id] = String(pct);
+
+    const basePrice = costPrice * (1 + pct / 100);
+    if (!priceMatrix.value[baseUnit.product_unit_id]) {
+      priceMatrix.value[baseUnit.product_unit_id] = {};
+    }
+    priceMatrix.value[baseUnit.product_unit_id][user.id] = basePrice.toFixed(2);
+
+    for (const unit of group.units) {
+      if (unit.product_unit_id === baseUnit.product_unit_id) continue;
+      if (!autoCalcMatrix.value[unit.product_unit_id]) {
+        autoCalcMatrix.value[unit.product_unit_id] = {};
+      }
+      autoCalcMatrix.value[unit.product_unit_id][user.id] = true;
+    }
+
+    handlePriceBlur(user.id, baseUnit.product_unit_id);
+  });
+
+  toast.success("ปรับ % กำไรให้ทุกลูกค้าเรียบร้อยแล้ว");
+}
+
 function getUserFullName(user: User): string {
   return formatUserName(user);
 }
@@ -240,6 +463,9 @@ async function fetchPricesForProducts() {
   await productPriceStore.fetchProductPrices(productIds);
 
   productPriceStore.productPrices.forEach((productPrice) => {
+    if (!markupPercent.value[productPrice.product_id]) {
+      markupPercent.value[productPrice.product_id] = {};
+    }
     productPrice.units.forEach((unitPrice) => {
       if (!priceMatrix.value[unitPrice.product_unit_id]) {
         priceMatrix.value[unitPrice.product_unit_id] = {};
@@ -252,6 +478,13 @@ async function fetchPricesForProducts() {
           String(userPrice.price);
         specialMatrix.value[unitPrice.product_unit_id][userPrice.user_id] =
           userPrice.is_special;
+        if (
+          userPrice.markup_percent !== null &&
+          userPrice.markup_percent !== undefined
+        ) {
+          markupPercent.value[productPrice.product_id][userPrice.user_id] =
+            String(userPrice.markup_percent);
+        }
       });
     });
   });
@@ -268,26 +501,72 @@ async function saveAllPrices() {
   users.value.forEach((user) => {
     allProductUnits.value.forEach((unit) => {
       const priceValue = priceMatrix.value[unit.product_unit_id]?.[user.id];
-      if (priceValue !== undefined) {
-        prices.push({
-          product_unit_id: unit.product_unit_id,
-          user_id: user.id,
-          price: Number(priceValue) || 0,
-        });
-      }
+      // Skip entries that have no value or are zero — avoid overwriting with 0
+      if (
+        priceValue === undefined ||
+        priceValue === "" ||
+        Number(priceValue) <= 0
+      )
+        return;
+      prices.push({
+        product_unit_id: unit.product_unit_id,
+        user_id: user.id,
+        price: Number(priceValue),
+      });
     });
   });
 
-  await productPriceStore.updateProductPrices(prices);
+  try {
+    const priceSuccess = await productPriceStore.updateProductPrices(prices);
+    if (!priceSuccess) return; // store already showed error toast
+
+    await Promise.all(
+      selectedProducts.value.map(async (product) => {
+        const pp = productPriceStore.productPrices.find(
+          (x) => x.product_id === product.id,
+        );
+        if (!pp) return;
+        const costPrice =
+          pp.cost_price != null ? parseFloat(pp.cost_price) : null;
+        await productsApi.updateProduct(product.id, { cost_price: costPrice });
+      }),
+    );
+
+    const markupPayload: {
+      user_id: number;
+      product_id: number;
+      markup_percent: number;
+    }[] = [];
+    for (const [productIdStr, userMap] of Object.entries(markupPercent.value)) {
+      for (const [userIdStr, pctStr] of Object.entries(userMap)) {
+        const pct = parseFloat(pctStr);
+        if (!isNaN(pct)) {
+          markupPayload.push({
+            user_id: Number(userIdStr),
+            product_id: Number(productIdStr),
+            markup_percent: pct,
+          });
+        }
+      }
+    }
+    if (markupPayload.length > 0) {
+      await productPricesApi.upsertMarkups(markupPayload);
+    }
+  } catch (err: unknown) {
+    const msg =
+      (err as any)?.response?.data?.message ||
+      "เกิดข้อผิดพลาดในการบันทึกข้อมูล";
+    toast.error(msg);
+  }
 }
 
-function getProductGroupAndIndex(productUnitId: number) {
-  const group = groupedColumns.value.find((g) =>
-    g.units.some((u) => u.product_unit_id === productUnitId)
-  );
-  if (!group) return { group: null, index: -1 };
-  const index = group.units.findIndex((u) => u.product_unit_id === productUnitId);
-  return { group, index };
+// ---- Bulk markup apply (shared handler) ----
+function handleApplyBulkMarkup(productId: number) {
+  const val = bulkMarkupValues.value[productId];
+  if (val) {
+    applyBulkMarkup(productId, val);
+    bulkMarkupValues.value[productId] = "";
+  }
 }
 
 onMounted(async () => {
@@ -314,14 +593,7 @@ onMounted(async () => {
       </p>
     </div>
 
-    <div v-if="isLoading" class="card">
-      <div class="flex items-center justify-center py-12">
-        <div
-          class="w-8 h-8 border-4 border-primary-600 border-t-transparent rounded-full animate-spin"
-        ></div>
-        <span class="ml-3 text-secondary-600">กำลังโหลดข้อมูล...</span>
-      </div>
-    </div>
+    <BaseLoading v-if="isLoading" />
 
     <div v-else class="card">
       <div class="mb-4 pb-4 border-b border-secondary-100 space-y-2">
@@ -416,7 +688,7 @@ onMounted(async () => {
             <thead>
               <tr class="border-b border-secondary-200">
                 <th
-                  class="sticky left-0 z-10 bg-white px-4 py-3 text-left text-sm font-semibold text-secondary-900 w-[160px] sm:min-w-[200px] border-r border-secondary-200"
+                  class="sticky-col left-0 z-10 bg-white px-4 py-3 text-left text-sm font-semibold text-secondary-900 w-[160px] sm:min-w-[200px]"
                   rowspan="2"
                 >
                   ผู้ใช้
@@ -429,49 +701,147 @@ onMounted(async () => {
                     v-if="group.units.length === 0"
                     class="px-4 py-3 text-left text-sm font-semibold text-secondary-900 min-w-[180px] border-r border-secondary-200 last:border-r-0"
                   >
-                    <div class="flex items-start justify-between gap-2">
-                      <div class="flex-1 min-w-0">
-                        <div class="font-semibold text-secondary-900 truncate">
-                          {{ group.product.name }}
+                    <div
+                      class="relative flex flex-col p-1 justify-between min-h-[95px]"
+                    >
+                      <div class="flex items-start justify-between gap-2">
+                        <div class="min-w-0">
+                          <div
+                            class="font-bold text-secondary-900 truncate text-sm"
+                          >
+                            {{ group.product.name }}
+                          </div>
+                          <div
+                            class="text-xs text-secondary-500 font-mono mt-0.5"
+                          >
+                            {{ group.product.code }}
+                          </div>
                         </div>
-                        <div class="text-xs text-secondary-500 mt-0.5">
-                          {{ group.product.code }}
+                        <button
+                          @click="removeProductColumn(group.product.id)"
+                          class="p-1 text-secondary-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                          title="ลบสินค้า"
+                        >
+                          <X class="w-4 h-4" />
+                        </button>
+                      </div>
+                      <div
+                        class="mt-2 pt-2 border-t border-secondary-100 flex flex-col gap-2 w-full"
+                      >
+                        <div class="flex flex-col gap-1 w-[180px]">
+                          <label class="label !text-xs !mb-1">ราคาทุน</label>
+                          <BaseInput
+                            :model-value="
+                              group.costPrice != null
+                                ? String(group.costPrice.toFixed(2))
+                                : ''
+                            "
+                            @update:model-value="
+                              updateLocalCostPrice(group.product.id, $event)
+                            "
+                            type="number"
+                            size="sm"
+                            placeholder="0.00"
+                            suffix="บาท"
+                            class="w-full text-xs"
+                          />
                         </div>
-                        <div class="text-xs text-amber-600 mt-0.5">
+                        <div class="text-xs text-amber-600 font-medium">
                           สินค้านี้ยังไม่มีหน่วยขาย
                         </div>
                       </div>
-                      <button
-                        @click="removeProductColumn(group.product.id)"
-                        class="flex-shrink-0 p-1 text-secondary-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-                        title="ลบสินค้า"
-                      >
-                        <X class="w-4 h-4" />
-                      </button>
                     </div>
                   </th>
 
                   <th
                     v-else
-                    :colspan="group.units.length"
-                    class="px-4 py-3 text-left text-sm font-semibold text-secondary-900 border-r border-r-secondary-200 last:border-r-0 border-b border-b-secondary-100"
+                    :colspan="group.units.length + 1"
+                    class="px-4 py-3 text-left text-sm font-semibold text-secondary-900 border-r border-r-secondary-200 last:border-r-0 border-b border-b-secondary-100 min-w-[240px]"
                   >
-                    <div class="flex items-start justify-between gap-2">
-                      <div class="flex-1 min-w-0">
-                        <div class="font-semibold text-secondary-900 truncate">
-                          {{ group.product.name }}
+                    <div
+                      class="relative flex flex-col p-1 justify-between min-h-[95px]"
+                    >
+                      <!-- Top Row: Name, Code & Remove Button -->
+                      <div class="flex items-start justify-between gap-2">
+                        <div class="min-w-0">
+                          <div
+                            class="font-bold text-secondary-900 truncate text-sm"
+                          >
+                            {{ group.product.name }}
+                          </div>
+                          <div
+                            class="text-xs text-secondary-500 font-mono mt-0.5"
+                          >
+                            {{ group.product.code }}
+                          </div>
                         </div>
-                        <div class="text-xs text-secondary-500 mt-0.5">
-                          {{ group.product.code }}
+                        <button
+                          @click="removeProductColumn(group.product.id)"
+                          class="p-1 text-secondary-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                          title="ลบสินค้า"
+                        >
+                          <X class="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      <!-- Bottom Row: Cost Input & Bulk Markup (aligned vertically, same width) -->
+                      <div
+                        class="mt-2 pt-2 border-t border-secondary-100 flex flex-col gap-2"
+                      >
+                        <!-- Cost Price -->
+                        <div class="flex flex-col gap-1 w-[180px]">
+                          <label class="label !text-xs !mb-1">ราคาทุน</label>
+                          <BaseInput
+                            :model-value="
+                              group.costPrice != null
+                                ? String(group.costPrice.toFixed(2))
+                                : ''
+                            "
+                            @update:model-value="
+                              updateLocalCostPrice(group.product.id, $event)
+                            "
+                            type="number"
+                            size="sm"
+                            placeholder="0.00"
+                            suffix="บาท"
+                            class="w-full text-xs"
+                          />
+                        </div>
+
+                        <!-- Bulk Markup -->
+                        <div class="flex flex-col gap-1 w-[180px]">
+                          <label class="label !text-xs !mb-1"
+                            >ตั้ง % กำไรทุกผู้ใช้</label
+                          >
+                          <div class="flex items-center gap-1.5 w-full">
+                            <BaseInput
+                              :model-value="
+                                bulkMarkupValues[group.product.id] ?? ''
+                              "
+                              @update:model-value="
+                                (val) =>
+                                  (bulkMarkupValues[group.product.id] =
+                                    val != null ? String(val) : '')
+                              "
+                              type="number"
+                              size="sm"
+                              placeholder="0.00"
+                              suffix="%"
+                              class="flex-1 min-w-0 text-xs"
+                              @keydown.enter="
+                                handleApplyBulkMarkup(group.product.id)
+                              "
+                            />
+                            <button
+                              type="button"
+                              class="btn btn-primary btn-sm shrink-0"
+                              @click="handleApplyBulkMarkup(group.product.id)"
+                            >
+                              ใช้
+                            </button>
+                          </div>
                         </div>
                       </div>
-                      <button
-                        @click="removeProductColumn(group.product.id)"
-                        class="flex-shrink-0 p-1 text-secondary-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-                        title="ลบสินค้า"
-                      >
-                        <X class="w-4 h-4" />
-                      </button>
                     </div>
                   </th>
                 </template>
@@ -482,16 +852,46 @@ onMounted(async () => {
                   v-for="group in groupedColumns"
                   :key="group.product.id"
                 >
-                  <th
-                    v-for="unit in group.units"
+                  <template
+                    v-for="(unit, uIdx) in group.units"
                     :key="unit.product_unit_id"
-                    class="px-4 py-2 text-left text-xs font-medium text-secondary-700 min-w-[140px] sm:min-w-[160px] border-r border-secondary-200 last:border-r-0"
                   >
-                    <div class="font-medium">{{ unit.unit_name }}</div>
-                    <div class="text-secondary-500">
-                      ฿{{ unit.default_price }}
-                    </div>
-                  </th>
+                    <!-- % กำไร column header placed before base unit (index 0) -->
+                    <th
+                      v-if="uIdx === 0"
+                      class="px-4 py-2 text-center text-xs font-semibold text-amber-700 bg-amber-50/20 w-[120px] min-w-[120px] max-w-[120px] border-r border-secondary-200"
+                    >
+                      % กำไร
+                    </th>
+
+                    <!-- Unit Column Header -->
+                    <th
+                      class="px-4 py-2 text-left text-xs font-medium text-secondary-700 min-w-[140px] sm:min-w-[160px] border-r border-secondary-200"
+                    >
+                      <div class="font-medium">{{ unit.unit_name }}</div>
+                      <div
+                        class="text-secondary-500 flex flex-col gap-0.5 mt-0.5"
+                      >
+                        <span
+                          >ราคากลาง
+                          {{ formatNum(unit.default_price, 2) }} บาท</span
+                        >
+                        <span
+                          v-if="group.costPrice !== null"
+                          class="text-emerald-600 text-[10px]"
+                        >
+                          ทุน:
+                          {{
+                            formatNum(
+                              group.costPrice * unit.multiplier_to_base,
+                              2,
+                            )
+                          }}
+                          บาท
+                        </span>
+                      </div>
+                    </th>
+                  </template>
                 </template>
               </tr>
             </thead>
@@ -502,7 +902,7 @@ onMounted(async () => {
                 class="border-b border-secondary-100 hover:bg-secondary-50 transition-colors"
               >
                 <td
-                  class="sticky left-0 z-10 bg-white px-4 py-3 text-sm font-medium text-secondary-900 border-r border-secondary-200 hover:bg-secondary-50"
+                  class="sticky-col left-0 z-10 bg-white px-4 py-3 text-sm font-medium text-secondary-900 hover:bg-secondary-50"
                 >
                   <div class="flex items-start justify-between gap-1">
                     <div class="min-w-0">
@@ -512,23 +912,10 @@ onMounted(async () => {
                         {{ getUserFullName(user) }}
                       </div>
                       <div
-                        class="text-xs text-secondary-500 mt-0.5 truncate max-w-[140px] sm:max-w-none"
+                        class="text-xs text-secondary-500 mt-0.5 truncate max-w-[140px] sm:max-w-[180px]"
                       >
                         {{ user.username }}
                       </div>
-                      <span
-                        class="inline-flex items-center mt-1 px-2 py-0.5 rounded text-xs font-medium"
-                        :class="{
-                          'bg-purple-100 text-purple-800':
-                            user.role === 'ADMIN',
-                          'bg-blue-100 text-blue-800':
-                            user.role === 'PHARMACIST',
-                          'bg-green-100 text-green-800':
-                            user.role === 'CUSTOMER',
-                          'bg-orange-100 text-orange-800': user.role === 'DEMO',
-                        }"
-                        >{{ user.role }}</span
-                      >
                     </div>
                     <button
                       @click="removeUserRow(user.id)"
@@ -539,27 +926,78 @@ onMounted(async () => {
                     </button>
                   </div>
                 </td>
-                <td
-                  v-for="unit in allProductUnits"
-                  :key="unit.product_unit_id"
-                  class="px-4 py-3 border-r border-secondary-200 last:border-r-0"
+                <template
+                  v-for="group in groupedColumns"
+                  :key="group.product.id"
                 >
-                  <div>
-                    <BaseInput
-                      :model-value="
-                        priceMatrix[unit.product_unit_id]?.[user.id] ?? ''
-                      "
-                      @update:model-value="
-                        (value: string | number | null) =>
-                          updatePrice(user.id, unit.product_unit_id, value)
-                      "
-                      @blur="handlePriceBlur(user.id, unit.product_unit_id)"
-                      type="number"
-                      :placeholder="String(unit.default_price)"
-                      class="w-full min-w-[120px]"
-                    />
-                  </div>
-                </td>
+                  <!-- Empty cell if product has no units -->
+                  <td
+                    v-if="group.units.length === 0"
+                    class="px-4 py-3 border-r border-secondary-200 text-center text-xs text-secondary-400 bg-secondary-50/50"
+                  >
+                    -
+                  </td>
+
+                  <template v-else>
+                    <template
+                      v-for="(unit, uIdx) in group.units"
+                      :key="unit.product_unit_id"
+                    >
+                      <td
+                        v-if="uIdx === 0"
+                        class="px-4 py-3 border-r border-secondary-200 bg-amber-50/10 text-center w-[120px] min-w-[120px] max-w-[120px]"
+                      >
+                        <BaseInput
+                          :model-value="
+                            markupPercent[group.product.id]?.[user.id] ?? ''
+                          "
+                          @update:model-value="
+                            (val) =>
+                              updateMarkup(group.product.id, user.id, val)
+                          "
+                          @blur="handleMarkupBlur(user.id, group.product.id)"
+                          type="number"
+                          size="sm"
+                          placeholder="0.00"
+                          suffix="%"
+                          class="w-full text-xs [&_input]:text-right"
+                        />
+                      </td>
+
+                      <!-- Render Unit cell -->
+                      <td class="px-4 py-3 border-r border-secondary-200">
+                        <div
+                          :class="
+                            specialMatrix[unit.product_unit_id]?.[user.id]
+                              ? 'rounded ring-1 ring-blue-300 bg-blue-50'
+                              : ''
+                          "
+                        >
+                          <BaseInput
+                            :model-value="
+                              priceMatrix[unit.product_unit_id]?.[user.id] ?? ''
+                            "
+                            @update:model-value="
+                              (value: string | number | null) =>
+                                updatePrice(
+                                  user.id,
+                                  unit.product_unit_id,
+                                  value,
+                                )
+                            "
+                            @blur="
+                              handlePriceBlur(user.id, unit.product_unit_id)
+                            "
+                            type="number"
+                            size="sm"
+                            :placeholder="String(unit.default_price)"
+                            class="w-full min-w-[120px]"
+                          />
+                        </div>
+                      </td>
+                    </template>
+                  </template>
+                </template>
               </tr>
             </tbody>
           </table>
@@ -569,7 +1007,7 @@ onMounted(async () => {
             <thead>
               <tr class="border-b-2 border-secondary-200">
                 <th
-                  class="sticky left-0 z-10 bg-white px-4 py-3 text-left text-sm font-semibold text-secondary-900 w-[200px] sm:min-w-[240px] border-r border-secondary-200"
+                  class="sticky-col left-0 z-10 bg-white px-4 py-3 text-left text-sm font-semibold text-secondary-900 w-[400px] min-w-[400px] max-w-[400px]"
                   colspan="2"
                 >
                   สินค้า / หน่วย
@@ -587,19 +1025,6 @@ onMounted(async () => {
                       <div class="text-xs text-secondary-500 mt-0.5">
                         {{ user.username }}
                       </div>
-                      <span
-                        class="inline-flex items-center mt-1 px-2 py-0.5 rounded text-xs font-medium"
-                        :class="{
-                          'bg-purple-100 text-purple-800':
-                            user.role === 'ADMIN',
-                          'bg-blue-100 text-blue-800':
-                            user.role === 'PHARMACIST',
-                          'bg-green-100 text-green-800':
-                            user.role === 'CUSTOMER',
-                          'bg-orange-100 text-orange-800': user.role === 'DEMO',
-                        }"
-                        >{{ user.role }}</span
-                      >
                     </div>
                     <button
                       @click="removeUserRow(user.id)"
@@ -614,73 +1039,193 @@ onMounted(async () => {
             </thead>
             <tbody>
               <tr
-                v-for="unit in allProductUnits"
-                :key="unit.product_unit_id"
+                v-for="row in transposedRows"
+                :key="
+                  row.type === 'markup'
+                    ? `markup-${row.productId}`
+                    : `unit-${row.unit.product_unit_id}`
+                "
                 class="border-b border-secondary-100 hover:bg-secondary-50 transition-colors"
               >
-                <!-- Product Spanned Cell -->
-                <td
-                  v-if="getProductGroupAndIndex(unit.product_unit_id).index === 0"
-                  :rowspan="getProductGroupAndIndex(unit.product_unit_id).group?.units.length || 1"
-                  class="sticky left-0 z-10 bg-white px-4 py-3 text-sm font-medium text-secondary-900 border-r border-secondary-200 hover:bg-secondary-50 align-top max-w-[140px] sm:max-w-[180px]"
-                >
-                  <div class="flex items-start justify-between gap-1">
-                    <div class="min-w-0 flex-1">
-                      <div class="font-semibold text-secondary-900 truncate">
-                        {{ getProductGroupAndIndex(unit.product_unit_id).group?.product.name }}
-                      </div>
-                      <div class="text-xs text-secondary-500 mt-0.5">
-                        {{ getProductGroupAndIndex(unit.product_unit_id).group?.product.code }}
-                      </div>
-                    </div>
-                    <button
-                      @click="removeProductColumn(getProductGroupAndIndex(unit.product_unit_id).group!.product.id)"
-                      class="flex-shrink-0 p-1 text-secondary-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-                      title="ลบสินค้า"
+                <!-- markup row: sticky product name cell + % กำไร label + inputs -->
+                <template v-if="row.type === 'markup'">
+                  <td
+                    class="sticky-col left-0 z-10 bg-white hover:bg-secondary-50 align-middle"
+                    style="width: 240px; min-width: 240px; max-width: 240px"
+                  >
+                    <div
+                      class="flex items-start justify-between gap-1 px-3 py-2"
                     >
-                      <X class="w-4 h-4" />
-                    </button>
-                  </div>
-                </td>
-
-                <!-- Unit Cell -->
-                <td
-                  class="px-4 py-3 text-sm font-medium text-secondary-700 border-r border-secondary-200 bg-white w-[100px] sm:w-[120px]"
-                >
-                  <div class="font-semibold text-secondary-900">
-                    {{ unit.unit_name }}
-                  </div>
-                  <div class="text-xs text-secondary-400 mt-0.5">
-                    ฿{{ unit.default_price }}
-                  </div>
-                </td>
-                <td
-                  v-for="user in users"
-                  :key="user.id"
-                  class="px-4 py-3 border-r border-secondary-200 last:border-r-0"
-                >
-                  <div
-                    :class="
-                      specialMatrix[unit.product_unit_id]?.[user.id]
-                        ? 'rounded ring-1 ring-blue-300 bg-blue-50'
-                        : ''
-                    "
+                      <div class="flex-1 min-w-0">
+                        <div
+                          class="font-bold text-secondary-900 text-sm truncate leading-tight"
+                        >
+                          {{ row.product.name }}
+                        </div>
+                        <div class="text-xs text-secondary-500 font-mono">
+                          {{ row.product.code }}
+                        </div>
+                      </div>
+                      <button
+                        @click="removeProductColumn(row.productId)"
+                        class="flex-shrink-0 p-1 text-secondary-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                        title="ลบสินค้า"
+                      >
+                        <X class="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                  <td
+                    class="sticky-col left-[240px] z-10 px-4 py-2 align-middle text-sm font-semibold text-amber-700 bg-amber-50 text-center w-[160px] min-w-[160px] max-w-[160px]"
+                  >
+                    % กำไร
+                  </td>
+                  <td
+                    v-for="user in users"
+                    :key="user.id"
+                    class="px-4 py-2 align-middle border-r border-secondary-200 last:border-r-0 bg-amber-50/10 text-center"
                   >
                     <BaseInput
                       :model-value="
-                        priceMatrix[unit.product_unit_id]?.[user.id] ?? ''
+                        markupPercent[row.productId]?.[user.id] ?? ''
                       "
                       @update:model-value="
-                        (value: string | number | null) =>
-                          updatePrice(user.id, unit.product_unit_id, value)
+                        (val) => updateMarkup(row.productId, user.id, val)
                       "
-                      @blur="handlePriceBlur(user.id, unit.product_unit_id)"
+                      @blur="handleMarkupBlur(user.id, row.productId)"
                       type="number"
-                      :placeholder="String(unit.default_price)"
-                      class="w-full min-w-[120px]"
+                      size="sm"
+                      placeholder="0.00"
+                      suffix="%"
+                      class="w-full text-xs [&_input]:text-right"
                     />
-                  </div>
-                </td>
+                  </td>
+                </template>
+
+                <!-- unit rows: sticky product cell (rowspan = unit count, first unit only) + unit label cell + value cells -->
+                <template v-else>
+                  <!-- Sticky cost + markup cell: only on first unit row -->
+                  <td
+                    v-if="row.isFirstUnit"
+                    :rowspan="row.unitRowspan"
+                    class="sticky-col left-0 z-10 bg-white hover:bg-secondary-50 align-top"
+                    style="width: 240px; min-width: 240px; max-width: 240px"
+                  >
+                    <div class="px-3 py-2 flex flex-col gap-1.5">
+                      <div>
+                        <label class="label !text-xs !mb-0.5 whitespace-nowrap"
+                          >ราคาทุน</label
+                        >
+                        <BaseInput
+                          :model-value="
+                            row.costPrice != null
+                              ? String(row.costPrice.toFixed(2))
+                              : ''
+                          "
+                          @update:model-value="
+                            updateLocalCostPrice(row.productId, $event)
+                          "
+                          type="number"
+                          size="sm"
+                          placeholder="0.00"
+                          suffix="บาท"
+                          class="w-full text-xs"
+                        />
+                      </div>
+                      <div>
+                        <label class="label !text-xs !mb-0.5 whitespace-nowrap"
+                          >ตั้ง % กำไร</label
+                        >
+                        <div class="flex gap-0.5">
+                          <BaseInput
+                            :model-value="bulkMarkupValues[row.productId] ?? ''"
+                            @update:model-value="
+                              (val) =>
+                                (bulkMarkupValues[row.productId] =
+                                  val != null ? String(val) : '')
+                            "
+                            type="number"
+                            size="sm"
+                            placeholder="0.00"
+                            suffix="%"
+                            class="flex-1 min-w-0 text-xs"
+                            @keydown.enter="
+                              handleApplyBulkMarkup(row.productId)
+                            "
+                          />
+                          <button
+                            type="button"
+                            class="btn btn-primary btn-sm shrink-0 h-[32px] flex items-center justify-center"
+                            @click="handleApplyBulkMarkup(row.productId)"
+                          >
+                            ใช้
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+
+                  <!-- Unit label cell -->
+                  <td
+                    class="sticky-col left-[240px] z-10 px-4 py-3 align-middle text-sm font-medium text-secondary-700 bg-white w-[160px] min-w-[160px] max-w-[160px]"
+                  >
+                    <div class="font-semibold text-secondary-900">
+                      {{ row.unit.unit_name }}
+                    </div>
+                    <div class="text-xs text-secondary-400 mt-0.5">
+                      ราคากลาง {{ formatNum(row.unit.default_price, 2) }} บาท
+                    </div>
+                    <div
+                      v-if="row.costPrice !== null"
+                      class="text-[10px] text-emerald-600 mt-0.5"
+                    >
+                      ทุน:
+                      {{
+                        formatNum(
+                          row.costPrice * row.unit.multiplier_to_base,
+                          2,
+                        )
+                      }}
+                      บาท
+                    </div>
+                  </td>
+
+                  <!-- Value cells -->
+                  <td
+                    v-for="user in users"
+                    :key="user.id"
+                    class="px-4 py-3 align-middle border-r border-secondary-200 last:border-r-0"
+                  >
+                    <div
+                      :class="
+                        specialMatrix[row.unit.product_unit_id]?.[user.id]
+                          ? 'rounded ring-1 ring-blue-300 bg-blue-50'
+                          : ''
+                      "
+                    >
+                      <BaseInput
+                        :model-value="
+                          priceMatrix[row.unit.product_unit_id]?.[user.id] ?? ''
+                        "
+                        @update:model-value="
+                          (value: string | number | null) =>
+                            updatePrice(
+                              user.id,
+                              row.unit.product_unit_id,
+                              value,
+                            )
+                        "
+                        @blur="
+                          handlePriceBlur(user.id, row.unit.product_unit_id)
+                        "
+                        type="number"
+                        size="sm"
+                        :placeholder="String(row.unit.default_price)"
+                        class="w-full min-w-[120px]"
+                      />
+                    </div>
+                  </td>
+                </template>
               </tr>
             </tbody>
           </table>
@@ -692,15 +1237,15 @@ onMounted(async () => {
             <span class="font-medium">สรุป:</span>
             ตั้งราคาสำหรับ
             <span class="font-semibold text-secondary-900">{{
-              selectedProducts.length
+              formatNum(selectedProducts.length)
             }}</span>
             สินค้า (
             <span class="font-semibold text-secondary-900">{{
-              allProductUnits.length
+              formatNum(allProductUnits.length)
             }}</span>
             หน่วย) และ
             <span class="font-semibold text-secondary-900">{{
-              users.length
+              formatNum(users.length)
             }}</span>
             ผู้ใช้
           </div>
@@ -753,6 +1298,16 @@ td {
 }
 
 tr:hover .sticky {
+  background-color: rgb(248 250 252);
+}
+
+/* Sticky column right-border via box-shadow — stays visible when scrolling */
+.sticky-col {
+  position: sticky;
+  box-shadow: 1px 0 0 0 #e2e8f0;
+}
+
+tr:hover .sticky-col {
   background-color: rgb(248 250 252);
 }
 </style>

@@ -11,7 +11,7 @@ import {
 } from "lucide-vue-next";
 import { useRouter } from "vue-router";
 import { useUsersStore } from "@/stores";
-import { formatDate } from "@/utils";
+import { formatDate, formatNum } from "@/utils";
 import { productsApi } from "@/api";
 
 import type { GetUsersParams } from "@/api";
@@ -312,8 +312,6 @@ onMounted(() => {
 
 <template>
   <div>
-    <LoadingOverlay :loading="loading && users.length > 0" />
-
     <button
       @click="router.push('/admin/settings')"
       class="lg:hidden flex items-center gap-2 text-secondary-600 hover:text-primary-600 mb-4 -ml-2"
@@ -335,25 +333,25 @@ onMounted(() => {
       <div class="card">
         <p class="text-xs text-secondary-400 mb-1">ผู้ใช้งานทั้งหมด</p>
         <p class="text-2xl font-bold text-secondary-900">
-          {{ pagination.total }}
+          {{ formatNum(pagination.total) }}
         </p>
       </div>
       <div class="card">
         <p class="text-xs text-secondary-400 mb-1">ใช้งานอยู่</p>
         <p class="text-2xl font-bold text-green-600">
-          {{ stats.active }}
+          {{ formatNum(stats.active) }}
         </p>
       </div>
       <div class="card">
         <p class="text-xs text-secondary-400 mb-1">ระงับ</p>
         <p class="text-2xl font-bold text-red-600">
-          {{ stats.inactive }}
+          {{ formatNum(stats.inactive) }}
         </p>
       </div>
       <div class="card">
         <p class="text-xs text-secondary-400 mb-1">ยืนยันอีเมล</p>
         <p class="text-2xl font-bold text-primary-600">
-          {{ stats.verified }}
+          {{ formatNum(stats.verified) }}
         </p>
       </div>
     </div>
@@ -391,7 +389,7 @@ onMounted(() => {
       <BaseTable
         :columns="columns"
         :data="users"
-        :loading="loading && users.length === 0"
+        :loading="loading"
         :pagination="{
           page: pagination.page,
           total: pagination.total,
@@ -697,7 +695,7 @@ onMounted(() => {
                 <span
                   v-if="file.size"
                   class="text-xs text-secondary-400 shrink-0"
-                  >{{ (file.size / 1024).toFixed(0) }} KB</span
+                  >{{ formatNum((file.size / 1024).toFixed(0)) }} KB</span
                 >
               </a>
             </div>
@@ -782,7 +780,7 @@ onMounted(() => {
           </div>
 
           <div class="space-y-2">
-            <label class="block text-sm font-medium text-secondary-700">สินค้าที่ถูกซ่อนจากผู้ใช้นี้ ({{ editForm.excluded_product_ids.length }} รายการ)</label>
+            <label class="block text-sm font-medium text-secondary-700">สินค้าที่ถูกซ่อนจากผู้ใช้นี้ ({{ formatNum(editForm.excluded_product_ids.length) }} รายการ)</label>
             
             <div
               v-if="editForm.excluded_product_ids.length === 0"

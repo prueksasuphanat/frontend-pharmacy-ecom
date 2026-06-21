@@ -4,7 +4,7 @@ import { RouterLink } from "vue-router";
 import { useToast } from "vue-toastification";
 import { useWishlistStore } from "@/stores/customer/wishlist.store";
 import { Heart, ShoppingCart, X, ShoppingBag } from "lucide-vue-next";
-import { formatPrice } from "@/utils/format";
+import { formatPrice, formatNum } from "@/utils/format";
 import { BaseLoading } from "@/components/ui";
 
 const wishlist = useWishlistStore();
@@ -36,7 +36,7 @@ onMounted(() => {
         </p>
       </div>
       <span v-if="wishlist.items.length > 0" class="badge badge-teal shrink-0">
-        {{ wishlist.items.length }} รายการ
+        {{ formatNum(wishlist.items.length) }} รายการ
       </span>
     </div>
 

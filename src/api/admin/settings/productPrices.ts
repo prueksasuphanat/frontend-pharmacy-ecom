@@ -19,4 +19,7 @@ export const productPricesApi = {
       API_ENDPOINTS.ADMIN.PRODUCT_PRICES.BASE,
       payload,
     ),
+
+  upsertMarkups: (markups: { user_id: number; product_id: number; markup_percent: number }[]) =>
+    apiClient.put(`${API_ENDPOINTS.ADMIN.PRODUCT_PRICES.BASE}/markup`, { markups }),
 };

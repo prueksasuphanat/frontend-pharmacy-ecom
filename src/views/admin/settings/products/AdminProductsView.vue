@@ -21,7 +21,7 @@ import {
   useUsersStore,
 } from "@/stores";
 import { unitsApi } from "@/api";
-import { formatDate, formatPrice } from "@/utils";
+import { formatDate, formatPrice, formatNum } from "@/utils";
 import AdminProductUnitView from "@/views/admin/settings/product-units/AdminProductUnitView.vue";
 import { useToast } from "@/composables";
 
@@ -135,18 +135,21 @@ const vendorOptions = computed(() =>
 const userOptions = computed(() =>
   usersStore.userFullName.map((u) => ({
     value: u.id,
-    label: `${u.full_name || u.username} (@${u.username})`,
+    label: `${[u.first_name, u.last_name].filter(Boolean).join(' ') || u.username} (@${u.username})`,
   })),
 );
 
 const excludedUsersDisplayList = computed(() => {
   return productForm.value.excluded_user_ids.map((id) => {
     const foundUser = usersStore.userFullName.find((u) => u.id === id);
+    const fullName = foundUser
+      ? `${foundUser.first_name} ${foundUser.last_name}`.trim() || foundUser.username
+      : 'N/A';
     return {
       id,
-      username: foundUser?.username ?? "N/A",
-      email: foundUser?.email ?? "N/A",
-      full_name: foundUser?.full_name ?? "N/A",
+      username: foundUser?.username ?? 'N/A',
+      email: foundUser?.email ?? 'N/A',
+      full_name: fullName,
     };
   });
 });
@@ -372,8 +375,6 @@ onMounted(async () => {
 
 <template>
   <div>
-    <LoadingOverlay :loading="loading && products.length > 0" />
-
     <div class="page-header mb-6">
       <h1 class="page-title">สินค้า</h1>
     </div>
@@ -460,7 +461,7 @@ onMounted(async () => {
                 : 'text-green-600',
           ]"
         >
-          {{ value }}
+          {{ formatNum(value as number) }}
         </span>
       </template>
 
@@ -774,7 +775,7 @@ onMounted(async () => {
             <div class="space-y-2">
               <label class="block text-sm font-medium text-secondary-700"
                 >ผู้ใช้งานที่ไม่มีสิทธิ์เข้าถึง ({{
-                  productForm.excluded_user_ids.length
+                  formatNum(productForm.excluded_user_ids.length)
                 }}
                 ราย)</label
               >

@@ -12,7 +12,7 @@ import {
 } from "lucide-vue-next";
 import { ordersApi } from "@/api/customer/orders";
 import type { Order, OrderStatus } from "@/types";
-import { formatPrice, formatDateTime } from "@/utils/format";
+import { formatPrice, formatDateTime, formatNum } from "@/utils/format";
 
 const orders = ref<Order[]>([]);
 const loading = ref(true);
@@ -136,7 +136,7 @@ function fmtTime(d: string) {
         :key="stat.label"
         class="card py-3 px-4 text-center"
       >
-        <p class="text-2xl font-bold text-secondary-900">{{ stat.count }}</p>
+        <p class="text-2xl font-bold text-secondary-900">{{ formatNum(stat.count) }}</p>
         <p class="text-xs text-secondary-500 mt-0.5">{{ stat.label }}</p>
       </div>
     </div>
@@ -208,7 +208,7 @@ function fmtTime(d: string) {
                 ฿{{ fmt(order.total_amount) }}
               </p>
               <p class="text-xs text-secondary-400 mt-0.5">
-                {{ order.items.length }} รายการ
+                {{ formatNum(order.items.length) }} รายการ
               </p>
             </div>
           </div>
@@ -229,7 +229,7 @@ function fmtTime(d: string) {
               v-if="order.items.length > 4"
               class="text-xs text-secondary-400 ml-1"
             >
-              +{{ order.items.length - 4 }} รายการ
+              +{{ formatNum(order.items.length - 4) }} รายการ
             </span>
             <span class="ml-auto text-xs text-primary-600 font-medium"
               >ดูรายละเอียด →</span

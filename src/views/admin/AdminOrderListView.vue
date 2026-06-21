@@ -4,7 +4,7 @@ import { RouterLink } from "vue-router";
 import { Search, Eye } from "lucide-vue-next";
 import { adminOrdersApi } from "@/api/admin/orders";
 import type { AdminOrder } from "@/types";
-import { formatPrice, formatDateTime } from "@/utils/format";
+import { formatPrice, formatDateTime, formatNum } from "@/utils/format";
 import { formatOrderUser } from "@/utils";
 import {
   BaseInput,
@@ -115,7 +115,7 @@ function fmtDate(d: string) {
   <div>
     <div class="page-header mb-6">
       <h1 class="page-title">คำสั่งซื้อทั้งหมด</h1>
-      <span class="text-sm text-secondary-400">{{ total }} รายการ</span>
+      <span class="text-sm text-secondary-400">{{ formatNum(total) }} รายการ</span>
     </div>
 
     <div class="card mb-6">

@@ -18,7 +18,7 @@ import type {
   ActiveCart,
   SessionStats,
 } from "@/types";
-import { formatPrice } from "@/utils/format";
+import { formatPrice, formatNum } from "@/utils/format";
 
 const loading = ref(true);
 const summary = ref<DashboardSummary>({
@@ -155,7 +155,7 @@ function orderUser(o: RecentOrder) {
           <div>
             <p class="text-xs text-secondary-400">คำสั่งซื้อรอดำเนินการ</p>
             <p class="text-xl font-bold text-secondary-900">
-              {{ summary.pending_orders }}
+              {{ formatNum(summary.pending_orders) }}
             </p>
           </div>
         </div>
@@ -166,7 +166,7 @@ function orderUser(o: RecentOrder) {
           <div>
             <p class="text-xs text-secondary-400">สินค้าสต็อกต่ำ</p>
             <p class="text-xl font-bold text-secondary-900">
-              {{ summary.low_stock_count }}
+              {{ formatNum(summary.low_stock_count) }}
             </p>
           </div>
         </div>
@@ -177,7 +177,7 @@ function orderUser(o: RecentOrder) {
           <div>
             <p class="text-xs text-secondary-400">คำสั่งซื้อทั้งหมด</p>
             <p class="text-xl font-bold text-secondary-900">
-              {{ summary.total_orders }}
+              {{ formatNum(summary.total_orders) }}
             </p>
           </div>
         </div>
@@ -226,7 +226,7 @@ function orderUser(o: RecentOrder) {
                 <p class="text-xs font-medium text-secondary-700 truncate">
                   {{ p.name }}
                 </p>
-                <p class="text-xs text-secondary-400">{{ p.sold }} ชิ้น</p>
+                <p class="text-xs text-secondary-400">{{ formatNum(p.sold) }} ชิ้น</p>
               </div>
               <p class="text-xs font-semibold text-primary-700 shrink-0">
                 ฿{{
@@ -328,7 +328,7 @@ function orderUser(o: RecentOrder) {
             </div>
 
             <p class="text-xs font-semibold text-primary-700 shrink-0">
-              {{ p.view_count.toLocaleString() }} ครั้ง
+              {{ formatNum(p.view_count) }} ครั้ง
             </p>
           </div>
         </div>
@@ -341,7 +341,7 @@ function orderUser(o: RecentOrder) {
               🧺 ตะกร้าที่ยังค้างอยู่
             </h2>
             <span v-if="activeCarts.length > 0" class="badge badge-yellow"
-              >{{ activeCarts.length }} ราย</span
+              >{{ formatNum(activeCarts.length) }} ราย</span
             >
           </div>
           <div v-if="activeCarts.length === 0" class="text-center py-8">
@@ -369,7 +369,7 @@ function orderUser(o: RecentOrder) {
                 </p>
               </div>
               <span class="badge badge-blue shrink-0 ml-2">
-                {{ cart.item_count }} รายการ
+                {{ formatNum(cart.item_count) }} รายการ
               </span>
             </div>
           </div>
@@ -387,19 +387,19 @@ function orderUser(o: RecentOrder) {
             <div class="grid grid-cols-3 gap-2 mb-4">
               <div class="bg-primary-50 rounded-xl p-3 text-center">
                 <p class="text-lg font-bold text-primary-700">
-                  {{ sessionStats.total_sessions.toLocaleString() }}
+                  {{ formatNum(sessionStats.total_sessions) }}
                 </p>
                 <p class="text-xs text-primary-500 mt-0.5">Sessions</p>
               </div>
               <div class="bg-teal-50 rounded-xl p-3 text-center">
                 <p class="text-lg font-bold text-teal-700">
-                  {{ sessionStats.unique_users.toLocaleString() }}
+                  {{ formatNum(sessionStats.unique_users) }}
                 </p>
                 <p class="text-xs text-teal-500 mt-0.5">Users</p>
               </div>
               <div class="bg-orange-50 rounded-xl p-3 text-center">
                 <p class="text-lg font-bold text-orange-700">
-                  {{ sessionStats.avg_duration_minutes }}
+                  {{ formatNum(sessionStats.avg_duration_minutes) }}
                 </p>
                 <p class="text-xs text-orange-500 mt-0.5">นาที/session</p>
               </div>

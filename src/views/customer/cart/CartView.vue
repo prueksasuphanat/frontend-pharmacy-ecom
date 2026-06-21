@@ -12,7 +12,7 @@ import {
   ShoppingBag,
   ArrowRight,
 } from "lucide-vue-next";
-import { formatPrice } from "@/utils/format";
+import { formatPrice, formatNum } from "@/utils/format";
 
 const cart = useCartStore();
 const wishlistStore = useWishlistStore();
@@ -85,7 +85,7 @@ onMounted(() => cart.fetchCart());
                     <Minus class="w-3 h-3" />
                   </button>
                   <span class="w-10 text-center text-sm font-medium">{{
-                    item.quantity
+                    formatNum(item.quantity)
                   }}</span>
                   <button
                     @click="cart.updateQty(item.id, item.quantity + 1)"
@@ -135,7 +135,7 @@ onMounted(() => cart.fetchCart());
             <h3 class="font-bold text-secondary-900 mb-4">สรุปคำสั่งซื้อ</h3>
             <div class="space-y-2 text-sm">
               <div class="flex justify-between text-secondary-600">
-                <span>ยอดรวม ({{ cart.totalItems }} รายการ)</span>
+                <span>ยอดรวม ({{ formatNum(cart.totalItems) }} รายการ)</span>
                 <span>฿{{ formatPrice(cart.subtotal) }}</span>
               </div>
               <div class="flex justify-between text-secondary-600">

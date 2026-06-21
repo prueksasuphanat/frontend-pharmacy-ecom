@@ -10,6 +10,7 @@ import type {
 } from "@/types";
 import { unitsApi } from "@/api";
 import { useToast } from "@/composables";
+import { formatNum } from "@/utils";
 
 const props = defineProps<{
   productId: number;
@@ -411,7 +412,7 @@ onMounted(() => {
             <p class="text-xs text-secondary-400">ราคาทุน</p>
             <p class="text-sm font-semibold text-secondary-900">
               <span v-if="unit.computed_cost_price !== null && unit.computed_cost_price !== undefined">
-                ฿{{ unit.computed_cost_price.toLocaleString("th-TH", { minimumFractionDigits: 2 }) }}
+                ฿{{ formatNum(unit.computed_cost_price, 2) }}
               </span>
               <span v-else class="text-secondary-400">—</span>
             </p>
@@ -419,11 +420,7 @@ onMounted(() => {
           <div class="text-right">
             <p class="text-xs text-secondary-400">ราคากลาง</p>
             <p class="text-sm font-semibold text-secondary-900">
-              ฿{{
-                Number(unit.default_price).toLocaleString("th-TH", {
-                  minimumFractionDigits: 2,
-                })
-              }}
+              ฿{{ formatNum(unit.default_price, 2) }}
             </p>
           </div>
           <div class="flex items-center gap-1">
