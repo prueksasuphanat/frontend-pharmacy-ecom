@@ -6,7 +6,6 @@ import {
   BaseTable,
   BaseToggle,
   BaseModal,
-  LoadingOverlay,
   BaseMultiSelect,
   BaseAutocomplete,
   BaseTextarea,
@@ -135,7 +134,7 @@ const vendorOptions = computed(() =>
 const userOptions = computed(() =>
   usersStore.userFullName.map((u) => ({
     value: u.id,
-    label: `${[u.first_name, u.last_name].filter(Boolean).join(' ') || u.username} (@${u.username})`,
+    label: `${[u.first_name, u.last_name].filter(Boolean).join(" ") || u.username} (@${u.username})`,
   })),
 );
 
@@ -143,12 +142,13 @@ const excludedUsersDisplayList = computed(() => {
   return productForm.value.excluded_user_ids.map((id) => {
     const foundUser = usersStore.userFullName.find((u) => u.id === id);
     const fullName = foundUser
-      ? `${foundUser.first_name} ${foundUser.last_name}`.trim() || foundUser.username
-      : 'N/A';
+      ? `${foundUser.first_name} ${foundUser.last_name}`.trim() ||
+        foundUser.username
+      : "N/A";
     return {
       id,
-      username: foundUser?.username ?? 'N/A',
-      email: foundUser?.email ?? 'N/A',
+      username: foundUser?.username ?? "N/A",
+      email: foundUser?.email ?? "N/A",
       full_name: fullName,
     };
   });
@@ -238,7 +238,8 @@ async function handleEditProduct(product: Product) {
       base_unit_id: fresh.base_unit_id ?? null,
       vendor_id: fresh.vendor_id ?? null,
       visibility: fresh.visibility ?? "ALL",
-      excluded_user_ids: fresh.excluded_users?.map((au: any) => au.user_id) ?? [],
+      excluded_user_ids:
+        fresh.excluded_users?.map((au: any) => au.user_id) ?? [],
       cost_price: fresh.cost_price ?? null,
     };
   }
@@ -513,8 +514,6 @@ onMounted(async () => {
       @close="closeEditModal"
     >
       <div class="relative min-h-[200px]">
-        <LoadingOverlay :loading="modalLoading" text="กำลังโหลดข้อมูล..." />
-
         <!-- Tabs Header -->
         <div class="flex border-b border-secondary-200 mb-5">
           <button
