@@ -859,7 +859,7 @@ onMounted(async () => {
                     <!-- % กำไร column header placed before base unit (index 0) -->
                     <th
                       v-if="uIdx === 0"
-                      class="px-4 py-2 text-center text-xs font-semibold text-amber-700 bg-amber-50/20 w-[120px] min-w-[120px] max-w-[120px] border-r border-secondary-200"
+                      class="px-4 py-2 text-center text-xs font-semibold text-amber-700 bg-amber-50 w-[120px] min-w-[120px] max-w-[120px] border-r border-amber-200"
                     >
                       % กำไร
                     </th>
@@ -945,7 +945,7 @@ onMounted(async () => {
                     >
                       <td
                         v-if="uIdx === 0"
-                        class="px-4 py-3 border-r border-secondary-200 bg-amber-50/10 text-center w-[120px] min-w-[120px] max-w-[120px]"
+                        class="px-4 py-3 border-r border-amber-200 bg-amber-50 text-center w-[120px] min-w-[120px] max-w-[120px]"
                       >
                         <BaseInput
                           :model-value="
@@ -1076,14 +1076,14 @@ onMounted(async () => {
                     </div>
                   </td>
                   <td
-                    class="sticky-col left-[240px] z-10 px-4 py-2 align-middle text-sm font-semibold text-amber-700 bg-amber-50 text-center w-[160px] min-w-[160px] max-w-[160px]"
+                    class="sticky-col left-[240px] z-10 px-4 py-2 align-middle text-sm font-semibold text-amber-700 bg-amber-50 text-center w-[160px] min-w-[160px] max-w-[160px] border-r border-amber-200"
                   >
                     % กำไร
                   </td>
                   <td
                     v-for="user in users"
                     :key="user.id"
-                    class="px-4 py-2 align-middle border-r border-secondary-200 last:border-r-0 bg-amber-50/10 text-center"
+                    class="px-4 py-2 align-middle border-r border-amber-200 last:border-r-0 bg-amber-50 text-center"
                   >
                     <BaseInput
                       :model-value="
