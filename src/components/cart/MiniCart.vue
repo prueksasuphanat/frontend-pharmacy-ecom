@@ -136,13 +136,6 @@ const isOpen = ref(false);
           <div class="flex justify-between text-secondary-600">
             <span>ยอดรวม</span><span>฿{{ formatNum(cart.subtotal, 2) }}</span>
           </div>
-          <div class="flex justify-between text-secondary-600">
-            <span>ค่าจัดส่ง</span>
-            <span v-if="cart.shippingFee === 0" class="text-success font-medium"
-              >ฟรี</span
-            >
-            <span v-else>฿{{ formatNum(cart.shippingFee, 2) }}</span>
-          </div>
           <div
             class="flex justify-between font-bold text-secondary-900 text-base border-t pt-1.5"
           >
@@ -152,9 +145,6 @@ const isOpen = ref(false);
             >
           </div>
         </div>
-        <p v-if="cart.shippingFee > 0" class="text-xs text-secondary-400">
-          สั่งซื้อครบ ฿1,000 รับสิทธิ์จัดส่งฟรี
-        </p>
         <RouterLink
           to="/checkout"
           @click="isOpen = false"

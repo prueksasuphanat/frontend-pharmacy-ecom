@@ -21,7 +21,6 @@ export interface CartItem {
 export interface CartData {
   items: CartItem[];
   subtotal: number;
-  shipping_fee: number;
   total: number;
   total_items: number;
 }

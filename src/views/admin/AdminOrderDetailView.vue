@@ -836,17 +836,6 @@ function getStepStatus(
                   >฿{{ formatPrice(order.subtotal) }}</span
                 >
               </div>
-              <div class="flex justify-between items-center">
-                <span>ค่าบริการจัดส่งพัสดุ</span>
-                <span class="text-secondary-900">
-                  {{
-                    order.shipping_fee === 0
-                      ? "จัดส่งฟรี"
-                      : `฿${formatPrice(order.shipping_fee)}`
-                  }}
-                </span>
-              </div>
-
               <!-- Net amount summary -->
               <div
                 class="border-t border-dashed border-secondary-200 pt-3 mt-1 flex justify-between items-baseline"

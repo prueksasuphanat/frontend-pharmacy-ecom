@@ -42,7 +42,6 @@ export interface Order {
   user_id: number;
   status: OrderStatus;
   shipping_address: OrderShippingAddress;
-  shipping_fee: number;
   subtotal: number;
   total_amount: number;
   note: string | null;
@@ -63,7 +62,6 @@ export interface AdminOrder {
   user_id: number;
   status: OrderStatus;
   shipping_address: OrderShippingAddress;
-  shipping_fee: number;
   subtotal: number;
   total_amount: number;
   note: string | null;

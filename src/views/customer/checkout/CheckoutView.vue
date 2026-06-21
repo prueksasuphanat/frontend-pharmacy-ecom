@@ -536,26 +536,6 @@ async function placeOrder() {
                   >
                 </div>
 
-                <div
-                  class="flex justify-between text-secondary-500 items-center"
-                >
-                  <span class="flex items-center gap-1.5"> ค่าจัดส่ง </span>
-                  <span
-                    :class="[
-                      'text-sm font-bold',
-                      cart.shippingFee === 0
-                        ? 'text-success bg-green-50 px-2 py-0.5 rounded-full text-xs'
-                        : 'text-secondary-800',
-                    ]"
-                  >
-                    {{
-                      cart.shippingFee === 0
-                        ? "ฟรีค่าจัดส่ง"
-                        : `฿${fmt(cart.shippingFee)}`
-                    }}
-                  </span>
-                </div>
-
                 <!-- Total Sum -->
                 <div
                   class="flex justify-between border-t border-dashed border-secondary-200 pt-4 mt-2"

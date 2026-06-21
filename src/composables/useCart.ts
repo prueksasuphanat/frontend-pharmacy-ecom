@@ -7,7 +7,6 @@ export function useCart() {
   const items = computed(() => cartStore.items);
   const totalItems = computed(() => cartStore.totalItems);
   const subtotal = computed(() => cartStore.subtotal);
-  const shippingFee = computed(() => cartStore.shippingFee);
   const total = computed(() => cartStore.total);
   const isLoading = computed(() => cartStore.isLoading);
 
@@ -34,7 +33,6 @@ export function useCart() {
     items,
     totalItems,
     subtotal,
-    shippingFee,
     total,
     isLoading,
     addToCart,
