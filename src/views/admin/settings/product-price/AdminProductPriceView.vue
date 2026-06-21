@@ -86,7 +86,6 @@ function removeUserRow(userId: number) {
 
 function onCustomUserModeChange() {
   selectedUsers.value = [];
-  initializePriceMatrix();
 }
 
 const productOptions = computed(() =>

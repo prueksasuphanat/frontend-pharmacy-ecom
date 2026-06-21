@@ -35,7 +35,6 @@ export interface Order {
     province: string;
     postal_code: string;
   };
-  shipping_fee: number;
   total_amount: number;
   note: string;
   cancelled_reason: string;
@@ -60,7 +59,6 @@ export const MOCK_ORDERS: Order[] = [
       province: "กรุงเทพมหานคร",
       postal_code: "10900",
     },
-    shipping_fee: 50,
     total_amount: 420,
     note: "",
     cancelled_reason: "",
@@ -111,7 +109,6 @@ export const MOCK_ORDERS: Order[] = [
       province: "กรุงเทพมหานคร",
       postal_code: "10500",
     },
-    shipping_fee: 0,
     total_amount: 3500,
     note: "ต้องการรับก่อนเที่ยง",
     cancelled_reason: "",
@@ -168,7 +165,6 @@ export const MOCK_ORDERS: Order[] = [
       province: "กรุงเทพมหานคร",
       postal_code: "10310",
     },
-    shipping_fee: 0,
     total_amount: 12400,
     note: "",
     cancelled_reason: "",
@@ -231,7 +227,6 @@ export const MOCK_ORDERS: Order[] = [
       province: "กรุงเทพมหานคร",
       postal_code: "10900",
     },
-    shipping_fee: 50,
     total_amount: 555,
     note: "",
     cancelled_reason: "",
@@ -300,7 +295,6 @@ export const MOCK_ORDERS: Order[] = [
       province: "กรุงเทพมหานคร",
       postal_code: "10700",
     },
-    shipping_fee: 50,
     total_amount: 230,
     note: "",
     cancelled_reason: "เปลี่ยนใจ ขอยกเลิก",

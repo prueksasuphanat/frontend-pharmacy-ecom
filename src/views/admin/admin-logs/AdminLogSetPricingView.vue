@@ -23,7 +23,7 @@ import type {
   SpecialPriceLogEntry,
 } from "@/types";
 import { usePricingLogStore, useUsersStore } from "@/stores";
-import { formatDateTime, formatNum } from "@/utils";
+import { formatDateTime, formatNum, formatPrice } from "@/utils";
 
 const store = usePricingLogStore();
 const usersStore = useUsersStore();
@@ -73,9 +73,10 @@ const defaultColumns: Column<any>[] = [
   { key: "changed_at", label: "วันที่เปลี่ยน", width: "160px" },
   { key: "product", label: "สินค้า", minWidth: "200px" },
   { key: "category", label: "ประเภท", width: "130px" },
-  { key: "old_price", label: "ราคาเดิม", width: "120px", align: "right" },
-  { key: "new_price", label: "ราคาใหม่", width: "120px", align: "right" },
-  { key: "diff", label: "ส่วนต่าง", width: "120px", align: "right" },
+  { key: "old_price", label: "ราคาเดิม", width: "110px", align: "right" },
+  { key: "new_price", label: "ราคาใหม่", width: "110px", align: "right" },
+  { key: "diff", label: "ส่วนต่าง", width: "100px", align: "right" },
+  { key: "markup", label: "Markup %", width: "90px", align: "right" },
   { key: "user", label: "ผู้เปลี่ยน", width: "160px" },
   { key: "actions", label: "", width: "50px", align: "center", fixed: "right" },
 ];
@@ -85,9 +86,10 @@ const specialColumns: Column<any>[] = [
   { key: "product", label: "สินค้า", minWidth: "180px" },
   { key: "category", label: "ประเภท", width: "150px" },
   { key: "target_user", label: "ผู้ใช้ที่ตั้งราคา", width: "160px" },
-  { key: "old_price", label: "ราคาเดิม", width: "110px", align: "right" },
-  { key: "new_price", label: "ราคาใหม่", width: "110px", align: "right" },
-  { key: "diff", label: "ส่วนต่าง", width: "110px", align: "right" },
+  { key: "old_price", label: "ราคาเดิม", width: "100px", align: "right" },
+  { key: "new_price", label: "ราคาใหม่", width: "100px", align: "right" },
+  { key: "diff", label: "ส่วนต่าง", width: "90px", align: "right" },
+  { key: "markup", label: "Markup %", width: "90px", align: "right" },
   { key: "changed_by_user", label: "ผู้เปลี่ยน", width: "150px" },
   { key: "actions", label: "", width: "80px", align: "center", fixed: "right" },
 ];
@@ -124,6 +126,26 @@ const userModalColumns: Column<any>[] = [
 
 function priceDiff(oldPrice: string, newPrice: string): number {
   return parseFloat(newPrice) - parseFloat(oldPrice);
+}
+
+function calcMarkup(log: any): string {
+  const cost = Number(log.product_unit?.product?.cost_price)
+  const multiplier = Number(log.product_unit?.multiplier_to_base ?? 1)
+  const price = parseFloat(log.new_price)
+  if (!cost || cost === 0 || multiplier === 0) return "—"
+  const unitCost = cost * multiplier
+  return (((price - unitCost) / unitCost) * 100).toFixed(1)
+}
+
+function markupColor(log: any): string {
+  const cost = Number(log.product_unit?.product?.cost_price)
+  const multiplier = Number(log.product_unit?.multiplier_to_base ?? 1)
+  const price = parseFloat(log.new_price)
+  if (!cost || cost === 0 || multiplier === 0) return "text-gray-400"
+  const markup = ((price - cost * multiplier) / (cost * multiplier)) * 100
+  if (markup < 0) return "text-red-600"
+  if (markup < 10) return "text-amber-600"
+  return "text-green-600"
 }
 
 function productWithUnit(
@@ -490,6 +512,17 @@ watch(
           {{ priceDiff(row.old_price, row.new_price) > 0 ? "+" : ""
           }}{{ formatNum(priceDiff(row.old_price, row.new_price), 2) }}
         </span>
+      </template>
+
+      <template #cell-markup="{ row }">
+        <span
+          v-if="calcMarkup(row) !== '—'"
+          class="text-sm font-medium"
+          :class="markupColor(row)"
+        >
+          {{ calcMarkup(row) }}%
+        </span>
+        <span v-else class="text-secondary-400 text-sm">—</span>
       </template>
 
       <template #cell-user="{ row }">

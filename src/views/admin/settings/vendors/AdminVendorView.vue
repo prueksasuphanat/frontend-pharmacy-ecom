@@ -40,7 +40,8 @@ const pagination = computed(() => vendorStore.pagination);
 
 const columns: Column<Vendor>[] = [
   { key: "name", label: "ชื่อผู้จำหน่าย", minWidth: "180px" },
-  { key: "seller_code", label: "รหัสผู้ขาย", width: "120px" },
+  { key: "seller_code", label: "รหัสผู้ขาย", width: "110px" },
+  { key: "pmc_vendor_id", label: "PMC ID", width: "90px", align: "center" },
   { key: "phone", label: "เบอร์โทรศัพท์", width: "130px" },
   { key: "_count", label: "จำนวนสินค้า", width: "120px", align: "center" },
   { key: "is_active", label: "สถานะ", width: "100px", align: "center" },
@@ -228,6 +229,10 @@ onMounted(() => {
       @page-change="handlePageChange"
       empty-text="ไม่พบข้อมูลผู้จำหน่าย"
     >
+      <template #cell-pmc_vendor_id="{ row }">
+        <span class="text-xs font-mono text-secondary-500">{{ row.pmc_vendor_id ?? '—' }}</span>
+      </template>
+
       <template #cell-is_active="{ row }">
         <BaseToggle
           :model-value="row.is_active"

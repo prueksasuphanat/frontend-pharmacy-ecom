@@ -138,15 +138,6 @@ onMounted(() => cart.fetchCart());
                 <span>ยอดรวม ({{ formatNum(cart.totalItems) }} รายการ)</span>
                 <span>฿{{ formatPrice(cart.subtotal) }}</span>
               </div>
-              <div class="flex justify-between text-secondary-600">
-                <span>ค่าจัดส่ง</span>
-                <span
-                  v-if="cart.shippingFee === 0"
-                  class="text-success font-medium"
-                  >ฟรี</span
-                >
-                <span v-else>฿{{ formatPrice(cart.shippingFee) }}</span>
-              </div>
               <div
                 class="border-t pt-2 mt-2 flex justify-between font-bold text-base text-secondary-900"
               >
@@ -155,16 +146,6 @@ onMounted(() => cart.fetchCart());
                   >฿{{ formatPrice(cart.total) }}</span
                 >
               </div>
-            </div>
-
-            <div
-              v-if="cart.shippingFee > 0"
-              class="mt-3 p-3 bg-primary-50 rounded-lg"
-            >
-              <p class="text-xs text-primary-700">
-                🚚 สั่งอีก ฿{{ formatPrice(1000 - cart.subtotal) }}
-                รับสิทธิ์จัดส่งฟรี
-              </p>
             </div>
 
             <RouterLink

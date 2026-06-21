@@ -286,14 +286,6 @@ async function cancelOrder() {
               <div class="flex justify-between text-secondary-600">
                 <span>ยอดสินค้า</span><span>฿{{ fmt(order.subtotal) }}</span>
               </div>
-              <div class="flex justify-between text-secondary-600">
-                <span>ค่าจัดส่ง</span>
-                <span :class="order.shipping_fee === 0 ? 'text-success' : ''">{{
-                  order.shipping_fee === 0
-                    ? "ฟรี"
-                    : "฿" + fmt(order.shipping_fee)
-                }}</span>
-              </div>
               <div
                 class="flex justify-between font-bold text-secondary-900 border-t pt-2"
               >

@@ -97,23 +97,6 @@ function fmt(n: number) {
               <span>ยอดสินค้า</span>
               <span class="font-semibold text-secondary-800">฿{{ fmt(orderStore.currentOrder.subtotal) }}</span>
             </div>
-            <div class="flex justify-between text-secondary-500">
-              <span>ค่าจัดส่ง</span>
-              <span
-                :class="
-                  orderStore.currentOrder.shipping_fee === 0
-                    ? 'text-success font-bold bg-green-50 px-2 py-0.5 rounded-full text-xs'
-                    : 'font-semibold text-secondary-800'
-                "
-              >
-                {{
-                  orderStore.currentOrder.shipping_fee === 0
-                    ? "ฟรี"
-                    : `฿${fmt(orderStore.currentOrder.shipping_fee)}`
-                }}
-              </span>
-            </div>
-            
             <div class="flex justify-between font-black text-lg border-t border-dashed border-secondary-200 pt-4 mt-2">
               <span class="text-secondary-800">ยอดชำระสุทธิ</span>
               <span class="text-xl text-primary-700">฿{{ fmt(orderStore.currentOrder.total_amount) }}</span>

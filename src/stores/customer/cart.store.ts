@@ -5,7 +5,6 @@ import type { CartData } from "@/types";
 const EMPTY_CART: CartData = {
   items: [],
   subtotal: 0,
-  shipping_fee: 0,
   total: 0,
   total_items: 0,
 };
@@ -21,7 +20,6 @@ export const useCartStore = defineStore("cart", {
     items: (state) => state.cart.items,
     totalItems: (state) => state.cart.total_items,
     subtotal: (state) => state.cart.subtotal,
-    shippingFee: (state) => state.cart.shipping_fee,
     total: (state) => state.cart.total,
   },
 

@@ -12,6 +12,7 @@ import {
 import { useRouter } from "vue-router";
 import { useUsersStore } from "@/stores";
 import { formatDate, formatNum } from "@/utils";
+import dayjs from "@/utils/dayjs";
 import { productsApi } from "@/api";
 
 import type { GetUsersParams } from "@/api";
@@ -60,11 +61,14 @@ let searchTimer: ReturnType<typeof setTimeout> | null = null;
 const pagination = computed(() => userStore.pagination);
 
 const columns: Column<User>[] = [
-  { key: "username", label: "Username", width: "150px", align: "left" },
-  { key: "email", label: "อีเมล", width: "20%", align: "left" },
+  { key: "code", label: "รหัส", width: "100px", align: "left" },
+  { key: "username", label: "Username", width: "140px", align: "left" },
   { key: "full_name", label: "ชื่อ-นามสกุล", width: "18%", align: "left" },
+  { key: "email", label: "อีเมล", width: "18%", align: "left" },
   { key: "phone", label: "เบอร์โทรศัพท์", width: "130px", align: "left" },
-  { key: "role", label: "Role", minWidth: "200px", align: "left" },
+  { key: "role", label: "Role", minWidth: "160px", align: "left" },
+  { key: "expired_date", label: "วันหมดอายุ", width: "130px", align: "center" },
+  { key: "last_active_at", label: "ใช้งานล่าสุด", width: "150px", align: "left" },
   {
     key: "is_verified",
     label: "อีเมลยืนยัน",
@@ -74,6 +78,10 @@ const columns: Column<User>[] = [
   { key: "is_active", label: "สถานะ", align: "left", width: "90px" },
   { key: "actions", label: "", align: "right", width: "10px", fixed: "right" },
 ];
+
+function isExpiredSoon(date: string): boolean {
+  return dayjs(date).diff(dayjs(), "day") <= 30;
+}
 
 const users = computed(() => userStore.users);
 
@@ -399,6 +407,10 @@ onMounted(() => {
         empty-text="ไม่พบข้อมูลผู้ใช้"
         @page-change="handlePageChange"
       >
+        <template #cell-code="{ row }">
+          <span class="text-xs font-mono text-secondary-500">{{ row.code || '—' }}</span>
+        </template>
+
         <template #cell-username="{ row }">
           <span class="text-sm text-secondary-900 block truncate">
             {{ row.username }}
@@ -442,6 +454,26 @@ onMounted(() => {
             class="max-w-[140px]"
             @update:model-value="updateUserRole(row.id, $event as string)"
           />
+        </template>
+
+        <template #cell-expired_date="{ row }">
+          <template v-if="row.expired_date">
+            <span
+              :class="isExpiredSoon(row.expired_date)
+                ? 'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700'
+                : 'text-sm text-secondary-700'"
+            >
+              {{ formatDate(row.expired_date, "D MMM BBBB") }}
+            </span>
+          </template>
+          <span v-else class="text-secondary-400 text-sm">—</span>
+        </template>
+
+        <template #cell-last_active_at="{ row }">
+          <span v-if="row.last_active_at" class="text-sm text-secondary-600">
+            {{ formatDate(row.last_active_at, "D MMM BBBB HH:mm") }}
+          </span>
+          <span v-else class="text-secondary-400 text-sm">ยังไม่เคย</span>
         </template>
 
         <template #cell-is_verified="{ row }">
