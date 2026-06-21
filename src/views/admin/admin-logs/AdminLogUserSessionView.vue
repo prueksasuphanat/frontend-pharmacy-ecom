@@ -55,6 +55,7 @@ const logs = computed(() => store.userSessionLogs);
 const columns: Column<UserSessionLogEntry>[] = [
   { key: "user", label: "ผู้ใช้งาน", minWidth: "220px" },
   { key: "role", label: "บทบาท", width: "130px" },
+  { key: "login_count", label: "จำนวน Login", width: "110px", align: "center" },
   { key: "status", label: "สถานะ", width: "155px" },
   { key: "login_at", label: "เวลาเข้าล่าสุด", width: "180px" },
   { key: "last_active_at", label: "ใช้งานล่าสุด", width: "180px" },
@@ -331,6 +332,12 @@ onMounted(() => {
       </template>
 
       <!-- Role Cell -->
+      <template #cell-login_count="{ row }">
+        <span class="inline-flex items-center justify-center w-8 h-6 rounded bg-gray-100 text-gray-700 text-xs font-medium">
+          {{ formatNum(row.login_count ?? 0) }}
+        </span>
+      </template>
+
       <template #cell-role="{ row }">
         <span
           v-if="row.user"

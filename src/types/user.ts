@@ -35,6 +35,7 @@ export interface User {
   created_by: number | null;
   updated_by: number | null;
   expired_date: string | null;
+  last_active_at?: string | null;
   profile_image?: UserAttachment | null;
   attachments?: UserAttachment[];
   excluded_products?: { id: number; code: string; name: string }[];

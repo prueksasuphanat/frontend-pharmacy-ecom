@@ -31,6 +31,7 @@ export interface UserSessionLogEntry {
   duration_minutes: number | null;
   ip_address: string | null;
   user_agent: string | null;
+  login_count?: number;
   user: AuditLogUser;
 }
 

@@ -48,7 +48,10 @@ const statusLbl: Record<string, string> = {
 
 const columns: Column<AdminOrder>[] = [
   { key: "id", label: "#", width: "90px", align: "left" },
-  { key: "customer", label: "ลูกค้า", minWidth: "220px" },
+  { key: "customer", label: "ลูกค้า", minWidth: "200px" },
+  { key: "phone", label: "เบอร์โทร", width: "130px", align: "left" },
+  { key: "items", label: "รายการ", width: "80px", align: "center" },
+  { key: "note", label: "", width: "50px", align: "center" },
   { key: "status", label: "สถานะ", width: "130px", align: "center" },
   { key: "total_amount", label: "ยอดรวม", width: "130px", align: "right" },
   { key: "created_at", label: "วันที่สั่ง", width: "180px", align: "left" },
@@ -158,6 +161,25 @@ function fmtDate(d: string) {
           </p>
           <p class="text-xs text-secondary-400">{{ row.user.email }}</p>
         </div>
+      </template>
+
+      <template #cell-phone="{ row }">
+        <span class="text-gray-700 text-sm">{{ row.user?.phone || '—' }}</span>
+      </template>
+
+      <template #cell-items="{ row }">
+        <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-100 text-gray-700 text-xs font-medium">
+          {{ row.items?.length ?? 0 }}
+        </span>
+      </template>
+
+      <template #cell-note="{ row }">
+        <span v-if="row.note" class="text-amber-500" title="มีหมายเหตุ">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
+          </svg>
+        </span>
+        <span v-else class="text-gray-300 text-xs">—</span>
       </template>
 
       <template #cell-status="{ row }">

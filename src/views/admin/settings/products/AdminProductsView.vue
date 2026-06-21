@@ -76,10 +76,13 @@ const currentImageUrl = computed(() => {
 
 const columns: Column<Product>[] = [
   { key: "code", label: "รหัสสินค้า", width: "120px" },
-  { key: "name", label: "ชื่อสินค้า", minWidth: "250px" },
+  { key: "name", label: "ชื่อสินค้า", minWidth: "220px" },
   { key: "category", label: "ประเภท", width: "150px" },
+  { key: "vendor", label: "ผู้จำหน่าย", width: "140px" },
   { key: "quantity", label: "คงเหลือ", width: "100px", align: "center" },
+  { key: "cost_price", label: "ราคาทุน", width: "110px", align: "right" },
   { key: "default_price", label: "ราคากลาง", width: "120px", align: "right" },
+  { key: "visibility", label: "การมองเห็น", width: "110px", align: "center" },
   {
     key: "is_special_pricing_enabled",
     label: "ราคาตามผู้ใช้",
@@ -449,6 +452,28 @@ onMounted(async () => {
           </span>
         </div>
         <span v-else class="text-sm text-secondary-400">-</span>
+      </template>
+
+      <template #cell-vendor="{ row }">
+        <span v-if="row.vendor" class="text-sm text-gray-700">{{ row.vendor.name }}</span>
+        <span v-else class="text-secondary-400 text-sm">—</span>
+      </template>
+
+      <template #cell-cost_price="{ row }">
+        <span v-if="row.cost_price != null" class="text-sm font-medium text-secondary-900">
+          ฿{{ formatPrice(Number(row.cost_price)) }}
+        </span>
+        <span v-else class="text-secondary-400 text-sm">—</span>
+      </template>
+
+      <template #cell-visibility="{ row }">
+        <span
+          v-if="row.visibility === 'RESTRICTED'"
+          class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-700"
+        >
+          จำกัด
+        </span>
+        <span v-else class="text-secondary-400 text-xs">ทั้งหมด</span>
       </template>
 
       <template #cell-quantity="{ value }">
