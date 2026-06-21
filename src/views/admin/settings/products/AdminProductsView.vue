@@ -135,18 +135,21 @@ const vendorOptions = computed(() =>
 const userOptions = computed(() =>
   usersStore.userFullName.map((u) => ({
     value: u.id,
-    label: `${u.full_name || u.username} (@${u.username})`,
+    label: `${[u.first_name, u.last_name].filter(Boolean).join(' ') || u.username} (@${u.username})`,
   })),
 );
 
 const excludedUsersDisplayList = computed(() => {
   return productForm.value.excluded_user_ids.map((id) => {
     const foundUser = usersStore.userFullName.find((u) => u.id === id);
+    const fullName = foundUser
+      ? `${foundUser.first_name} ${foundUser.last_name}`.trim() || foundUser.username
+      : 'N/A';
     return {
       id,
-      username: foundUser?.username ?? "N/A",
-      email: foundUser?.email ?? "N/A",
-      full_name: foundUser?.full_name ?? "N/A",
+      username: foundUser?.username ?? 'N/A',
+      email: foundUser?.email ?? 'N/A',
+      full_name: fullName,
     };
   });
 });
