@@ -9,6 +9,7 @@ export interface UserUnitPrice {
   price: number;
   special_price_id: number | null;
   is_special: boolean;
+  markup_percent: number | null;
 }
 
 export interface ProductUnitPriceData {
@@ -22,6 +23,7 @@ export interface ProductUnitPriceData {
 
 export interface ProductPriceData {
   product_id: number;
+  cost_price: string | null;
   is_special_pricing_enabled: boolean;
   units: ProductUnitPriceData[];
 }

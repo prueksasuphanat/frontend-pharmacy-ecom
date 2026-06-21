@@ -14,6 +14,7 @@ interface Props {
   readonly?: boolean;
   /** อนุญาตให้กรอกค่าติดลบได้ (ใช้เฉพาะ type="number") */
   allowNegative?: boolean;
+  size?: "sm" | "md";
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -22,6 +23,7 @@ const props = withDefaults(defineProps<Props>(), {
   required: false,
   readonly: false,
   allowNegative: false,
+  size: "md",
 });
 
 const emit = defineEmits<{
@@ -33,6 +35,7 @@ const emit = defineEmits<{
 
 const inputClasses = computed(() => [
   "input",
+  props.size === "sm" ? "input-sm" : "",
   {
     "pl-9": props.icon,
     "pr-10": props.iconRight,

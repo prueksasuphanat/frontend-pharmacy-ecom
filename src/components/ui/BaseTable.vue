@@ -2,6 +2,7 @@
 import { computed } from "vue";
 import { ChevronLeft, ChevronRight } from "lucide-vue-next";
 import type { Pagination } from "@/types";
+import { formatNum } from "@/utils";
 
 export interface Column<T> {
   key: keyof T | string;
@@ -21,6 +22,7 @@ interface Props {
   pagination?: Pagination;
   hoverable?: boolean;
   striped?: boolean;
+  skeletonRows?: number;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -28,6 +30,7 @@ const props = withDefaults(defineProps<Props>(), {
   emptyText: "ไม่มีข้อมูล",
   hoverable: true,
   striped: false,
+  skeletonRows: 5,
 });
 
 const emit = defineEmits<{
@@ -188,18 +191,23 @@ function isFixed(column: Column<T>) {
           </tr>
         </thead>
         <tbody>
-          <tr v-if="loading">
-            <td :colspan="columns.length" class="text-center py-12">
-              <div class="flex items-center justify-center gap-2">
+          <!-- First load: skeleton rows -->
+          <template v-if="loading && data.length === 0">
+            <tr v-for="i in skeletonRows" :key="`sk-${i}`" class="animate-pulse">
+              <td
+                v-for="column in columns"
+                :key="`sk-${String(column.key)}`"
+                class="py-3 px-4"
+              >
                 <div
-                  class="w-5 h-5 border-2 border-primary-600 border-t-transparent rounded-full animate-spin"
-                ></div>
-                <span class="text-sm text-secondary-500">กำลังโหลด...</span>
-              </div>
-            </td>
-          </tr>
+                  class="h-4 bg-secondary-200 rounded"
+                  :class="i % 3 === 0 ? 'w-3/4' : i % 3 === 1 ? 'w-full' : 'w-1/2'"
+                />
+              </td>
+            </tr>
+          </template>
 
-          <tr v-else-if="data.length === 0">
+          <tr v-else-if="!loading && data.length === 0">
             <td :colspan="columns.length" class="text-center py-12">
               <slot name="empty">
                 <div class="text-secondary-400">
@@ -213,8 +221,12 @@ function isFixed(column: Column<T>) {
             v-else
             v-for="(row, index) in data"
             :key="index"
-            @click="$emit('rowClick', row)"
-            :class="['transition-colors', { 'cursor-pointer hover:bg-secondary-50/80': hoverable }]"
+            @click="!loading && $emit('rowClick', row)"
+            :class="[
+              'transition-all',
+              { 'cursor-pointer hover:bg-secondary-50/80': hoverable && !loading },
+              { 'opacity-50 pointer-events-none': loading },
+            ]"
           >
             <td
               v-for="column in columns"
@@ -247,12 +259,12 @@ function isFixed(column: Column<T>) {
         class="text-xs sm:text-sm text-secondary-500 text-center sm:text-left"
       >
         แสดง
-        <span class="font-medium text-secondary-900">{{ startItem }}</span>
+        <span class="font-medium text-secondary-900">{{ formatNum(startItem) }}</span>
         ถึง
-        <span class="font-medium text-secondary-900">{{ endItem }}</span>
+        <span class="font-medium text-secondary-900">{{ formatNum(endItem) }}</span>
         จาก
         <span class="font-medium text-secondary-900">{{
-          pagination.total
+          formatNum(pagination.total)
         }}</span>
         รายการ
       </div>

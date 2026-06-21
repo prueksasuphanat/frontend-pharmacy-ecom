@@ -21,7 +21,7 @@ import {
   useUsersStore,
 } from "@/stores";
 import { unitsApi } from "@/api";
-import { formatDate, formatPrice } from "@/utils";
+import { formatDate, formatPrice, formatNum } from "@/utils";
 import AdminProductUnitView from "@/views/admin/settings/product-units/AdminProductUnitView.vue";
 import { useToast } from "@/composables";
 
@@ -372,8 +372,6 @@ onMounted(async () => {
 
 <template>
   <div>
-    <LoadingOverlay :loading="loading && products.length > 0" />
-
     <div class="page-header mb-6">
       <h1 class="page-title">สินค้า</h1>
     </div>
@@ -460,7 +458,7 @@ onMounted(async () => {
                 : 'text-green-600',
           ]"
         >
-          {{ value }}
+          {{ formatNum(value as number) }}
         </span>
       </template>
 
@@ -774,7 +772,7 @@ onMounted(async () => {
             <div class="space-y-2">
               <label class="block text-sm font-medium text-secondary-700"
                 >ผู้ใช้งานที่ไม่มีสิทธิ์เข้าถึง ({{
-                  productForm.excluded_user_ids.length
+                  formatNum(productForm.excluded_user_ids.length)
                 }}
                 ราย)</label
               >

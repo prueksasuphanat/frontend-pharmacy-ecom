@@ -10,13 +10,10 @@ import {
 } from "lucide-vue-next";
 import { RouterLink } from "vue-router";
 import { useCartStore } from "@/stores/customer/cart.store";
+import { formatNum } from "@/utils";
 
 const cart = useCartStore();
 const isOpen = ref(false);
-
-function formatPrice(n: number) {
-  return n.toLocaleString("th-TH", { minimumFractionDigits: 2 });
-}
 </script>
 
 <template>
@@ -29,7 +26,7 @@ function formatPrice(n: number) {
       v-if="cart.totalItems > 0"
       class="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-primary-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center"
     >
-      {{ cart.totalItems > 9 ? "9+" : cart.totalItems }}
+      {{ cart.totalItems > 9 ? "9+" : formatNum(cart.totalItems) }}
     </span>
   </button>
 
@@ -50,7 +47,7 @@ function formatPrice(n: number) {
         <h2 class="font-bold text-lg flex items-center gap-2">
           <ShoppingCart class="w-5 h-5 text-primary-600" />
           ตะกร้าสินค้า
-          <span class="badge badge-teal">{{ cart.totalItems }}</span>
+          <span class="badge badge-teal">{{ formatNum(cart.totalItems) }}</span>
         </h2>
         <button
           @click="isOpen = false"
@@ -100,7 +97,7 @@ function formatPrice(n: number) {
               {{ item.unit.name }}
             </p>
             <p class="text-primary-600 font-semibold text-sm mt-1">
-              ฿{{ formatPrice(item.unit_price) }}
+              ฿{{ formatNum(item.unit_price, 2) }}
             </p>
           </div>
           <div class="flex flex-col items-end gap-2 shrink-0">
@@ -120,7 +117,7 @@ function formatPrice(n: number) {
                 <Minus class="w-3 h-3" />
               </button>
               <span class="text-sm font-medium w-6 text-center">{{
-                item.quantity
+                formatNum(item.quantity)
               }}</span>
               <button
                 @click="cart.updateQty(item.id, item.quantity + 1)"
@@ -137,21 +134,21 @@ function formatPrice(n: number) {
       <div v-if="cart.items.length > 0" class="border-t px-5 py-4 space-y-3">
         <div class="space-y-1.5 text-sm">
           <div class="flex justify-between text-secondary-600">
-            <span>ยอดรวม</span><span>฿{{ formatPrice(cart.subtotal) }}</span>
+            <span>ยอดรวม</span><span>฿{{ formatNum(cart.subtotal, 2) }}</span>
           </div>
           <div class="flex justify-between text-secondary-600">
             <span>ค่าจัดส่ง</span>
             <span v-if="cart.shippingFee === 0" class="text-success font-medium"
               >ฟรี</span
             >
-            <span v-else>฿{{ formatPrice(cart.shippingFee) }}</span>
+            <span v-else>฿{{ formatNum(cart.shippingFee, 2) }}</span>
           </div>
           <div
             class="flex justify-between font-bold text-secondary-900 text-base border-t pt-1.5"
           >
             <span>ยอดรวมทั้งหมด</span
             ><span class="text-primary-600"
-              >฿{{ formatPrice(cart.total) }}</span
+              >฿{{ formatNum(cart.total, 2) }}</span
             >
           </div>
         </div>

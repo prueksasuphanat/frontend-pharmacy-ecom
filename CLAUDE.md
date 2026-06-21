@@ -7,10 +7,11 @@
 
 > See root `CLAUDE.md` for full rules, format, types & emojis, and examples.
 
-- **ยังไม่ต้องทำการ Git Commit ทุกครั้งจนกว่าผู้ใช้จะสั่งโดยตรง** (Do NOT commit automatically; wait for explicit instruction/approval from the user to commit).
-- **หยุดถามเพื่อขอคำยืนยันจากผู้ใช้ก่อนทำการ Commit เสมอ** (Always ask and wait for user confirmation/command before committing).
-- **NEVER `git push` automatically** — only push when explicitly asked/instructed by the user
-- **NEVER touch the `main` branch**
+- **Do NOT commit automatically** — wait for explicit instruction/approval from the user to commit.
+- **Always ask and wait for user confirmation/command before committing.**
+- **NEVER `git push` automatically** — only push when explicitly asked/instructed by the user.
+- **NEVER touch the `main` branch directly** — no checkout, no push, no merge, no reset.
+
 
 
 ## Tech Stack
@@ -220,7 +221,10 @@ VITE_S3_BUCKET_URL=          # optional — Cloudflare R2 public URL
 - `import type { ... }` for types
 - `@/` alias — never relative paths with `../../../`
 - `useToast()` composable — never import vue-toastification directly
-- Error messages in Thai
+- Error messages must be in Thai (ภาษาไทย).
+- All numbers, counts, or prices rendered on the UI must always be formatted with thousands separators (`,`) (e.g., using `formatNum` or `formatPrice` formatting utilities).
+
+
 
 ### Store action pattern
 

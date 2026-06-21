@@ -13,7 +13,6 @@ import {
   BaseInput,
   BaseTable,
   BaseDatePicker,
-  LoadingOverlay,
   BaseModal,
   BaseAutocomplete,
 } from "@/components/ui";
@@ -24,7 +23,7 @@ import type {
   SpecialPriceLogEntry,
 } from "@/types";
 import { usePricingLogStore, useUsersStore } from "@/stores";
-import { formatDateTime } from "@/utils";
+import { formatDateTime, formatNum } from "@/utils";
 
 const store = usePricingLogStore();
 const usersStore = useUsersStore();
@@ -140,13 +139,6 @@ function productWithUnit(
   return `${productName} — ${unitName}`;
 }
 
-function formatPrice(price: string | number): string {
-  const num = typeof price === "string" ? parseFloat(price) : price;
-  return num.toLocaleString("th-TH", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-}
 
 function fullName(user?: {
   title?: string | null;
@@ -332,8 +324,6 @@ watch(
 
 <template>
   <div class="overflow-y-visible">
-    <LoadingOverlay :loading="loading && logs.length > 0" />
-
     <div class="page-header mb-6">
       <div>
         <h1 class="page-title">บันทึกการตั้งราคา</h1>
@@ -468,13 +458,13 @@ watch(
 
       <template #cell-old_price="{ value }">
         <span class="text-sm text-secondary-600">
-          ฿{{ formatPrice(value as string) }}
+          ฿{{ formatNum(value as string, 2) }}
         </span>
       </template>
 
       <template #cell-new_price="{ value }">
         <span class="text-sm font-medium text-secondary-900">
-          ฿{{ formatPrice(value as string) }}
+          ฿{{ formatNum(value as string, 2) }}
         </span>
       </template>
 
@@ -498,7 +488,7 @@ watch(
             class="w-3.5 h-3.5"
           />
           {{ priceDiff(row.old_price, row.new_price) > 0 ? "+" : ""
-          }}{{ formatPrice(priceDiff(row.old_price, row.new_price)) }}
+          }}{{ formatNum(priceDiff(row.old_price, row.new_price), 2) }}
         </span>
       </template>
 
@@ -554,8 +544,6 @@ watch(
       @close="closeProductModal"
     >
       <div class="relative min-h-[200px]">
-        <LoadingOverlay :loading="modalLoading" />
-
         <div
           v-if="selectedProductUnit"
           class="mb-4 p-4 bg-secondary-50 rounded-lg"
@@ -624,12 +612,12 @@ watch(
           </template>
           <template #cell-old_price="{ value }">
             <span class="text-sm text-secondary-600">
-              ฿{{ formatPrice(value as string) }}
+              ฿{{ formatNum(value as string, 2) }}
             </span>
           </template>
           <template #cell-new_price="{ value }">
             <span class="text-sm font-medium text-secondary-900">
-              ฿{{ formatPrice(value as string) }}
+              ฿{{ formatNum(value as string, 2) }}
             </span>
           </template>
           <template #cell-diff="{ row }">
@@ -652,7 +640,7 @@ watch(
                 class="w-3.5 h-3.5"
               />
               {{ priceDiff(row.old_price, row.new_price) > 0 ? "+" : ""
-              }}{{ formatPrice(priceDiff(row.old_price, row.new_price)) }}
+              }}{{ formatNum(priceDiff(row.old_price, row.new_price), 2) }}
             </span>
           </template>
           <template #cell-user="{ row }">
@@ -681,12 +669,12 @@ watch(
           </template>
           <template #cell-old_price="{ value }">
             <span class="text-sm text-secondary-600">
-              ฿{{ formatPrice(value as string) }}
+              ฿{{ formatNum(value as string, 2) }}
             </span>
           </template>
           <template #cell-new_price="{ value }">
             <span class="text-sm font-medium text-secondary-900">
-              ฿{{ formatPrice(value as string) }}
+              ฿{{ formatNum(value as string, 2) }}
             </span>
           </template>
           <template #cell-diff="{ row }">
@@ -709,7 +697,7 @@ watch(
                 class="w-3.5 h-3.5"
               />
               {{ priceDiff(row.old_price, row.new_price) > 0 ? "+" : ""
-              }}{{ formatPrice(priceDiff(row.old_price, row.new_price)) }}
+              }}{{ formatNum(priceDiff(row.old_price, row.new_price), 2) }}
             </span>
           </template>
           <template #cell-changed_by_user="{ row }">
@@ -738,8 +726,6 @@ watch(
       @close="closeUserModal"
     >
       <div class="relative min-h-[200px]">
-        <LoadingOverlay :loading="modalLoading" />
-
         <div v-if="selectedUser" class="mb-4 p-4 bg-secondary-50 rounded-lg">
           <div class="flex items-start justify-between mb-3">
             <span class="badge badge-purple text-xs">ราคาตามผู้ใช้</span>
@@ -797,12 +783,12 @@ watch(
           </template>
           <template #cell-old_price="{ value }">
             <span class="text-sm text-secondary-600">
-              ฿{{ formatPrice(value as string) }}
+              ฿{{ formatNum(value as string, 2) }}
             </span>
           </template>
           <template #cell-new_price="{ value }">
             <span class="text-sm font-medium text-secondary-900">
-              ฿{{ formatPrice(value as string) }}
+              ฿{{ formatNum(value as string, 2) }}
             </span>
           </template>
           <template #cell-diff="{ row }">
@@ -825,7 +811,7 @@ watch(
                 class="w-3.5 h-3.5"
               />
               {{ priceDiff(row.old_price, row.new_price) > 0 ? "+" : ""
-              }}{{ formatPrice(priceDiff(row.old_price, row.new_price)) }}
+              }}{{ formatNum(priceDiff(row.old_price, row.new_price), 2) }}
             </span>
           </template>
           <template #cell-changed_by_user="{ row }">

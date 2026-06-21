@@ -12,7 +12,7 @@ import {
 import type { Column } from "@/components/ui/BaseTable.vue";
 import type { Vendor } from "@/types";
 import { useVendorStore } from "@/stores";
-import { formatDate } from "@/utils";
+import { formatDate, formatNum } from "@/utils";
 
 const vendorStore = useVendorStore();
 
@@ -237,7 +237,7 @@ onMounted(() => {
       </template>
 
       <template #cell-_count="{ value }">
-        {{ (value as { products: number })?.products || 0 }} รายการ
+        {{ formatNum((value as { products: number })?.products || 0) }} รายการ
       </template>
 
       <template #cell-actions="{ row }">
@@ -374,7 +374,7 @@ onMounted(() => {
           <div>
             <p class="text-secondary-400 text-xs mb-0.5">จำนวนสินค้าในระบบ</p>
             <p class="text-secondary-900 font-medium">
-              {{ selectedVendor._count?.products || 0 }} รายการ
+              {{ formatNum(selectedVendor._count?.products || 0) }} รายการ
             </p>
           </div>
           <div>

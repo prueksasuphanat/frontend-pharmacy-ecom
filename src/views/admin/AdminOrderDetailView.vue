@@ -22,7 +22,7 @@ import {
   ShieldCheck,
   QrCode,
 } from "lucide-vue-next";
-import { formatPrice, formatDateTime } from "@/utils/format";
+import { formatPrice, formatDateTime, formatNum } from "@/utils/format";
 import { formatOrderUser } from "@/utils";
 import { BaseLoading, BaseTable, BaseTextarea } from "@/components/ui";
 import CardSection from "./components/CardSection.vue";
@@ -503,7 +503,7 @@ function getStepStatus(
           <!-- 2. Detailed Order Items Section -->
           <CardSection :icon="Package" size="base">
             <template #title>
-              <span class="flex-1">รายการยาและเวชภัณฑ์ในตะกร้า ({{ order.items.length }})</span>
+              <span class="flex-1">รายการยาและเวชภัณฑ์ในตะกร้า ({{ formatNum(order.items.length) }})</span>
               <button
                 @click="showBarcodeModal = true"
                 class="ml-auto p-1.5 rounded-lg hover:bg-secondary-100 transition-colors text-secondary-400 hover:text-teal-600"
@@ -546,7 +546,7 @@ function getStepStatus(
               <template #cell-current_stock="{ row }">
                 <template v-if="row.current_stock !== undefined">
                   <span class="text-sm text-secondary-900">{{
-                    row.current_stock
+                    formatNum(row.current_stock)
                   }}</span>
                 </template>
                 <span v-else class="text-xs text-secondary-400">-</span>
@@ -554,7 +554,7 @@ function getStepStatus(
 
               <template #cell-quantity="{ row }">
                 <span class="text-sm text-secondary-900">{{
-                  row.quantity
+                  formatNum(row.quantity)
                 }}</span>
               </template>
 

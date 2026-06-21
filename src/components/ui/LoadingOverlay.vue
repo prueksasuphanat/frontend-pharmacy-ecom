@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { Loader2 } from "lucide-vue-next";
+
 interface Props {
   loading?: boolean;
   text?: string;
@@ -24,9 +26,7 @@ withDefaults(defineProps<Props>(), {
       <div
         class="flex items-center gap-2 bg-white shadow-md rounded-lg px-4 py-2.5"
       >
-        <div
-          class="w-4 h-4 border-2 border-primary-600 border-t-transparent rounded-full animate-spin"
-        />
+        <Loader2 class="w-4 h-4 text-teal-600 animate-spin" />
         <span class="text-sm text-secondary-600">{{ text }}</span>
       </div>
     </div>

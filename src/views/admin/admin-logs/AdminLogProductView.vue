@@ -12,12 +12,11 @@ import {
   BaseInput,
   BaseTable,
   BaseDatePicker,
-  LoadingOverlay,
 } from "@/components/ui";
 import type { Column } from "@/components/ui/BaseTable.vue";
 import type { ProductViewLogEntry } from "@/types";
 import { useAuditLogStore } from "@/stores";
-import { formatDateTime, formatUserName } from "@/utils";
+import { formatDateTime, formatUserName, formatNum } from "@/utils";
 
 const store = useAuditLogStore();
 
@@ -136,8 +135,6 @@ onMounted(() => {
 
 <template>
   <div class="overflow-y-visible">
-    <LoadingOverlay :loading="loading && logs.length > 0" />
-
     <div class="page-header mb-6">
       <div>
         <h1 class="page-title flex items-center gap-2">
@@ -150,7 +147,7 @@ onMounted(() => {
       </div>
       <div class="flex items-center gap-2">
         <span class="text-sm text-secondary-400">
-          {{ pagination.total }} รายการ
+          {{ formatNum(pagination.total) }} รายการ
         </span>
         <button
           @click="exportToCSV"

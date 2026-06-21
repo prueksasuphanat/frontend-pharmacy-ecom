@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, onUnmounted, computed } from "vue";
 import { useRouter } from "vue-router";
 import { ChevronLeft, Plus, X, Save, ArrowLeftRight } from "lucide-vue-next";
-import { BaseInput, BaseAutocomplete, BaseMultiSelect } from "@/components/ui";
+import { BaseInput, BaseMultiSelect, BaseLoading } from "@/components/ui";
 import type { User, Product, UpdateProductPricePayload } from "@/types";
 import { useToast } from "@/composables";
-import { formatUserName } from "@/utils/format";
+import { formatUserName, formatNum } from "@/utils/format";
 import { useProductPriceStore, useUsersStore, useProductStore } from "@/stores";
+import { productsApi, productPricesApi } from "@/api";
 
 const router = useRouter();
 const toast = useToast();
@@ -27,6 +28,8 @@ const isTransposed = ref(false);
 
 const isCustomUserMode = ref(false);
 const selectedUsers = ref<User[]>([]);
+// markupPercent[productId][userId] = "10"
+const markupPercent = ref<Record<number, Record<number, string>>>({});
 
 const users = computed(() =>
   isCustomUserMode.value ? selectedUsers.value : allUsers.value,
@@ -95,7 +98,12 @@ const allProductUnits = computed(() => {
     const priceData = productPriceStore.productPrices.find(
       (pp) => pp.product_id === product.id,
     );
-    return priceData?.units ?? [];
+    const units = priceData?.units ?? [];
+    return units.map((unit) => ({
+      ...unit,
+      productId: product.id,
+      costPrice: priceData?.cost_price ? parseFloat(priceData.cost_price) : null,
+    }));
   });
 });
 
@@ -117,6 +125,7 @@ const groupedColumns = computed(() => {
     return {
       product,
       units: priceData?.units ?? [],
+      costPrice: priceData?.cost_price ? parseFloat(priceData.cost_price) : null,
     };
   });
 });
@@ -145,6 +154,7 @@ function removeProductColumn(productId: number) {
     delete priceMatrix.value[unit.product_unit_id];
     delete specialMatrix.value[unit.product_unit_id];
   });
+  delete markupPercent.value[productId];
   selectedProducts.value = selectedProducts.value.filter(
     (p) => p.id !== productId,
   );
@@ -227,6 +237,45 @@ function handlePriceBlur(userId: number, productUnitId: number) {
   }
 }
 
+function updateMarkup(productId: number, userId: number, value: string | number | null) {
+  if (!markupPercent.value[productId]) markupPercent.value[productId] = {};
+  markupPercent.value[productId][userId] = value != null ? String(value) : "";
+}
+
+function handleMarkupBlur(userId: number, productId: number) {
+  const pct = parseFloat(markupPercent.value[productId]?.[userId]);
+  if (isNaN(pct) || pct < 0) return;
+
+  const group = productPriceStore.productPrices.find((g) => g.product_id === productId);
+  if (!group) return;
+
+  const costPrice = group.cost_price ? parseFloat(group.cost_price) : null;
+  if (costPrice === null) return;
+
+  const baseUnit = group.units.find((u) => u.multiplier_to_base === 1);
+  if (!baseUnit) return;
+
+  for (const unit of group.units) {
+    if (unit.product_unit_id === baseUnit.product_unit_id) continue;
+    if (!autoCalcMatrix.value[unit.product_unit_id]) autoCalcMatrix.value[unit.product_unit_id] = {};
+    autoCalcMatrix.value[unit.product_unit_id][userId] = true;
+  }
+
+  const basePrice = costPrice * (1 + pct / 100);
+  if (!priceMatrix.value[baseUnit.product_unit_id]) priceMatrix.value[baseUnit.product_unit_id] = {};
+  if (!autoCalcMatrix.value[baseUnit.product_unit_id]) autoCalcMatrix.value[baseUnit.product_unit_id] = {};
+  priceMatrix.value[baseUnit.product_unit_id][userId] = basePrice.toFixed(2);
+  autoCalcMatrix.value[baseUnit.product_unit_id][userId] = false;
+  handlePriceBlur(userId, baseUnit.product_unit_id);
+}
+
+function updateLocalCostPrice(productId: number, value: string | number | null) {
+  const pp = productPriceStore.productPrices.find((p) => p.product_id === productId);
+  if (!pp) return;
+  pp.cost_price = value === null || value === "" ? null : String(value);
+}
+
+
 function getUserFullName(user: User): string {
   return formatUserName(user);
 }
@@ -240,6 +289,9 @@ async function fetchPricesForProducts() {
   await productPriceStore.fetchProductPrices(productIds);
 
   productPriceStore.productPrices.forEach((productPrice) => {
+    if (!markupPercent.value[productPrice.product_id]) {
+      markupPercent.value[productPrice.product_id] = {};
+    }
     productPrice.units.forEach((unitPrice) => {
       if (!priceMatrix.value[unitPrice.product_unit_id]) {
         priceMatrix.value[unitPrice.product_unit_id] = {};
@@ -252,6 +304,9 @@ async function fetchPricesForProducts() {
           String(userPrice.price);
         specialMatrix.value[unitPrice.product_unit_id][userPrice.user_id] =
           userPrice.is_special;
+        if (userPrice.markup_percent !== null && userPrice.markup_percent !== undefined) {
+          markupPercent.value[productPrice.product_id][userPrice.user_id] = String(userPrice.markup_percent);
+        }
       });
     });
   });
@@ -279,6 +334,37 @@ async function saveAllPrices() {
   });
 
   await productPriceStore.updateProductPrices(prices);
+
+  await Promise.all(
+    selectedProducts.value.map(async (product) => {
+      const pp = productPriceStore.productPrices.find((x) => x.product_id === product.id);
+      if (!pp) return;
+      const costPrice = pp.cost_price != null ? parseFloat(pp.cost_price) : null;
+      await productsApi.updateProduct(product.id, { cost_price: costPrice });
+    }),
+  );
+
+  const markupPayload: { user_id: number; product_id: number; markup_percent: number }[] = [];
+  for (const [productIdStr, userMap] of Object.entries(markupPercent.value)) {
+    for (const [userIdStr, pctStr] of Object.entries(userMap)) {
+      const pct = parseFloat(pctStr);
+      if (!isNaN(pct)) {
+        markupPayload.push({ user_id: Number(userIdStr), product_id: Number(productIdStr), markup_percent: pct });
+      }
+    }
+  }
+  if (markupPayload.length > 0) {
+    await productPricesApi.upsertMarkups(markupPayload);
+  }
+}
+
+const markupPopoverProductId = ref<number | null>(null);
+
+function toggleMarkupPopover(productId: number) {
+  markupPopoverProductId.value = markupPopoverProductId.value === productId ? null : productId;
+}
+function closeMarkupPopover() {
+  markupPopoverProductId.value = null;
 }
 
 function getProductGroupAndIndex(productUnitId: number) {
@@ -294,6 +380,10 @@ onMounted(async () => {
   isLoading.value = true;
   await Promise.all([fetchUsers(), fetchProducts()]);
   isLoading.value = false;
+  document.addEventListener("click", closeMarkupPopover);
+});
+onUnmounted(() => {
+  document.removeEventListener("click", closeMarkupPopover);
 });
 </script>
 
@@ -314,14 +404,7 @@ onMounted(async () => {
       </p>
     </div>
 
-    <div v-if="isLoading" class="card">
-      <div class="flex items-center justify-center py-12">
-        <div
-          class="w-8 h-8 border-4 border-primary-600 border-t-transparent rounded-full animate-spin"
-        ></div>
-        <span class="ml-3 text-secondary-600">กำลังโหลดข้อมูล...</span>
-      </div>
-    </div>
+    <BaseLoading v-if="isLoading" />
 
     <div v-else class="card">
       <div class="mb-4 pb-4 border-b border-secondary-100 space-y-2">
@@ -434,8 +517,42 @@ onMounted(async () => {
                         <div class="font-semibold text-secondary-900 truncate">
                           {{ group.product.name }}
                         </div>
-                        <div class="text-xs text-secondary-500 mt-0.5">
-                          {{ group.product.code }}
+                        <div class="text-xs text-secondary-500 mt-0.5">{{ group.product.code }}</div>
+                        <div class="flex items-center gap-1 mt-1">
+                          <span class="text-[10px] text-secondary-400">ทุน ฿</span>
+                          <BaseInput
+                            :model-value="group.costPrice != null ? String(group.costPrice.toFixed(2)) : ''"
+                            @update:model-value="updateLocalCostPrice(group.product.id, $event)"
+                            type="number"
+                            size="sm"
+                            placeholder="ราคาทุน"
+                            class="!w-20 !min-w-0"
+                          />
+                        </div>
+                        <div class="relative mt-1" @click.stop>
+                          <button
+                            @click.stop="toggleMarkupPopover(group.product.id)"
+                            class="flex items-center gap-1 text-[10px] text-secondary-500 hover:text-primary-600 px-1.5 py-0.5 rounded border border-secondary-200 hover:border-primary-300 transition-colors"
+                          >
+                            <span>% กำไร</span>
+                            <span class="text-[9px]">▾</span>
+                          </button>
+                          <div
+                            v-if="markupPopoverProductId === group.product.id"
+                            class="absolute left-0 top-full mt-1 z-50 bg-white border border-secondary-200 rounded-lg shadow-lg p-3 min-w-[200px] max-h-64 overflow-y-auto"
+                            @click.stop
+                          >
+                            <div class="text-[10px] font-semibold text-secondary-500 mb-2">% กำไร — {{ group.product.name }}</div>
+                            <div v-for="user in users" :key="user.id" class="flex items-center gap-2 mb-1.5">
+                              <span class="text-xs text-secondary-600 truncate flex-1">{{ getUserFullName(user).split(' ')[0] }}</span>
+                              <BaseInput
+                                :model-value="markupPercent[group.product.id]?.[user.id] ?? ''"
+                                @update:model-value="updateMarkup(group.product.id, user.id, $event)"
+                                @blur="handleMarkupBlur(user.id, group.product.id)"
+                                type="number" size="sm" placeholder="0" class="!w-16 !min-w-0"
+                              />
+                            </div>
+                          </div>
                         </div>
                         <div class="text-xs text-amber-600 mt-0.5">
                           สินค้านี้ยังไม่มีหน่วยขาย
@@ -461,8 +578,42 @@ onMounted(async () => {
                         <div class="font-semibold text-secondary-900 truncate">
                           {{ group.product.name }}
                         </div>
-                        <div class="text-xs text-secondary-500 mt-0.5">
-                          {{ group.product.code }}
+                        <div class="text-xs text-secondary-500 mt-0.5">{{ group.product.code }}</div>
+                        <div class="flex items-center gap-1 mt-1">
+                          <span class="text-[10px] text-secondary-400">ทุน ฿</span>
+                          <BaseInput
+                            :model-value="group.costPrice != null ? String(group.costPrice.toFixed(2)) : ''"
+                            @update:model-value="updateLocalCostPrice(group.product.id, $event)"
+                            type="number"
+                            size="sm"
+                            placeholder="ราคาทุน"
+                            class="!w-20 !min-w-0"
+                          />
+                        </div>
+                        <div class="relative mt-1" @click.stop>
+                          <button
+                            @click.stop="toggleMarkupPopover(group.product.id)"
+                            class="flex items-center gap-1 text-[10px] text-secondary-500 hover:text-primary-600 px-1.5 py-0.5 rounded border border-secondary-200 hover:border-primary-300 transition-colors"
+                          >
+                            <span>% กำไร</span>
+                            <span class="text-[9px]">▾</span>
+                          </button>
+                          <div
+                            v-if="markupPopoverProductId === group.product.id"
+                            class="absolute left-0 top-full mt-1 z-50 bg-white border border-secondary-200 rounded-lg shadow-lg p-3 min-w-[200px] max-h-64 overflow-y-auto"
+                            @click.stop
+                          >
+                            <div class="text-[10px] font-semibold text-secondary-500 mb-2">% กำไร — {{ group.product.name }}</div>
+                            <div v-for="user in users" :key="user.id" class="flex items-center gap-2 mb-1.5">
+                              <span class="text-xs text-secondary-600 truncate flex-1">{{ getUserFullName(user).split(' ')[0] }}</span>
+                              <BaseInput
+                                :model-value="markupPercent[group.product.id]?.[user.id] ?? ''"
+                                @update:model-value="updateMarkup(group.product.id, user.id, $event)"
+                                @blur="handleMarkupBlur(user.id, group.product.id)"
+                                type="number" size="sm" placeholder="0" class="!w-16 !min-w-0"
+                              />
+                            </div>
+                          </div>
                         </div>
                       </div>
                       <button
@@ -488,8 +639,11 @@ onMounted(async () => {
                     class="px-4 py-2 text-left text-xs font-medium text-secondary-700 min-w-[140px] sm:min-w-[160px] border-r border-secondary-200 last:border-r-0"
                   >
                     <div class="font-medium">{{ unit.unit_name }}</div>
-                    <div class="text-secondary-500">
-                      ฿{{ unit.default_price }}
+                    <div class="text-secondary-500 flex items-center justify-between gap-1 mt-0.5">
+                      <span>฿{{ formatNum(unit.default_price, 2) }}</span>
+                      <span v-if="group.costPrice !== null" class="text-emerald-600 text-[10px]">
+                        ทุน: ฿{{ formatNum(group.costPrice * unit.multiplier_to_base, 2) }}
+                      </span>
                     </div>
                   </th>
                 </template>
@@ -544,7 +698,13 @@ onMounted(async () => {
                   :key="unit.product_unit_id"
                   class="px-4 py-3 border-r border-secondary-200 last:border-r-0"
                 >
-                  <div>
+                  <div
+                    :class="
+                      specialMatrix[unit.product_unit_id]?.[user.id]
+                        ? 'rounded ring-1 ring-blue-300 bg-blue-50'
+                        : ''
+                    "
+                  >
                     <BaseInput
                       :model-value="
                         priceMatrix[unit.product_unit_id]?.[user.id] ?? ''
@@ -555,6 +715,7 @@ onMounted(async () => {
                       "
                       @blur="handlePriceBlur(user.id, unit.product_unit_id)"
                       type="number"
+                      size="sm"
                       :placeholder="String(unit.default_price)"
                       class="w-full min-w-[120px]"
                     />
@@ -632,6 +793,44 @@ onMounted(async () => {
                       <div class="text-xs text-secondary-500 mt-0.5">
                         {{ getProductGroupAndIndex(unit.product_unit_id).group?.product.code }}
                       </div>
+                      <div class="flex items-center gap-1 mt-1">
+                        <span class="text-[10px] text-secondary-400">ทุน ฿</span>
+                        <BaseInput
+                          :model-value="getProductGroupAndIndex(unit.product_unit_id).group?.costPrice != null
+                            ? String(getProductGroupAndIndex(unit.product_unit_id).group!.costPrice!.toFixed(2))
+                            : ''"
+                          @update:model-value="updateLocalCostPrice(getProductGroupAndIndex(unit.product_unit_id).group!.product.id, $event)"
+                          type="number"
+                          size="sm"
+                          placeholder="ราคาทุน"
+                          class="!w-20 !min-w-0"
+                        />
+                      </div>
+                      <div class="relative mt-1" @click.stop>
+                        <button
+                          @click.stop="toggleMarkupPopover(getProductGroupAndIndex(unit.product_unit_id).group!.product.id)"
+                          class="flex items-center gap-1 text-[10px] text-secondary-500 hover:text-primary-600 px-1.5 py-0.5 rounded border border-secondary-200 hover:border-primary-300 transition-colors"
+                        >
+                          <span>% กำไร</span>
+                          <span class="text-[9px]">▾</span>
+                        </button>
+                        <div
+                          v-if="markupPopoverProductId === getProductGroupAndIndex(unit.product_unit_id).group?.product.id"
+                          class="absolute left-0 top-full mt-1 z-50 bg-white border border-secondary-200 rounded-lg shadow-lg p-3 min-w-[200px] max-h-64 overflow-y-auto"
+                          @click.stop
+                        >
+                          <div class="text-[10px] font-semibold text-secondary-500 mb-2">% กำไร — {{ getProductGroupAndIndex(unit.product_unit_id).group?.product.name }}</div>
+                          <div v-for="user in users" :key="user.id" class="flex items-center gap-2 mb-1.5">
+                            <span class="text-xs text-secondary-600 truncate flex-1">{{ getUserFullName(user).split(' ')[0] }}</span>
+                            <BaseInput
+                              :model-value="markupPercent[getProductGroupAndIndex(unit.product_unit_id).group?.product.id ?? 0]?.[user.id] ?? ''"
+                              @update:model-value="updateMarkup(getProductGroupAndIndex(unit.product_unit_id).group!.product.id, user.id, $event)"
+                              @blur="handleMarkupBlur(user.id, getProductGroupAndIndex(unit.product_unit_id).group!.product.id)"
+                              type="number" size="sm" placeholder="0" class="!w-16 !min-w-0"
+                            />
+                          </div>
+                        </div>
+                      </div>
                     </div>
                     <button
                       @click="removeProductColumn(getProductGroupAndIndex(unit.product_unit_id).group!.product.id)"
@@ -651,7 +850,10 @@ onMounted(async () => {
                     {{ unit.unit_name }}
                   </div>
                   <div class="text-xs text-secondary-400 mt-0.5">
-                    ฿{{ unit.default_price }}
+                    ฿{{ formatNum(unit.default_price, 2) }}
+                  </div>
+                  <div v-if="unit.costPrice !== null" class="text-[10px] text-emerald-600 mt-0.5">
+                    ทุน: ฿{{ formatNum(unit.costPrice * unit.multiplier_to_base, 2) }}
                   </div>
                 </td>
                 <td
@@ -676,6 +878,7 @@ onMounted(async () => {
                       "
                       @blur="handlePriceBlur(user.id, unit.product_unit_id)"
                       type="number"
+                      size="sm"
                       :placeholder="String(unit.default_price)"
                       class="w-full min-w-[120px]"
                     />
@@ -692,15 +895,15 @@ onMounted(async () => {
             <span class="font-medium">สรุป:</span>
             ตั้งราคาสำหรับ
             <span class="font-semibold text-secondary-900">{{
-              selectedProducts.length
+              formatNum(selectedProducts.length)
             }}</span>
             สินค้า (
             <span class="font-semibold text-secondary-900">{{
-              allProductUnits.length
+              formatNum(allProductUnits.length)
             }}</span>
             หน่วย) และ
             <span class="font-semibold text-secondary-900">{{
-              users.length
+              formatNum(users.length)
             }}</span>
             ผู้ใช้
           </div>

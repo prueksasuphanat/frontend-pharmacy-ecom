@@ -11,7 +11,7 @@ import {
 import type { Column } from "@/components/ui/BaseTable.vue";
 import type { Unit } from "@/types";
 import { useUnitStore } from "@/stores";
-import { formatDate } from "@/utils";
+import { formatDate, formatNum } from "@/utils";
 
 const unitStore = useUnitStore();
 
@@ -192,8 +192,8 @@ onMounted(() => {
 
       <template #cell-_count="{ value }">
         <span class="text-xs text-secondary-500">
-          สินค้า {{ (value as Unit["_count"]).base_products }} / หน่วยขาย
-          {{ (value as Unit["_count"]).product_units }}
+          สินค้า {{ formatNum((value as Unit["_count"]).base_products) }} / หน่วยขาย
+          {{ formatNum((value as Unit["_count"]).product_units) }}
         </span>
       </template>
 
