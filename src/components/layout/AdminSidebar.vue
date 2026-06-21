@@ -102,7 +102,7 @@ if (isLogsActive()) {
 
 <template>
   <aside
-    class="w-60 shrink-0 hidden lg:flex flex-col h-screen sticky top-0 bg-white border-r border-secondary-100"
+    class="w-[18rem] shrink-0 hidden lg:flex flex-col h-screen sticky top-0 bg-white border-r border-secondary-100"
   >
     <div
       class="flex items-center gap-2.5 px-5 h-16 border-b border-secondary-100"
