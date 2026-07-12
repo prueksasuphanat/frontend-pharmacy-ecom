@@ -12,7 +12,6 @@ interface Props {
   icon?: any;
   iconRight?: any;
   readonly?: boolean;
-  /** อนุญาตให้กรอกค่าติดลบได้ (ใช้เฉพาะ type="number") */
   allowNegative?: boolean;
   size?: "sm" | "md";
   prefix?: string | any;
@@ -57,7 +56,7 @@ const inputClasses = computed(() => [
 const displayValue = ref<string>(
   props.modelValue != null && props.modelValue !== "" && props.type === "number"
     ? Number(props.modelValue).toFixed(2)
-    : (props.modelValue ?? "")?.toString() ?? ""
+    : ((props.modelValue ?? "")?.toString() ?? ""),
 );
 
 /** เมื่อ props เปลี่ยนจากข้างนอก (ไม่ได้ focus อยู่) */
@@ -89,8 +88,7 @@ function handleFocus(event: FocusEvent) {
   if (props.type === "number") {
     // แสดงค่าดิบขณะกรอก (ไม่ format)
     const raw = props.modelValue;
-    displayValue.value =
-      raw != null && raw !== "" ? String(raw) : "";
+    displayValue.value = raw != null && raw !== "" ? String(raw) : "";
   }
   emit("focus", event);
 }
@@ -119,12 +117,23 @@ function handleKeydown(event: KeyboardEvent) {
   const isMinus = event.key === "-" && props.allowNegative;
   const isCtrlCmd = event.ctrlKey || event.metaKey; // copy/paste/select-all
   const allowedKeys = [
-    "Backspace", "Delete", "ArrowLeft", "ArrowRight",
-    "Tab", "Home", "End",
+    "Backspace",
+    "Delete",
+    "ArrowLeft",
+    "ArrowRight",
+    "Tab",
+    "Home",
+    "End",
   ];
 
   // บล็อกแป้นที่ไม่อนุญาต
-  if (!isDigit && !isMinus && event.key !== "." && !allowedKeys.includes(event.key) && !isCtrlCmd) {
+  if (
+    !isDigit &&
+    !isMinus &&
+    event.key !== "." &&
+    !allowedKeys.includes(event.key) &&
+    !isCtrlCmd
+  ) {
     event.preventDefault();
     return;
   }
@@ -139,7 +148,11 @@ function handleKeydown(event: KeyboardEvent) {
 
   // ป้องกันกด "-" ซ้ำ หรือกด "-" ที่ไม่ใช่ตำแหน่งแรก
   if (event.key === "-") {
-    if (!props.allowNegative || input.selectionStart !== 0 || input.value.includes("-")) {
+    if (
+      !props.allowNegative ||
+      input.selectionStart !== 0 ||
+      input.value.includes("-")
+    ) {
       event.preventDefault();
     }
   }
@@ -168,7 +181,9 @@ const boundValue = computed(() => {
       class="w-full flex items-stretch overflow-hidden border border-secondary-200 transition-all duration-200 focus-within:ring-2 focus-within:ring-primary-400 focus-within:border-primary-400 bg-white"
       :class="[
         size === 'sm' ? 'rounded-lg text-xs' : 'rounded-xl text-sm',
-        error ? 'border-red-300 focus-within:ring-red-500 focus-within:border-red-500' : ''
+        error
+          ? 'border-red-300 focus-within:ring-red-500 focus-within:border-red-500'
+          : '',
       ]"
     >
       <!-- Prefix -->
@@ -185,7 +200,11 @@ const boundValue = computed(() => {
       <div
         v-else-if="prefix"
         class="flex items-center justify-center border-r border-secondary-200 bg-secondary-50 text-secondary-505 select-none whitespace-nowrap"
-        :class="size === 'sm' ? 'px-2.5 text-xs font-semibold' : 'px-3.5 text-sm font-semibold'"
+        :class="
+          size === 'sm'
+            ? 'px-2.5 text-xs font-semibold'
+            : 'px-3.5 text-sm font-semibold'
+        "
       >
         <component :is="prefix" v-if="typeof prefix !== 'string'" />
         <span v-else>{{ prefix }}</span>
@@ -205,8 +224,8 @@ const boundValue = computed(() => {
           size === 'sm' ? 'px-3 py-1.5 text-xs' : 'px-4 py-2.5 text-sm',
           {
             'opacity-50 cursor-not-allowed': disabled,
-            'no-spinner': type === 'number'
-          }
+            'no-spinner': type === 'number',
+          },
         ]"
         @input="handleInput"
         @focus="handleFocus"
@@ -224,7 +243,7 @@ const boundValue = computed(() => {
           size === 'sm' ? 'px-2.5 text-xs' : 'px-3.5 text-sm',
           suffix === 'ใช้'
             ? 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100 active:bg-emerald-200'
-            : 'bg-secondary-50 text-secondary-600 hover:bg-secondary-100'
+            : 'bg-secondary-50 text-secondary-600 hover:bg-secondary-100',
         ]"
       >
         <component :is="suffix" v-if="typeof suffix !== 'string'" />
@@ -233,7 +252,11 @@ const boundValue = computed(() => {
       <div
         v-else-if="suffix"
         class="flex items-center justify-center border-l border-secondary-200 bg-secondary-50 text-secondary-505 select-none whitespace-nowrap"
-        :class="size === 'sm' ? 'px-2.5 text-xs font-semibold' : 'px-3.5 text-sm font-semibold'"
+        :class="
+          size === 'sm'
+            ? 'px-2.5 text-xs font-semibold'
+            : 'px-3.5 text-sm font-semibold'
+        "
       >
         <component :is="suffix" v-if="typeof suffix !== 'string'" />
         <span v-else>{{ suffix }}</span>
