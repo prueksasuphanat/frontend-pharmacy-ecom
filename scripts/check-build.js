@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Build verification script
+ * Build verification scripsdsdsdsddt
  * Checks if the build output contains proper environment variable replacements
  */
 
