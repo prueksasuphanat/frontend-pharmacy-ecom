@@ -2,7 +2,7 @@
 
 /**
  * Build verification scripsdsdsdsddt
- * Checks if the build output contains proper environment variable replacements
+ * Checkฟหกฟหกs if the build output contains proper environment variable replacements
  */
 
 import fs from "fs";
