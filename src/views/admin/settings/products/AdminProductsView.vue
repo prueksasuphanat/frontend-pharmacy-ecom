@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from "vue";
-import { Search, Edit } from "lucide-vue-next";
+import { Search, Edit, FileSpreadsheet, Download } from "lucide-vue-next";
 import {
   BaseInput,
   BaseTable,
@@ -13,6 +13,7 @@ import {
 } from "@/components/ui";
 import type { Column } from "@/components/ui/BaseTable.vue";
 import type { Product, Unit } from "@/types";
+import ImportPriceModal from "./ImportPriceModal.vue";
 import {
   useProductStore,
   useCategoryStore,
@@ -38,6 +39,7 @@ const categoryFilter = ref<string | number | null>(null);
 const specialPricingFilter = ref<string | number | null>(null);
 
 const editModalOpen = ref(false);
+const importModalOpen = ref(false);
 const modalLoading = ref(false);
 const selectedProduct = ref<Product | null>(null);
 const imageFile = ref<File | null>(null);
@@ -322,6 +324,10 @@ function handleProductUnitUpdated() {
   fetchProducts();
 }
 
+function handlePriceImported() {
+  fetchProducts();
+}
+
 async function handleSaveProductFirst() {
   if (!selectedProduct.value) return;
   if (!productForm.value.name.trim()) return;
@@ -379,8 +385,26 @@ onMounted(async () => {
 
 <template>
   <div>
-    <div class="page-header mb-6">
+    <div class="page-header mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
       <h1 class="page-title">สินค้า</h1>
+      <div class="flex items-center gap-3">
+        <a
+          href="/download/ราคาเสนอขาย_รวม.xlsx"
+          download
+          class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-secondary-50 text-secondary-700 border border-secondary-200 rounded-xl text-xs font-semibold shadow-xs transition-colors"
+        >
+          <Download class="w-4 h-4 text-secondary-500" />
+          <span>ตัวอย่างไฟล์ Excel</span>
+        </a>
+        <button
+          type="button"
+          @click="importModalOpen = true"
+          class="inline-flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold shadow-xs transition-all"
+        >
+          <FileSpreadsheet class="w-4 h-4" />
+          <span>นำเข้าการตั้งราคา (Excel)</span>
+        </button>
+      </div>
     </div>
 
     <div class="card mb-6">
@@ -899,5 +923,12 @@ onMounted(async () => {
         </button>
       </template>
     </BaseModal>
+
+    <!-- Import Price Modal -->
+    <ImportPriceModal
+      :is-open="importModalOpen"
+      @close="importModalOpen = false"
+      @imported="handlePriceImported"
+    />
   </div>
 </template>

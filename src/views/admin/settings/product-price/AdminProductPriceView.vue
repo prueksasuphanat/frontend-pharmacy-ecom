@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from "vue";
 import { useRouter } from "vue-router";
-import { ChevronLeft, Plus, X, Save, ArrowLeftRight } from "lucide-vue-next";
+import { ChevronLeft, Plus, X, Save, ArrowLeftRight, FileSpreadsheet, Download } from "lucide-vue-next";
 import { BaseInput, BaseMultiSelect, BaseLoading } from "@/components/ui";
 import type { User, Product, UpdateProductPricePayload } from "@/types";
 import { useToast } from "@/composables";
 import { formatUserName, formatNum } from "@/utils/format";
 import { useProductPriceStore, useUsersStore, useProductStore } from "@/stores";
 import { productsApi, productPricesApi } from "@/api";
+import ImportPriceModal, { type ParsedItem } from "@/views/admin/settings/products/ImportPriceModal.vue";
 
 const router = useRouter();
 const toast = useToast();
@@ -25,6 +26,7 @@ const autoCalcMatrix = ref<Record<number, Record<number, boolean>>>({});
 const specialMatrix = ref<Record<number, Record<number, boolean>>>({});
 const isLoading = ref(false);
 const isTransposed = ref(false);
+const importModalOpen = ref(false);
 
 const isCustomUserMode = ref(false);
 const selectedUsers = ref<User[]>([]);
@@ -199,12 +201,11 @@ const groupedColumns = computed(() => {
     const priceData = productPriceStore.productPrices.find(
       (pp) => pp.product_id === product.id,
     );
+    const rawCost = priceData?.cost_price ?? product.cost_price;
     return {
       product,
       units: priceData?.units ?? [],
-      costPrice: priceData?.cost_price
-        ? parseFloat(priceData.cost_price)
-        : null,
+      costPrice: rawCost != null && rawCost !== "" ? parseFloat(String(rawCost)) : null,
     };
   });
 });
@@ -568,6 +569,83 @@ function handleApplyBulkMarkup(productId: number) {
   }
 }
 
+async function handlePriceImported() {
+  if (selectedProductIds.value.length > 0) {
+    await fetchPricesForProducts();
+  }
+}
+
+async function handleApplyToMatrix(items: ParsedItem[]) {
+  const newProductsMap = new Map<number, Product>();
+  const newUsersMap = new Map<number, User>();
+
+  items.forEach((item) => {
+    if (item.isMatched && item.isIncluded && item.matchedProduct && item.matchedUser) {
+      newProductsMap.set(item.matchedProduct.id, item.matchedProduct);
+      newUsersMap.set(item.matchedUser.id, item.matchedUser);
+    }
+  });
+
+  if (newProductsMap.size === 0) return;
+
+  const currentProdIds = selectedProducts.value.map((p) => p.id);
+  newProductsMap.forEach((prod, prodId) => {
+    if (!currentProdIds.includes(prodId)) {
+      selectedProducts.value.push(prod);
+    }
+  });
+
+  await fetchPricesForProducts();
+
+  isCustomUserMode.value = true;
+  const currentUsersMap = new Map(selectedUsers.value.map((u) => [u.id, u]));
+  newUsersMap.forEach((user, userId) => {
+    if (!currentUsersMap.has(userId)) {
+      selectedUsers.value.push(user);
+    }
+  });
+
+  items.forEach((item) => {
+    if (!item.isMatched || !item.isIncluded || !item.matchedProduct || !item.matchedUser) return;
+
+    const userId = item.matchedUser.id;
+    const productId = item.matchedProduct.id;
+
+    item.calculatedUnits.forEach((cu) => {
+      if (!priceMatrix.value[cu.product_unit_id]) {
+        priceMatrix.value[cu.product_unit_id] = {};
+      }
+      if (!autoCalcMatrix.value[cu.product_unit_id]) {
+        autoCalcMatrix.value[cu.product_unit_id] = {};
+      }
+
+      priceMatrix.value[cu.product_unit_id][userId] = String(cu.price);
+      autoCalcMatrix.value[cu.product_unit_id][userId] = cu.multiplier_to_base > 1;
+    });
+
+    const group = groupedColumns.value.find((g) => g.product.id === productId);
+    const costPrice =
+      item.costPrice ??
+      (group?.costPrice != null
+        ? group.costPrice
+        : item.matchedProduct.cost_price != null
+        ? Number(item.matchedProduct.cost_price)
+        : null);
+
+    if (costPrice !== null && costPrice > 0 && item.excel_price > 0) {
+      const pct = ((item.excel_price - costPrice) / costPrice) * 100;
+      if (!markupPercent.value[productId]) {
+        markupPercent.value[productId] = {};
+      }
+      markupPercent.value[productId][userId] = pct.toFixed(2);
+    }
+  });
+
+  // Force Vue 3 reactivity update for matrix display
+  markupPercent.value = { ...markupPercent.value };
+  priceMatrix.value = { ...priceMatrix.value };
+}
+
 onMounted(async () => {
   isLoading.value = true;
   await Promise.all([fetchUsers(), fetchProducts()]);
@@ -585,11 +663,31 @@ onMounted(async () => {
       <span class="text-sm font-medium">กลับไปตั้งค่าระบบ</span>
     </button>
 
-    <div class="mb-6">
-      <h1 class="page-title">ราคาสินค้า</h1>
-      <p class="text-sm text-secondary-500 mt-1">
-        กำหนดราคาสินค้าตาม Role และส่วนลด
-      </p>
+    <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div>
+        <h1 class="page-title">ราคาสินค้า</h1>
+        <p class="text-sm text-secondary-500 mt-1">
+          กำหนดราคาสินค้าตาม Role และส่วนลด
+        </p>
+      </div>
+      <div class="flex items-center gap-3">
+        <a
+          href="/download/ราคาเสนอขาย_รวม.xlsx"
+          download
+          class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-secondary-50 text-secondary-700 border border-secondary-200 rounded-xl text-xs font-semibold shadow-xs transition-colors shrink-0"
+        >
+          <Download class="w-4 h-4 text-secondary-500" />
+          <span>ตัวอย่างไฟล์ Excel</span>
+        </a>
+        <button
+          type="button"
+          @click="importModalOpen = true"
+          class="inline-flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold shadow-xs transition-all shrink-0"
+        >
+          <FileSpreadsheet class="w-4 h-4" />
+          <span>นำเข้าการตั้งราคา (Excel)</span>
+        </button>
+      </div>
     </div>
 
     <BaseLoading v-if="isLoading" />
@@ -1261,6 +1359,14 @@ onMounted(async () => {
         <p class="text-xs mt-1">เริ่มต้นด้วยการเพิ่มสินค้าด้านบน</p>
       </div>
     </div>
+
+    <!-- Import Price Modal -->
+    <ImportPriceModal
+      :is-open="importModalOpen"
+      :auto-save="false"
+      @close="importModalOpen = false"
+      @apply-to-matrix="handleApplyToMatrix"
+    />
   </div>
 </template>
 
