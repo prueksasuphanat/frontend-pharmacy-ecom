@@ -339,14 +339,47 @@ async function processFile(file: File) {
 
         if (!productCode && !productName && !userCode) continue;
 
-        // 1. Match Product (O(1) Map lookup)
-        let product = productCode ? productByCodeMap.get(productCode.toLowerCase()) : undefined;
+        // 1. Match Product (O(1) Map lookup with verification)
+        let product: Product | undefined = undefined;
+        if (productCode) {
+          const candidateProd = productByCodeMap.get(productCode.toLowerCase());
+          if (candidateProd) {
+            if (!productName) {
+              product = candidateProd;
+            } else {
+              const candName = (candidateProd.name || "").trim().toLowerCase();
+              const normProdName = productName.toLowerCase();
+              if (candName && normProdName && !candName.includes(normProdName) && !normProdName.includes(candName)) {
+                product = undefined; // Name conflict! Fallback to productName
+              } else {
+                product = candidateProd;
+              }
+            }
+          }
+        }
         if (!product && productName) {
           product = productByNameMap.get(productName.toLowerCase());
         }
 
-        // 2. Match User (O(1) Map lookup with fallback)
-        let user = userCode ? userByCodeMap.get(userCode.toLowerCase()) : undefined;
+        // 2. Match User (O(1) Map lookup with name verification fallback)
+        let user: User | undefined = undefined;
+        if (userCode) {
+          const candidateUser = userByCodeMap.get(userCode.toLowerCase());
+          if (candidateUser) {
+            if (!userName) {
+              user = candidateUser;
+            } else {
+              const candName = (candidateUser.pmc_name || `${candidateUser.first_name || ""} ${candidateUser.last_name || ""}`).trim().toLowerCase();
+              const normUserName = userName.toLowerCase();
+              if (candName && normUserName && (candName.includes(normUserName) || normUserName.includes(candName))) {
+                user = candidateUser;
+              } else {
+                // Name conflict! User_Code in Excel points to a different user in DB, but User_Name specifies the target user
+                user = undefined;
+              }
+            }
+          }
+        }
         if (!user && userName) {
           user = userByNameMap.get(userName.toLowerCase());
           if (!user) {

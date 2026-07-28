@@ -601,7 +601,7 @@ async function handleApplyToMatrix(items: ParsedItem[]) {
   const currentUsersMap = new Map(selectedUsers.value.map((u) => [u.id, u]));
   newUsersMap.forEach((user, userId) => {
     if (!currentUsersMap.has(userId)) {
-      selectedUsers.value.push(user);
+      selectedUsers.value.unshift(user);
     }
   });
 
