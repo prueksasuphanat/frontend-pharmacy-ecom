@@ -23,16 +23,6 @@ const menuItems = [
   { to: "/profile/wishlist", label: "สินค้าที่บันทึกไว้", icon: Heart },
 ];
 
-const roleLabel = computed(() => {
-  const map: Record<string, string> = {
-    ADMIN: "ผู้ดูแลระบบ",
-    PHARMACIST: "เภสัชกร",
-    DEMO: "Demo",
-    CUSTOMER: "ลูกค้า",
-  };
-  return map[auth.currentUser?.role ?? ""] ?? "ลูกค้า";
-});
-
 const fullName = computed(() => {
   const u = auth.currentUser;
   if (!u) return "ผู้ใช้งาน";
@@ -69,9 +59,6 @@ const fullName = computed(() => {
               <p class="text-sm font-semibold text-secondary-900 truncate">
                 {{ fullName }}
               </p>
-              <span class="badge badge-teal text-xs mt-0.5">{{
-                roleLabel
-              }}</span>
             </div>
           </div>
 

@@ -63,16 +63,6 @@ const memberSince = computed(() =>
   formatDate(user.value?.created_at, "D MMMM BBBB"),
 );
 
-const roleLabel = computed(() => {
-  const map: Record<string, string> = {
-    ADMIN: "ผู้ดูแลระบบ",
-    PHARMACIST: "เภสัชกร",
-    DEMO: "Demo",
-    CUSTOMER: "ลูกค้า",
-  };
-  return map[user.value?.role ?? ""] ?? "ลูกค้า";
-});
-
 const profileInputRef = ref<HTMLInputElement | null>(null);
 const avatarPreview = ref<string | null>(null);
 const avatarFile = ref<File | null>(null);
@@ -207,12 +197,9 @@ const onSubmit = handleSubmit(
         </div>
 
         <div class="flex-1 min-w-0 pt-0.5">
-          <div class="flex items-center gap-2 flex-wrap">
-            <h2 class="text-lg font-bold text-secondary-900 leading-tight">
-              {{ fullName }}
-            </h2>
-            <span class="badge badge-teal text-xs">{{ roleLabel }}</span>
-          </div>
+          <h2 class="text-lg font-bold text-secondary-900 leading-tight">
+            {{ fullName }}
+          </h2>
           <p class="text-sm text-secondary-500 mt-0.5 truncate">
             {{ user?.email }}
           </p>
