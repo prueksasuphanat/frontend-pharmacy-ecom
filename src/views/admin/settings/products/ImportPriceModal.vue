@@ -22,6 +22,7 @@ import {
 import { useToast } from "@/composables";
 import { formatPrice, formatNum } from "@/utils/format";
 import { productsApi, productPricesApi, usersApi } from "@/api";
+import { useProductPriceStore } from "@/stores";
 import { BaseLoading } from "@/components/ui";
 import type { Product, User } from "@/types";
 
@@ -42,6 +43,7 @@ const emit = defineEmits<{
 }>();
 
 const toast = useToast();
+const productPriceStore = useProductPriceStore();
 
 export interface CalculatedUnit {
   product_unit_id: number;
@@ -63,6 +65,9 @@ export interface ParsedItem {
   baseUnitName?: string;
   costPrice: number | null;
   markupPercent: number | null;
+
+  hasExistingPrice: boolean;
+  existingPriceValue?: number | null;
 
   isMatched: boolean;
   matchErrorReason?: string;
@@ -87,8 +92,44 @@ const allProducts = ref<Product[]>([]);
 const allUsers = ref<User[]>([]);
 
 const parsedItems = ref<ParsedItem[]>([]);
-const activeTab = ref<"all" | "importable" | "below_cost" | "errors">("importable");
+const activeTab = ref<"all" | "importable" | "has_existing_price" | "below_cost" | "errors">("importable");
 const searchQuery = ref("");
+
+// Helper: Case-insensitive & flexible header key lookup
+function getRowValue(row: any, candidateKeys: string[]): any {
+  if (!row || typeof row !== "object") return "";
+
+  const normMap = new Map<string, any>();
+  for (const [key, val] of Object.entries(row)) {
+    if (val !== undefined && val !== null) {
+      const cleanKey = key.toString().toLowerCase().trim().replace(/[\s_]+/g, "");
+      normMap.set(cleanKey, val);
+    }
+  }
+
+  for (const cand of candidateKeys) {
+    const cleanCand = cand.toLowerCase().trim().replace(/[\s_]+/g, "");
+    if (normMap.has(cleanCand)) {
+      return normMap.get(cleanCand);
+    }
+  }
+
+  return "";
+}
+
+// Helper: Flexible number parsing (handles numbers, strings like "13.00", strings with commas like "1,234.50" or currency)
+function parseFlexibleNumber(val: any): number {
+  if (val === null || val === undefined || val === "") return NaN;
+  if (typeof val === "number") return val;
+
+  const strVal = String(val).trim();
+  if (!strVal) return NaN;
+
+  // Clean commas, currency signs e.g. "1,234.50" -> "1234.50", "฿13.00" -> "13.00"
+  const cleanedStr = strVal.replace(/,/g, "").replace(/[^\d.-]/g, "").trim();
+  const parsed = parseFloat(cleanedStr);
+  return isNaN(parsed) ? NaN : parsed;
+}
 
 const summaryStats = computed(() => {
   const total = parsedItems.value.length;
@@ -96,6 +137,7 @@ const summaryStats = computed(() => {
   const belowCost = parsedItems.value.filter((i) => i.isBelowCost).length;
   const errors = parsedItems.value.filter((i) => !i.isMatched).length;
   const included = parsedItems.value.filter((i) => i.isIncluded && i.isMatched && !i.isBelowCost).length;
+  const hasExistingPrice = parsedItems.value.filter((i) => i.isMatched && !i.isBelowCost && i.hasExistingPrice).length;
 
   return {
     total,
@@ -103,6 +145,7 @@ const summaryStats = computed(() => {
     belowCost,
     errors,
     included,
+    hasExistingPrice,
   };
 });
 
@@ -111,6 +154,8 @@ const filteredItems = computed(() => {
 
   if (activeTab.value === "importable") {
     result = result.filter((i) => i.isMatched && !i.isBelowCost);
+  } else if (activeTab.value === "has_existing_price") {
+    result = result.filter((i) => i.isMatched && !i.isBelowCost && i.hasExistingPrice);
   } else if (activeTab.value === "below_cost") {
     result = result.filter((i) => i.isBelowCost);
   } else if (activeTab.value === "errors") {
@@ -256,6 +301,18 @@ async function processFile(file: File) {
       if (u.pmc_name) userByNameMap.set(u.pmc_name.toLowerCase().trim(), u);
     });
 
+    // Build existing prices Map: `${productId}_${userId}` -> price
+    const existingPricesMap = new Map<string, number>();
+    productPriceStore.productPrices.forEach((pp) => {
+      pp.units.forEach((u) => {
+        u.users.forEach((usr) => {
+          if (usr.price != null && Number(usr.price) > 0) {
+            existingPricesMap.set(`${pp.product_id}_${usr.user_id}`, Number(usr.price));
+          }
+        });
+      });
+    });
+
     const items: ParsedItem[] = [];
     const chunkSize = 400;
 
@@ -265,11 +322,20 @@ async function processFile(file: File) {
       for (let i = index; i < chunkEnd; i++) {
         const row = rawRows[i];
 
-        const productCode = String(row.product_code || row["รหัสสินค้า"] || "").trim();
-        const productName = String(row.product_name || row["ชื่อสินค้า"] || "").trim();
-        const userCode = String(row.user_code || row["รหัสผู้ใช้"] || row["รหัสลูกค้า"] || "").trim();
-        const userName = String(row.user_name || row["ชื่อผู้ใช้"] || row["ชื่อลูกค้า"] || "").trim();
-        const priceVal = parseFloat(row.price || row["ราคา"] || row["ราคาเสนอขาย"] || "0");
+        // Flexible case-insensitive header extraction
+        const productCodeRaw = getRowValue(row, ["product_code", "productcode", "code", "รหัสสินค้า", "รหัส"]);
+        const productNameRaw = getRowValue(row, ["product_name", "productname", "name", "ชื่อสินค้า", "ชื่อ"]);
+        const userCodeRaw = getRowValue(row, ["user_code", "usercode", "customer_code", "customercode", "รหัสผู้ใช้", "รหัสลูกค้า", "รหัสผู้ซื้อ"]);
+        const userNameRaw = getRowValue(row, ["user_name", "username", "customer_name", "customername", "ชื่อผู้ใช้", "ชื่อลูกค้า", "ชื่อผู้ซื้อ"]);
+        const priceRaw = getRowValue(row, ["price", "excel_price", "ราคา", "ราคาเสนอขาย", "ราคาขาย"]);
+
+        const productCode = String(productCodeRaw || "").trim();
+        const productName = String(productNameRaw || "").trim();
+        const userCode = String(userCodeRaw || "").trim();
+        const userName = String(userNameRaw || "").trim();
+
+        // Flexible type parsing for price (handles numbers, strings "13.00", strings with commas "1,234.50")
+        const priceVal = parseFlexibleNumber(priceRaw);
 
         if (!productCode && !productName && !userCode) continue;
 
@@ -308,6 +374,17 @@ async function processFile(file: File) {
         let markupPercent: number | null = null;
         if (hasCostPrice && priceVal > 0) {
           markupPercent = Number((((priceVal - costPrice!) / costPrice!) * 100).toFixed(2));
+        }
+
+        // Check Existing Price
+        let hasExistingPrice = false;
+        let existingPriceValue: number | null = null;
+        if (product && user) {
+          const exPrice = existingPricesMap.get(`${product.id}_${user.id}`);
+          if (exPrice != null && exPrice > 0) {
+            hasExistingPrice = true;
+            existingPriceValue = exPrice;
+          }
         }
 
         // Base Unit finding
@@ -351,6 +428,8 @@ async function processFile(file: File) {
           baseUnitName,
           costPrice,
           markupPercent,
+          hasExistingPrice,
+          existingPriceValue,
           isMatched,
           matchErrorReason: errors.join(", "),
           isBelowCost,
@@ -578,23 +657,30 @@ async function handleConfirmImport() {
           <!-- Step 2: Parsed Preview State -->
           <div v-else class="flex flex-col gap-4 flex-1 min-h-0">
             <!-- Summary Stats Cards -->
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div class="p-3.5 bg-secondary-50 border border-secondary-200 rounded-xl">
-                <p class="text-xs font-medium text-secondary-500">แถบข้อมูลทั้งหมด</p>
-                <p class="text-xl font-bold text-secondary-900 mt-0.5">
-                  {{ formatNum(summaryStats.total) }} <span class="text-xs font-normal text-secondary-500">รายการ</span>
+            <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+              <div class="p-3 bg-secondary-50 border border-secondary-200 rounded-xl">
+                <p class="text-[11px] font-medium text-secondary-500">แถบข้อมูลทั้งหมด</p>
+                <p class="text-lg font-bold text-secondary-900 mt-0.5">
+                  {{ formatNum(summaryStats.total) }} <span class="text-[10px] font-normal text-secondary-500">รายการ</span>
                 </p>
               </div>
 
-              <div class="p-3.5 bg-green-50 border border-green-200 rounded-xl">
-                <p class="text-xs font-medium text-green-700">พร้อมนำเข้า</p>
-                <p class="text-xl font-bold text-green-900 mt-0.5">
-                  {{ formatNum(summaryStats.included) }} <span class="text-xs font-normal text-green-700">รายการ</span>
+              <div class="p-3 bg-green-50 border border-green-200 rounded-xl">
+                <p class="text-[11px] font-medium text-green-700">พร้อมนำเข้า</p>
+                <p class="text-lg font-bold text-green-900 mt-0.5">
+                  {{ formatNum(summaryStats.included) }} <span class="text-[10px] font-normal text-green-700">รายการ</span>
+                </p>
+              </div>
+
+              <div class="p-3 bg-blue-50 border border-blue-200 rounded-xl">
+                <p class="text-[11px] font-medium text-blue-700">มีราคาอยู่แล้ว</p>
+                <p class="text-lg font-bold text-blue-900 mt-0.5">
+                  {{ formatNum(summaryStats.hasExistingPrice) }} <span class="text-[10px] font-normal text-blue-700">รายการ</span>
                 </p>
               </div>
 
               <div
-                class="p-3.5 rounded-xl border transition-colors"
+                class="p-3 rounded-xl border transition-colors"
                 :class="
                   summaryStats.belowCost > 0
                     ? 'bg-amber-50 border-amber-200'
@@ -603,26 +689,26 @@ async function handleConfirmImport() {
               >
                 <div class="flex items-center justify-between">
                   <p
-                    class="text-xs font-medium"
+                    class="text-[11px] font-medium"
                     :class="summaryStats.belowCost > 0 ? 'text-amber-800' : 'text-secondary-500'"
                   >
                     ต่ำกว่าราคาทุน
                   </p>
                   <AlertTriangle
                     v-if="summaryStats.belowCost > 0"
-                    class="w-4 h-4 text-amber-600 shrink-0"
+                    class="w-3.5 h-3.5 text-amber-600 shrink-0"
                   />
                 </div>
                 <p
-                  class="text-xl font-bold mt-0.5"
+                  class="text-lg font-bold mt-0.5"
                   :class="summaryStats.belowCost > 0 ? 'text-amber-900' : 'text-secondary-900'"
                 >
-                  {{ formatNum(summaryStats.belowCost) }} <span class="text-xs font-normal">รายการ</span>
+                  {{ formatNum(summaryStats.belowCost) }} <span class="text-[10px] font-normal">รายการ</span>
                 </p>
               </div>
 
               <div
-                class="p-3.5 rounded-xl border transition-colors"
+                class="p-3 rounded-xl border transition-colors"
                 :class="
                   summaryStats.errors > 0
                     ? 'bg-red-50 border-red-200'
@@ -630,21 +716,21 @@ async function handleConfirmImport() {
                 "
               >
                 <p
-                  class="text-xs font-medium"
+                  class="text-[11px] font-medium"
                   :class="summaryStats.errors > 0 ? 'text-red-700' : 'text-secondary-500'"
                 >
                   ไม่พบข้อมูล / ข้อผิดพลาด
                 </p>
                 <p
-                  class="text-xl font-bold mt-0.5"
+                  class="text-lg font-bold mt-0.5"
                   :class="summaryStats.errors > 0 ? 'text-red-900' : 'text-secondary-900'"
                 >
-                  {{ formatNum(summaryStats.errors) }} <span class="text-xs font-normal">รายการ</span>
+                  {{ formatNum(summaryStats.errors) }} <span class="text-[10px] font-normal">รายการ</span>
                 </p>
               </div>
             </div>
 
-            <!-- Toolbar & 4 Filter Tabs -->
+            <!-- Toolbar & 5 Filter Tabs -->
             <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
               <div class="flex flex-wrap items-center gap-1.5 bg-secondary-100 p-1 rounded-xl">
                 <button
@@ -674,6 +760,19 @@ async function handleConfirmImport() {
                 </button>
                 <button
                   type="button"
+                  @click="activeTab = 'has_existing_price'"
+                  :class="[
+                    'px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5',
+                    activeTab === 'has_existing_price'
+                      ? 'bg-blue-600 text-white shadow-xs'
+                      : 'text-blue-700 hover:bg-blue-100/50',
+                  ]"
+                >
+                  <RefreshCw class="w-3.5 h-3.5" />
+                  มีราคาอยู่แล้ว ({{ formatNum(summaryStats.hasExistingPrice) }})
+                </button>
+                <button
+                  type="button"
                   @click="activeTab = 'below_cost'"
                   :class="[
                     'px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5',
@@ -700,7 +799,7 @@ async function handleConfirmImport() {
               </div>
 
               <!-- Search input inside modal -->
-              <div class="relative min-w-[240px]">
+              <div class="relative min-w-[220px]">
                 <Search class="w-4 h-4 text-secondary-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   v-model="searchQuery"
@@ -711,9 +810,18 @@ async function handleConfirmImport() {
               </div>
             </div>
 
-            <!-- Informational Banner for Non-Importable Tabs -->
+            <!-- Informational Banners -->
             <div
-              v-if="activeTab === 'below_cost'"
+              v-if="activeTab === 'has_existing_price'"
+              class="p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-900 flex items-center gap-2"
+            >
+              <RefreshCw class="w-4 h-4 text-blue-600 shrink-0" />
+              <span>
+                <strong>ข้อมูล:</strong> รายการในหมวดนี้มีราคาเสนอขายในระบบอยู่แล้ว การยืนยันนำเข้าจะทำการอัปเดตเป็นราคาใหม่ที่ระบุจากไฟล์ Excel
+              </span>
+            </div>
+            <div
+              v-else-if="activeTab === 'below_cost'"
               class="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 flex items-center gap-2"
             >
               <AlertTriangle class="w-4 h-4 text-amber-600 shrink-0" />
@@ -731,9 +839,9 @@ async function handleConfirmImport() {
               </span>
             </div>
 
-            <!-- Table Controls Bar (Only in Importable/All tab) -->
+            <!-- Table Controls Bar (Only in Importable/HasExisting/All tab) -->
             <div
-              v-if="activeTab === 'importable' || activeTab === 'all'"
+              v-if="activeTab === 'importable' || activeTab === 'has_existing_price' || activeTab === 'all'"
               class="flex items-center justify-between px-1 text-xs text-secondary-600"
             >
               <div class="flex items-center gap-2">
@@ -766,7 +874,7 @@ async function handleConfirmImport() {
                     <tr>
                       <th class="py-2.5 px-3 w-10 text-center">
                         <input
-                          v-if="activeTab === 'importable' || activeTab === 'all'"
+                          v-if="activeTab === 'importable' || activeTab === 'has_existing_price' || activeTab === 'all'"
                           type="checkbox"
                           class="rounded text-teal-600 focus:ring-teal-500"
                           :checked="isAllFilteredSelected"
@@ -789,7 +897,7 @@ async function handleConfirmImport() {
                       <tr
                         :class="[
                           'hover:bg-secondary-50/80 transition-colors',
-                          !item.isMatched ? 'bg-red-50/30' : item.isBelowCost ? 'bg-amber-50/40' : '',
+                          !item.isMatched ? 'bg-red-50/30' : item.isBelowCost ? 'bg-amber-50/40' : item.hasExistingPrice ? 'bg-blue-50/20' : '',
                         ]"
                       >
                         <!-- Checkbox (ONLY shown for valid importable items) -->
@@ -879,13 +987,21 @@ async function handleConfirmImport() {
                             <AlertTriangle class="w-3 h-3" />
                             ต่ำกว่าทุน
                           </span>
-                          <span
-                            v-else
-                            class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-green-100 text-green-700"
-                          >
-                            <CheckCircle2 class="w-3 h-3" />
-                            ถูกต้อง
-                          </span>
+                          <div v-else class="flex flex-col items-center gap-0.5">
+                            <span
+                              class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-green-100 text-green-700"
+                            >
+                              <CheckCircle2 class="w-3 h-3" />
+                              ถูกต้อง
+                            </span>
+                            <span
+                              v-if="item.hasExistingPrice && item.existingPriceValue"
+                              class="text-[10px] text-blue-700 font-medium bg-blue-50 px-1.5 py-0.2 rounded border border-blue-200"
+                              :title="`ราคาเดิมในระบบ ฿${formatPrice(item.existingPriceValue)}`"
+                            >
+                              มีราคาเดิม (฿{{ formatPrice(item.existingPriceValue) }})
+                            </span>
+                          </div>
                         </td>
 
                         <!-- Detail expand button -->
