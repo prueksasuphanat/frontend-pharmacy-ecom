@@ -588,6 +588,12 @@ async function handleApplyToMatrix(items: ParsedItem[]) {
 
   if (newProductsMap.size === 0) return;
 
+  isLoading.value = true;
+
+  // Set Custom User Mode immediately so table shows ONLY imported user(s)
+  isCustomUserMode.value = true;
+  selectedUsers.value = Array.from(newUsersMap.values());
+
   const currentProdIds = selectedProducts.value.map((p) => p.id);
   newProductsMap.forEach((prod, prodId) => {
     if (!currentProdIds.includes(prodId)) {
@@ -595,55 +601,51 @@ async function handleApplyToMatrix(items: ParsedItem[]) {
     }
   });
 
-  await fetchPricesForProducts();
+  try {
+    await fetchPricesForProducts();
 
-  isCustomUserMode.value = true;
-  const currentUsersMap = new Map(selectedUsers.value.map((u) => [u.id, u]));
-  newUsersMap.forEach((user, userId) => {
-    if (!currentUsersMap.has(userId)) {
-      selectedUsers.value.unshift(user);
-    }
-  });
+    items.forEach((item) => {
+      if (!item.isMatched || !item.isIncluded || !item.matchedProduct || !item.matchedUser) return;
 
-  items.forEach((item) => {
-    if (!item.isMatched || !item.isIncluded || !item.matchedProduct || !item.matchedUser) return;
+      const userId = item.matchedUser.id;
+      const productId = item.matchedProduct.id;
 
-    const userId = item.matchedUser.id;
-    const productId = item.matchedProduct.id;
+      item.calculatedUnits.forEach((cu) => {
+        if (!priceMatrix.value[cu.product_unit_id]) {
+          priceMatrix.value[cu.product_unit_id] = {};
+        }
+        if (!autoCalcMatrix.value[cu.product_unit_id]) {
+          autoCalcMatrix.value[cu.product_unit_id] = {};
+        }
 
-    item.calculatedUnits.forEach((cu) => {
-      if (!priceMatrix.value[cu.product_unit_id]) {
-        priceMatrix.value[cu.product_unit_id] = {};
+        priceMatrix.value[cu.product_unit_id][userId] = String(cu.price);
+        autoCalcMatrix.value[cu.product_unit_id][userId] = cu.multiplier_to_base > 1;
+      });
+
+      const group = groupedColumns.value.find((g) => g.product.id === productId);
+      const costPrice =
+        item.costPrice ??
+        (group?.costPrice != null
+          ? group.costPrice
+          : item.matchedProduct.cost_price != null
+          ? Number(item.matchedProduct.cost_price)
+          : null);
+
+      if (costPrice !== null && costPrice > 0 && item.excel_price > 0) {
+        const pct = ((item.excel_price - costPrice) / costPrice) * 100;
+        if (!markupPercent.value[productId]) {
+          markupPercent.value[productId] = {};
+        }
+        markupPercent.value[productId][userId] = pct.toFixed(2);
       }
-      if (!autoCalcMatrix.value[cu.product_unit_id]) {
-        autoCalcMatrix.value[cu.product_unit_id] = {};
-      }
-
-      priceMatrix.value[cu.product_unit_id][userId] = String(cu.price);
-      autoCalcMatrix.value[cu.product_unit_id][userId] = cu.multiplier_to_base > 1;
     });
 
-    const group = groupedColumns.value.find((g) => g.product.id === productId);
-    const costPrice =
-      item.costPrice ??
-      (group?.costPrice != null
-        ? group.costPrice
-        : item.matchedProduct.cost_price != null
-        ? Number(item.matchedProduct.cost_price)
-        : null);
-
-    if (costPrice !== null && costPrice > 0 && item.excel_price > 0) {
-      const pct = ((item.excel_price - costPrice) / costPrice) * 100;
-      if (!markupPercent.value[productId]) {
-        markupPercent.value[productId] = {};
-      }
-      markupPercent.value[productId][userId] = pct.toFixed(2);
-    }
-  });
-
-  // Force Vue 3 reactivity update for matrix display
-  markupPercent.value = { ...markupPercent.value };
-  priceMatrix.value = { ...priceMatrix.value };
+    // Force Vue 3 reactivity update for matrix display
+    markupPercent.value = { ...markupPercent.value };
+    priceMatrix.value = { ...priceMatrix.value };
+  } finally {
+    isLoading.value = false;
+  }
 }
 
 onMounted(async () => {
