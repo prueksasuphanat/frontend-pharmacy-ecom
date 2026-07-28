@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from "vue";
-import { useRouter } from "vue-router";
-import { usePublicProductStore } from "@/stores/public/product.store";
-import { usePublicCategoryStore } from "@/stores/public/category.store";
-import { ProductDetailModal, ProductImage } from "@/components/product";
-import { useAuthStore } from "@/stores/auth.store";
+import { ref, computed, watch, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { usePublicProductStore } from '@/stores/public/product.store';
+import { usePublicCategoryStore } from '@/stores/public/category.store';
+import { ProductDetailModal, ProductImage } from '@/components/product';
+import { useAuthStore } from '@/stores/auth.store';
 import {
   Search,
   ChevronRight,
@@ -22,11 +22,11 @@ import {
   BadgeCheck,
   X,
   ChevronDown,
-  Star,
-} from "lucide-vue-next";
-import { Navbar, Footer } from "@/components/layout";
-import { BaseSelect } from "@/components/ui";
-import { formatNum } from "@/utils/format";
+  Star
+} from 'lucide-vue-next';
+import { Navbar, Footer } from '@/components/layout';
+import { BaseSelect } from '@/components/ui';
+import { formatNum } from '@/utils/format';
 
 const auth = useAuthStore();
 const router = useRouter();
@@ -49,13 +49,10 @@ function onHeroMouseMove(e: MouseEvent) {
   const my = e.clientY - rect.top;
   heroParallax.value = {
     dx: (mx - rect.width / 2) / (rect.width / 2),
-    dy: (my - rect.height / 2) / (rect.height / 2),
+    dy: (my - rect.height / 2) / (rect.height / 2)
   };
   heroMousePos.value = { x: mx, y: my };
-  trailPositions.value = [
-    { x: mx, y: my, id: ++_trailId },
-    ...trailPositions.value.slice(0, 11),
-  ];
+  trailPositions.value = [{ x: mx, y: my, id: ++_trailId }, ...trailPositions.value.slice(0, 11)];
 }
 
 function onHeroMouseLeave() {
@@ -64,11 +61,9 @@ function onHeroMouseLeave() {
   trailPositions.value = [];
 }
 
-
-
 // ── hero search ──
-const search = ref("");
-const categoryId = ref<number | "">("");
+const search = ref('');
+const categoryId = ref<number | ''>('');
 const page = ref(1);
 const PAGE_SIZE = 12;
 const selectedProductId = ref<number | null>(null);
@@ -80,23 +75,22 @@ const promoCarouselRef = ref<HTMLElement | null>(null);
 const openFaq = ref<number | null>(null);
 const faqs = [
   {
-    q: "ต้องสมัครสมาชิกก่อนสั่งซื้อไหม?",
-    a: "ใช่ การสมัครสมาชิกช่วยให้คุณดูราคาสินค้า ติดตามสถานะคำสั่งซื้อ และรับสิทธิพิเศษต่างๆ สมัครฟรีและใช้เวลาเพียงไม่กี่นาที",
+    q: 'ต้องสมัครสมาชิกก่อนสั่งซื้อไหม?',
+    a: 'ใช่ การสมัครสมาชิกช่วยให้คุณดูราคาสินค้า ติดตามสถานะคำสั่งซื้อ และรับสิทธิพิเศษต่างๆ สมัครฟรีและใช้เวลาเพียงไม่กี่นาที'
   },
   {
-    q: "สินค้าผ่านการรับรองจากองค์การอาหารและยา (อย.) ไหม?",
-    a: "สินค้าทุกรายการในระบบผ่านการรับรองมาตรฐานจาก อย. และมาจากผู้ผลิตและผู้นำเข้าที่ได้รับอนุญาตอย่างถูกต้อง",
+    q: 'สินค้าผ่านการรับรองจากองค์การอาหารและยา (อย.) ไหม?',
+    a: 'สินค้าทุกรายการในระบบผ่านการรับรองมาตรฐานจาก อย. และมาจากผู้ผลิตและผู้นำเข้าที่ได้รับอนุญาตอย่างถูกต้อง'
   },
   {
-    q: "จัดส่งถึงที่ใช้เวลานานเท่าไหร่?",
-    a: "สั่งซื้อก่อน 14:00 น. ส่งออกวันเดียวกัน ระยะเวลาจัดส่งทั่วประเทศ 1-3 วันทำการ พื้นที่ห่างไกลอาจใช้เวลาเพิ่มเติม",
+    q: 'จัดส่งถึงที่ใช้เวลานานเท่าไหร่?',
+    a: 'สั่งซื้อก่อน 14:00 น. ส่งออกวันเดียวกัน ระยะเวลาจัดส่งทั่วประเทศ 1-3 วันทำการ พื้นที่ห่างไกลอาจใช้เวลาเพิ่มเติม'
   },
   {
-    q: "สามารถคืนหรือเปลี่ยนสินค้าได้ไหม?",
-    a: "สามารถคืนสินค้าได้ภายใน 7 วัน หากสินค้าได้รับความเสียหายระหว่างการจัดส่ง หรือไม่ตรงกับที่สั่ง กรุณาติดต่อทีมงานของเราพร้อมแนบหลักฐาน",
-  },
+    q: 'สามารถคืนหรือเปลี่ยนสินค้าได้ไหม?',
+    a: 'สามารถคืนสินค้าได้ภายใน 7 วัน หากสินค้าได้รับความเสียหายระหว่างการจัดส่ง หรือไม่ตรงกับที่สั่ง กรุณาติดต่อทีมงานของเราพร้อมแนบหลักฐาน'
+  }
 ];
-
 
 let searchTimer: ReturnType<typeof setTimeout> | null = null;
 function onSearchInput() {
@@ -122,9 +116,9 @@ const pageNumbers = computed(() => {
     pages.push(1);
     const start = Math.max(2, current - delta);
     const end = Math.min(total - 1, current + delta);
-    if (start > 2) pages.push("...");
+    if (start > 2) pages.push('...');
     for (let i = start; i <= end; i++) pages.push(i);
-    if (end < total - 1) pages.push("...");
+    if (end < total - 1) pages.push('...');
     pages.push(total);
   }
   return pages;
@@ -135,16 +129,15 @@ function fetchProducts() {
     page: page.value,
     limit: PAGE_SIZE,
     search: search.value || undefined,
-    category_id:
-      categoryId.value !== "" ? (categoryId.value as number) : undefined,
+    category_id: categoryId.value !== '' ? (categoryId.value as number) : undefined
   });
 }
 
 function goToPage(p: number) {
   page.value = p;
   productsSectionRef.value?.scrollIntoView({
-    behavior: "smooth",
-    block: "start",
+    behavior: 'smooth',
+    block: 'start'
   });
   fetchProducts();
 }
@@ -156,8 +149,6 @@ function nextPage() {
 function prevPage() {
   if (page.value > 1) goToPage(page.value - 1);
 }
-
-
 
 watch(categoryId, () => {
   page.value = 1;
@@ -174,8 +165,8 @@ function goToProduct(id: number) {
 
 function scrollToProducts() {
   productsSectionRef.value?.scrollIntoView({
-    behavior: "smooth",
-    block: "start",
+    behavior: 'smooth',
+    block: 'start'
   });
 }
 
@@ -195,18 +186,14 @@ onMounted(() => {
     <Navbar />
 
     <!-- ─── 3. Hero Section ─── -->
-    <section
-      class="hero-section relative overflow-hidden"
-      @mousemove="onHeroMouseMove"
-      @mouseleave="onHeroMouseLeave"
-    >
+    <section class="hero-section relative overflow-hidden" @mousemove="onHeroMouseMove" @mouseleave="onHeroMouseLeave">
       <div class="animated-bg absolute inset-0" />
       <!-- Mouse spotlight glow -->
       <div
         class="absolute inset-0 pointer-events-none z-[1] transition-opacity duration-300"
         :style="{
           background: `radial-gradient(circle 280px at ${heroMousePos.x}px ${heroMousePos.y}px, rgba(255,255,255,0.18) 0%, rgba(45,212,191,0.1) 40%, transparent 70%)`,
-          opacity: heroMousePos.x < 0 ? 0 : 1,
+          opacity: heroMousePos.x < 0 ? 0 : 1
         }"
       />
       <!-- Cursor trail dots -->
@@ -222,7 +209,7 @@ onMounted(() => {
           transform: 'translate(-50%, -50%)',
           opacity: (1 - i / 12) * 0.65,
           background: 'rgba(45, 212, 191, 0.85)',
-          filter: `blur(${i * 0.3}px)`,
+          filter: `blur(${i * 0.3}px)`
         }"
       />
       <!-- Cursor glow orb -->
@@ -235,10 +222,9 @@ onMounted(() => {
           left: `${heroMousePos.x}px`,
           top: `${heroMousePos.y}px`,
           transform: 'translate(-50%, -50%)',
-          background:
-            'radial-gradient(circle, rgba(255,255,255,0.45) 0%, rgba(45,212,191,0.25) 55%, transparent 100%)',
+          background: 'radial-gradient(circle, rgba(255,255,255,0.45) 0%, rgba(45,212,191,0.25) 55%, transparent 100%)',
           boxShadow: '0 0 14px 4px rgba(45, 212, 191, 0.25)',
-          transition: 'left 0.06s ease-out, top 0.06s ease-out',
+          transition: 'left 0.06s ease-out, top 0.06s ease-out'
         }"
       />
       <!-- Parallax blobs — move opposite to mouse -->
@@ -246,72 +232,28 @@ onMounted(() => {
         class="blob blob-1 absolute"
         :style="{
           transform: `translate(${heroParallax.dx * 80}px, ${heroParallax.dy * 55}px)`,
-          transition: 'transform 0.3s ease-out',
+          transition: 'transform 0.3s ease-out'
         }"
       />
       <div
         class="blob blob-2 absolute"
         :style="{
           transform: `translate(${-heroParallax.dx * 100}px, ${-heroParallax.dy * 70}px)`,
-          transition: 'transform 0.3s ease-out',
+          transition: 'transform 0.3s ease-out'
         }"
       />
       <!-- Floating decorative icons -->
       <div class="absolute inset-0 overflow-hidden pointer-events-none z-0">
-        <Pill
-          class="float-icon"
-          style="
-            top: 14%;
-            left: 7%;
-            animation-delay: 0s;
-            animation-duration: 6.5s;
-          "
-        />
-        <ShieldCheck
-          class="float-icon"
-          style="
-            top: 22%;
-            right: 9%;
-            animation-delay: 1.2s;
-            animation-duration: 8s;
-          "
-        />
-        <Sparkles
-          class="float-icon"
-          style="
-            top: 65%;
-            right: 7%;
-            animation-delay: 0.4s;
-            animation-duration: 7s;
-          "
-        />
-        <Zap
-          class="float-icon"
-          style="
-            top: 72%;
-            left: 10%;
-            animation-delay: 2s;
-            animation-duration: 5.5s;
-          "
-        />
-        <span
-          class="float-icon float-cross"
-          style="
-            top: 42%;
-            left: 4%;
-            animation-delay: 3s;
-            animation-duration: 9s;
-          "
+        <Pill class="float-icon" style="top: 14%; left: 7%; animation-delay: 0s; animation-duration: 6.5s" />
+        <ShieldCheck class="float-icon" style="top: 22%; right: 9%; animation-delay: 1.2s; animation-duration: 8s" />
+        <Sparkles class="float-icon" style="top: 65%; right: 7%; animation-delay: 0.4s; animation-duration: 7s" />
+        <Zap class="float-icon" style="top: 72%; left: 10%; animation-delay: 2s; animation-duration: 5.5s" />
+        <span class="float-icon float-cross" style="top: 42%; left: 4%; animation-delay: 3s; animation-duration: 9s"
           >+</span
         >
         <span
           class="float-icon float-cross"
-          style="
-            top: 38%;
-            right: 5%;
-            animation-delay: 1.8s;
-            animation-duration: 7.5s;
-          "
+          style="top: 38%; right: 5%; animation-delay: 1.8s; animation-duration: 7.5s"
           >✕</span
         >
       </div>
@@ -319,47 +261,30 @@ onMounted(() => {
       <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div
           class="flex justify-center"
-          style="
-            padding-top: clamp(48px, 8vw, 80px);
-            padding-bottom: clamp(40px, 6vw, 72px);
-          "
+          style="padding-top: clamp(48px, 8vw, 80px); padding-bottom: clamp(40px, 6vw, 72px)"
         >
           <!-- Content — centered with staggered fade-in -->
           <div class="w-full max-w-2xl text-center">
             <!-- Heading -->
             <h1
               class="font-extrabold text-white mb-4 leading-tight"
-              style="
-                font-size: clamp(2rem, 5vw, 3.5rem);
-                line-height: 1.1;
-                letter-spacing: -0.02em;
-              "
+              style="font-size: clamp(2rem, 5vw, 3.5rem); line-height: 1.1; letter-spacing: -0.02em"
             >
-              <span class="stagger-item block" style="animation-delay: 0.1s"
-                >ยาและผลิตภัณฑ์</span
-              >
+              <span class="stagger-item block" style="animation-delay: 0.1s">ยาและผลิตภัณฑ์</span>
               <span class="stagger-item block" style="animation-delay: 0.2s">
                 เพื่อสุขภาพ
                 <span class="icon-pill-badge">
                   <Pill class="w-5 h-5 sm:w-7 sm:h-7" />
                 </span>
               </span>
-              <span
-                class="stagger-item block text-teal-100"
-                style="animation-delay: 0.3s"
-                >คุณภาพมาตรฐาน อย.
-              </span>
+              <span class="stagger-item block text-teal-100" style="animation-delay: 0.3s">คุณภาพมาตรฐาน อย. </span>
             </h1>
 
             <!-- Subtext -->
             <div class="stagger-item" style="animation-delay: 0.42s">
               <p
                 class="text-white/80 mb-7 mx-auto"
-                style="
-                  font-size: clamp(0.9rem, 2.5vw, 1.1rem);
-                  max-width: 480px;
-                  line-height: 1.7;
-                "
+                style="font-size: clamp(0.9rem, 2.5vw, 1.1rem); max-width: 480px; line-height: 1.7"
               >
                 สินค้าคุณภาพจากผู้ผลิตชั้นนำ พร้อมส่งทั่วประเทศ
               </p>
@@ -367,10 +292,7 @@ onMounted(() => {
 
             <!-- Search -->
             <div class="stagger-item" style="animation-delay: 0.52s">
-              <div
-                class="hero-search relative mx-auto mb-6"
-                style="max-width: 520px"
-              >
+              <div class="hero-search relative mx-auto mb-6" style="max-width: 520px">
                 <Search
                   class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-secondary-400 z-10 pointer-events-none"
                 />
@@ -406,12 +328,12 @@ onMounted(() => {
                   @click="router.push('/login')"
                   class="group flex items-center gap-2 bg-white/15 hover:bg-white/25 border border-white/30 text-white font-semibold pl-5 pr-2 py-2 rounded-full transition-all text-sm"
                 >
-                  <span class="overflow-hidden h-6 inline-flex items-center">
+                  <span class="relative block overflow-hidden h-6">
                     <span
-                      class="flex flex-col group-hover:-translate-y-1/2 transition-transform duration-500 ease-[cubic-bezier(0.25,0.1,0.25,1)]"
+                      class="flex flex-col group-hover:-translate-y-6 transition-transform duration-500 ease-[cubic-bezier(0.25,0.1,0.25,1)]"
                     >
-                      <span class="h-6 flex items-center">เข้าสู่ระบบ</span>
-                      <span class="h-6 flex items-center">เข้าสู่ระบบ</span>
+                      <span class="h-6 flex items-center shrink-0">เข้าสู่ระบบ</span>
+                      <span class="h-6 flex items-center shrink-0">สมัครสมาชิก</span>
                     </span>
                   </span>
                   <span
@@ -437,9 +359,7 @@ onMounted(() => {
             </div>
             <div>
               <p class="font-semibold text-secondary-800 text-sm">ยาแท้ 100%</p>
-              <p class="text-xs text-secondary-400 mt-0.5">
-                ผ่านการรับรองจาก อย.
-              </p>
+              <p class="text-xs text-secondary-400 mt-0.5">ผ่านการรับรองจาก อย.</p>
             </div>
           </div>
           <div class="feature-item">
@@ -447,9 +367,7 @@ onMounted(() => {
               <UserCheck class="w-6 h-6" />
             </div>
             <div>
-              <p class="font-semibold text-secondary-800 text-sm">
-                เภสัชกรดูแล
-              </p>
+              <p class="font-semibold text-secondary-800 text-sm">เภสัชกรดูแล</p>
               <p class="text-xs text-secondary-400 mt-0.5">ทีมผู้เชี่ยวชาญ</p>
             </div>
           </div>
@@ -459,9 +377,7 @@ onMounted(() => {
             </div>
             <div>
               <p class="font-semibold text-secondary-800 text-sm">ส่งรวดเร็ว</p>
-              <p class="text-xs text-secondary-400 mt-0.5">
-                ภายใน 1-3 วันทำการ
-              </p>
+              <p class="text-xs text-secondary-400 mt-0.5">ภายใน 1-3 วันทำการ</p>
             </div>
           </div>
         </div>
@@ -476,7 +392,10 @@ onMounted(() => {
             <p class="text-xs font-semibold text-primary-600 uppercase tracking-widest mb-1">คำสั่งซื้อล่าสุด</p>
             <h2 class="text-xl font-bold text-secondary-900">สินค้าที่เคยสั่ง</h2>
           </div>
-          <button @click="scrollToProducts" class="text-sm text-primary-600 font-medium hover:underline flex items-center gap-1">
+          <button
+            @click="scrollToProducts"
+            class="text-sm text-primary-600 font-medium hover:underline flex items-center gap-1"
+          >
             ดูทั้งหมด <ChevronRight class="w-4 h-4" />
           </button>
         </div>
@@ -490,15 +409,21 @@ onMounted(() => {
             <ChevronLeft class="w-4 h-4 text-secondary-600" />
           </button>
 
-          <div ref="recentCarouselRef" class="flex gap-4 overflow-x-auto scrollbar-hide pb-2" style="scroll-snap-type: x mandatory;">
+          <div
+            ref="recentCarouselRef"
+            class="flex gap-4 overflow-x-auto scrollbar-hide pb-2"
+            style="scroll-snap-type: x mandatory"
+          >
             <div
               v-for="product in productStore.products.slice(0, 6)"
               :key="product.id"
               @click="goToProduct(product.id)"
               class="flex-shrink-0 w-52 cursor-pointer group"
-              style="scroll-snap-align: start;"
+              style="scroll-snap-align: start"
             >
-              <div class="relative rounded-2xl overflow-hidden mb-2.5 h-44 shadow-sm group-hover:shadow-md transition-shadow duration-200">
+              <div
+                class="relative rounded-2xl overflow-hidden mb-2.5 h-44 shadow-sm group-hover:shadow-md transition-shadow duration-200"
+              >
                 <ProductImage
                   :attachments="product.attachments"
                   :name="product.name"
@@ -506,11 +431,15 @@ onMounted(() => {
                   class="w-full h-full"
                 />
                 <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-                <p class="absolute bottom-3 left-3 right-3 text-white text-xs font-bold line-clamp-2 leading-snug drop-shadow-sm">
+                <p
+                  class="absolute bottom-3 left-3 right-3 text-white text-xs font-bold line-clamp-2 leading-snug drop-shadow-sm"
+                >
                   {{ product.name }}
                 </p>
               </div>
-              <button class="w-full text-xs bg-primary-600 text-white font-semibold py-2.5 rounded-xl hover:bg-primary-700 active:scale-95 transition-all duration-150 flex items-center justify-center gap-1.5">
+              <button
+                class="w-full text-xs bg-primary-600 text-white font-semibold py-2.5 rounded-xl hover:bg-primary-700 active:scale-95 transition-all duration-150 flex items-center justify-center gap-1.5"
+              >
                 สั่งซื้ออีกครั้ง
               </button>
             </div>
@@ -525,7 +454,10 @@ onMounted(() => {
         </div>
 
         <!-- ถ้าไม่ login -->
-        <div v-else-if="!auth.isLoggedIn" class="flex items-center gap-4 bg-secondary-50 rounded-2xl p-6 border border-secondary-100">
+        <div
+          v-else-if="!auth.isLoggedIn"
+          class="flex items-center gap-4 bg-secondary-50 rounded-2xl p-6 border border-secondary-100"
+        >
           <div class="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center shrink-0">
             <UserCheck class="w-5 h-5 text-primary-600" />
           </div>
@@ -533,7 +465,10 @@ onMounted(() => {
             <p class="font-semibold text-secondary-800 text-sm">เข้าสู่ระบบเพื่อดูประวัติการสั่งซื้อ</p>
             <p class="text-xs text-secondary-500 mt-0.5">ดูสินค้าที่เคยสั่งและสั่งซื้ออีกครั้งได้ทันที</p>
           </div>
-          <button @click="router.push('/login')" class="shrink-0 text-sm bg-primary-600 text-white font-semibold px-4 py-2 rounded-full hover:bg-primary-700 transition-colors">
+          <button
+            @click="router.push('/login')"
+            class="shrink-0 text-sm bg-primary-600 text-white font-semibold px-4 py-2 rounded-full hover:bg-primary-700 transition-colors"
+          >
             เข้าสู่ระบบ
           </button>
         </div>
@@ -572,13 +507,18 @@ onMounted(() => {
             <ChevronLeft class="w-4 h-4" />
           </button>
 
-          <div v-if="productStore.products.length" ref="promoCarouselRef" class="flex gap-4 overflow-x-auto scrollbar-hide pb-2" style="scroll-snap-type: x mandatory;">
+          <div
+            v-if="productStore.products.length"
+            ref="promoCarouselRef"
+            class="flex gap-4 overflow-x-auto scrollbar-hide pb-2"
+            style="scroll-snap-type: x mandatory"
+          >
             <div
               v-for="(product, i) in productStore.products.slice(0, 8)"
               :key="product.id"
               @click="goToProduct(product.id)"
               class="flex-shrink-0 w-72 bg-white rounded-2xl border border-secondary-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-200 cursor-pointer group overflow-hidden"
-              style="scroll-snap-align: start;"
+              style="scroll-snap-align: start"
             >
               <div class="relative h-52 overflow-hidden">
                 <ProductImage
@@ -587,7 +527,9 @@ onMounted(() => {
                   img-class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   class="w-full h-full"
                 />
-                <div class="absolute top-3 -right-8 w-32 bg-red-500 text-white text-xs font-black text-center py-1.5 rotate-45 shadow-md tracking-wide">
+                <div
+                  class="absolute top-3 -right-8 w-32 bg-red-500 text-white text-xs font-black text-center py-1.5 rotate-45 shadow-md tracking-wide"
+                >
                   -{{ [10, 15, 20, 25][i % 4] }}%
                 </div>
               </div>
@@ -604,7 +546,11 @@ onMounted(() => {
 
           <!-- skeleton -->
           <div v-else class="flex gap-4 overflow-x-auto">
-            <div v-for="n in 4" :key="n" class="flex-shrink-0 w-72 bg-white rounded-2xl border border-secondary-100 animate-pulse overflow-hidden">
+            <div
+              v-for="n in 4"
+              :key="n"
+              class="flex-shrink-0 w-72 bg-white rounded-2xl border border-secondary-100 animate-pulse overflow-hidden"
+            >
               <div class="w-full h-52 bg-secondary-100" />
               <div class="p-4 space-y-2">
                 <div class="h-4 bg-secondary-100 rounded w-full" />
@@ -630,9 +576,7 @@ onMounted(() => {
       class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8"
     >
       <!-- Filter bar -->
-      <div
-        class="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-6"
-      >
+      <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-6">
         <div class="flex items-center gap-3 flex-1 flex-wrap w-full sm:w-auto">
           <div class="flex items-center gap-1.5 shrink-0">
             <SlidersHorizontal class="h-4 w-4 text-secondary-400" />
@@ -644,8 +588,8 @@ onMounted(() => {
               { value: '', label: 'ทุกหมวดหมู่' },
               ...categoryStore.categories.map((c) => ({
                 value: c.id,
-                label: c.name,
-              })),
+                label: c.name
+              }))
             ]"
             class="w-full sm:w-56 shrink-0"
           />
@@ -664,12 +608,8 @@ onMounted(() => {
             :key="n"
             class="rounded-2xl overflow-hidden border border-secondary-100 bg-white animate-pulse"
           >
-            <div
-              class="w-full h-40 bg-gradient-to-br from-secondary-100 to-secondary-50 relative"
-            >
-              <div
-                class="absolute top-2 left-2 h-5 w-16 bg-secondary-200 rounded-full"
-              />
+            <div class="w-full h-40 bg-gradient-to-br from-secondary-100 to-secondary-50 relative">
+              <div class="absolute top-2 left-2 h-5 w-16 bg-secondary-200 rounded-full" />
             </div>
             <div class="p-3 space-y-2">
               <div class="h-3 bg-secondary-100 rounded w-2/5" />
@@ -689,9 +629,7 @@ onMounted(() => {
       <div v-else-if="productStore.error" class="text-center py-20">
         <Package class="w-14 h-14 text-secondary-200 mx-auto mb-4" />
         <p class="text-secondary-400">{{ productStore.error }}</p>
-        <button @click="fetchProducts" class="btn-secondary mt-4 text-sm">
-          ลองใหม่
-        </button>
+        <button @click="fetchProducts" class="btn-secondary mt-4 text-sm">ลองใหม่</button>
       </div>
 
       <!-- Product Grid -->
@@ -716,10 +654,7 @@ onMounted(() => {
               >
                 {{ product.categories[0].category.name }}
               </div>
-              <div
-                v-if="product.quantity === 0"
-                class="absolute inset-0 bg-black/45 flex items-center justify-center"
-              >
+              <div v-if="product.quantity === 0" class="absolute inset-0 bg-black/45 flex items-center justify-center">
                 <span class="bg-white text-secondary-700 text-xs font-bold px-3 py-1.5 rounded-full shadow">
                   สินค้าหมด
                 </span>
@@ -728,7 +663,7 @@ onMounted(() => {
 
             <div class="p-3.5">
               <p class="text-[11px] text-secondary-400 mb-1 truncate">
-                {{ product.generic_name || "—" }}
+                {{ product.generic_name || '—' }}
               </p>
               <h3 class="font-semibold text-sm text-secondary-900 line-clamp-2 leading-snug mb-2.5">
                 {{ product.name }}
@@ -746,11 +681,9 @@ onMounted(() => {
                 v-if="!auth.isLoggedIn"
                 class="bg-secondary-50 border border-dashed border-secondary-200 rounded-xl px-3 py-2 text-center"
               >
-                <p class="text-xs text-secondary-500">🔒 เข้าสู่ระบบเพื่อดูราคา</p>
+                <p class="text-xs text-secondary-500">เข้าสู่ระบบเพื่อดูราคา</p>
               </div>
-              <div v-else-if="product.quantity === 0" class="text-sm font-medium text-secondary-400">
-                สินค้าหมด
-              </div>
+              <div v-else-if="product.quantity === 0" class="text-sm font-medium text-secondary-400">สินค้าหมด</div>
               <div v-else class="flex items-center justify-between pt-0.5">
                 <p class="text-xs font-semibold text-primary-600">ดูรายละเอียดและราคา</p>
                 <ChevronRight class="w-4 h-4 text-primary-500 group-hover:translate-x-0.5 transition-transform" />
@@ -779,13 +712,13 @@ onMounted(() => {
 
       <!-- Pagination -->
       <div v-if="totalPages > 1 && !productStore.isLoading" class="mt-8">
-        <div
-          class="flex flex-col sm:flex-row items-center justify-between gap-4"
-        >
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
           <p class="text-sm text-secondary-500">
             แสดงหน้า <strong class="text-secondary-900">{{ formatNum(page) }}</strong> จาก
-            <strong class="text-secondary-900">{{ formatNum(totalPages) }}</strong> หน้า
-            ({{ formatNum(totalItems) }} รายการ)
+            <strong class="text-secondary-900">{{ formatNum(totalPages) }}</strong> หน้า ({{
+              formatNum(totalItems)
+            }}
+            รายการ)
           </p>
           <div class="flex items-center gap-2">
             <button
@@ -793,9 +726,7 @@ onMounted(() => {
               :disabled="page === 1"
               :class="[
                 'w-9 h-9 rounded-lg flex items-center justify-center transition-colors',
-                page === 1
-                  ? 'text-secondary-300 cursor-not-allowed'
-                  : 'text-secondary-600 hover:bg-secondary-100',
+                page === 1 ? 'text-secondary-300 cursor-not-allowed' : 'text-secondary-600 hover:bg-secondary-100'
               ]"
             >
               <ChevronsLeft class="w-4 h-4" />
@@ -805,9 +736,7 @@ onMounted(() => {
               :disabled="page === 1"
               :class="[
                 'w-9 h-9 rounded-lg flex items-center justify-center transition-colors',
-                page === 1
-                  ? 'text-secondary-300 cursor-not-allowed'
-                  : 'text-secondary-600 hover:bg-secondary-100',
+                page === 1 ? 'text-secondary-300 cursor-not-allowed' : 'text-secondary-600 hover:bg-secondary-100'
               ]"
             >
               <ChevronLeft class="w-4 h-4" />
@@ -820,16 +749,12 @@ onMounted(() => {
                   'w-9 h-9 rounded-lg text-sm font-medium transition-all',
                   p === page
                     ? 'bg-primary-600 text-white shadow-lg shadow-primary-600/30'
-                    : 'bg-white text-secondary-600 border border-secondary-200 hover:bg-secondary-50 hover:border-primary-300',
+                    : 'bg-white text-secondary-600 border border-secondary-200 hover:bg-secondary-50 hover:border-primary-300'
                 ]"
               >
                 {{ p }}
               </button>
-              <span
-                v-else
-                class="w-9 h-9 flex items-center justify-center text-secondary-400"
-                >{{ p }}</span
-              >
+              <span v-else class="w-9 h-9 flex items-center justify-center text-secondary-400">{{ p }}</span>
             </template>
             <button
               @click="nextPage"
@@ -838,7 +763,7 @@ onMounted(() => {
                 'w-9 h-9 rounded-lg flex items-center justify-center transition-colors',
                 page === totalPages
                   ? 'text-secondary-300 cursor-not-allowed'
-                  : 'text-secondary-600 hover:bg-secondary-100',
+                  : 'text-secondary-600 hover:bg-secondary-100'
               ]"
             >
               <ChevronRight class="w-4 h-4" />
@@ -850,7 +775,7 @@ onMounted(() => {
                 'w-9 h-9 rounded-lg flex items-center justify-center transition-colors',
                 page === totalPages
                   ? 'text-secondary-300 cursor-not-allowed'
-                  : 'text-secondary-600 hover:bg-secondary-100',
+                  : 'text-secondary-600 hover:bg-secondary-100'
               ]"
             >
               <ChevronsRight class="w-4 h-4" />
@@ -864,29 +789,14 @@ onMounted(() => {
     <section class="bg-white py-14">
       <div class="max-w-3xl mx-auto px-4 sm:px-6">
         <div class="text-center mb-10">
-          <p
-            class="text-xs font-semibold text-primary-600 uppercase tracking-widest mb-2"
-          >
-            FAQ
-          </p>
+          <p class="text-xs font-semibold text-primary-600 uppercase tracking-widest mb-2">FAQ</p>
           <h2 class="section-heading">คำถามที่พบบ่อย</h2>
         </div>
 
         <div class="space-y-3">
-          <div
-            v-for="(faq, i) in faqs"
-            :key="i"
-            class="faq-item"
-            :class="openFaq === i ? 'faq-item--open' : ''"
-          >
-            <button
-              @click="toggleFaq(i)"
-              class="w-full flex items-center justify-between gap-4 text-left p-4 sm:p-5"
-            >
-              <span
-                class="font-semibold text-secondary-800 text-sm sm:text-base"
-                >{{ faq.q }}</span
-              >
+          <div v-for="(faq, i) in faqs" :key="i" class="faq-item" :class="openFaq === i ? 'faq-item--open' : ''">
+            <button @click="toggleFaq(i)" class="w-full flex items-center justify-between gap-4 text-left p-4 sm:p-5">
+              <span class="font-semibold text-secondary-800 text-sm sm:text-base">{{ faq.q }}</span>
               <ChevronDown
                 class="w-4 h-4 text-secondary-400 shrink-0 transition-transform duration-200"
                 :class="openFaq === i ? 'rotate-180 text-primary-600' : ''"
@@ -894,15 +804,9 @@ onMounted(() => {
             </button>
             <div
               class="faq-answer overflow-hidden transition-all duration-300"
-              :style="
-                openFaq === i
-                  ? 'max-height: 200px; opacity: 1'
-                  : 'max-height: 0; opacity: 0'
-              "
+              :style="openFaq === i ? 'max-height: 200px; opacity: 1' : 'max-height: 0; opacity: 0'"
             >
-              <p
-                class="px-4 sm:px-5 pb-4 sm:pb-5 text-sm text-secondary-500 leading-relaxed"
-              >
+              <p class="px-4 sm:px-5 pb-4 sm:pb-5 text-sm text-secondary-500 leading-relaxed">
                 {{ faq.a }}
               </p>
             </div>
@@ -916,17 +820,12 @@ onMounted(() => {
       <div class="newsletter-bg absolute inset-0" />
       <div class="blob blob-1 absolute opacity-20" />
       <div class="relative z-10 max-w-xl mx-auto px-4 text-center">
-        <div
-          class="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm mb-4"
-        >
+        <div class="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm mb-4">
           <UserCheck class="w-6 h-6 text-white" />
         </div>
-        <h2 class="text-2xl font-bold text-white mb-2">
-          สมัครสมาชิกวันนี้ ฟรี!
-        </h2>
+        <h2 class="text-2xl font-bold text-white mb-2">สมัครสมาชิกวันนี้ ฟรี!</h2>
         <p class="text-white/75 text-sm mb-7 leading-relaxed">
-          ดูราคาสินค้า ติดตามสถานะคำสั่งซื้อ
-          และรับสิทธิพิเศษอีกมากมาย
+          ดูราคาสินค้า ติดตามสถานะคำสั่งซื้อ และรับสิทธิพิเศษอีกมากมาย
         </p>
         <div class="flex flex-wrap gap-3 justify-center">
           <button
@@ -946,10 +845,7 @@ onMounted(() => {
     </section>
 
     <!-- ─── ProductDetailModal ─── -->
-    <ProductDetailModal
-      :product-id="selectedProductId"
-      @close="selectedProductId = null"
-    />
+    <ProductDetailModal :product-id="selectedProductId" @close="selectedProductId = null" />
 
     <!-- ─── 10. Footer ─── -->
     <Footer />
@@ -987,19 +883,13 @@ onMounted(() => {
 }
 
 .animated-bg {
-  background: linear-gradient(
-    135deg,
-    #0d9488 0%,
-    #0891b2 35%,
-    #059669 70%,
-    #0d9488 100%
-  );
+  background: linear-gradient(135deg, #0d9488 0%, #0891b2 35%, #059669 70%, #0d9488 100%);
   background-size: 300% 300%;
   animation: gradientShift 12s ease infinite;
 }
 
 .animated-bg::before {
-  content: "";
+  content: '';
   position: absolute;
   inset: -50%;
   background: radial-gradient(
@@ -1013,7 +903,7 @@ onMounted(() => {
 }
 
 .animated-bg::after {
-  content: "";
+  content: '';
   position: absolute;
   inset: 0;
   background: conic-gradient(
@@ -1303,7 +1193,7 @@ onMounted(() => {
 }
 
 .promo-banner::after {
-  content: "";
+  content: '';
   position: absolute;
   top: -40px;
   right: -40px;
