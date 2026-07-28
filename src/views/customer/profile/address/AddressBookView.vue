@@ -125,7 +125,7 @@ async function saveAddress() {
   if (isEditMode.value && editingId.value) {
     success = await addressStore.updateAddress(editingId.value, form);
   } else {
-    success = await addressStore.createAddress(form);
+    success = Boolean(await addressStore.createAddress(form));
   }
 
   if (success) {

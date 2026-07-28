@@ -35,7 +35,7 @@ export const useAddressStore = defineStore("customerAddress", {
       }
     },
 
-    async createAddress(data: AddressBody): Promise<boolean> {
+    async createAddress(data: AddressBody): Promise<Address | null> {
       const toast = getToast();
       this.isLoading = true;
       try {
@@ -43,14 +43,14 @@ export const useAddressStore = defineStore("customerAddress", {
         if (res.success) {
           toast.success(res.message);
           await this.fetchAddresses();
-          return true;
+          return res.data;
         }
       } catch (err: unknown) {
         toast.error((err as any).response?.data?.message || "ไม่สามารถเพิ่มที่อยู่ได้");
       } finally {
         this.isLoading = false;
       }
-      return false;
+      return null;
     },
 
     async updateAddress(id: number, data: AddressBody): Promise<boolean> {
