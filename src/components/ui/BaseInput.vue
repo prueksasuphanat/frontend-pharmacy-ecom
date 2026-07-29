@@ -169,7 +169,7 @@ const boundValue = computed(() => {
 </script>
 
 <template>
-  <div class="w-full">
+  <div class="w-full min-w-0">
     <label v-if="label" class="label">
       {{ label }}
       <span v-if="required" class="text-red-500 ml-0.5">*</span>
@@ -264,7 +264,7 @@ const boundValue = computed(() => {
     </div>
 
     <!-- Standard Input (No Prefix/Suffix) -->
-    <div v-else class="w-full relative">
+    <div v-else class="w-full min-w-0 relative">
       <component
         v-if="icon"
         :is="icon"
