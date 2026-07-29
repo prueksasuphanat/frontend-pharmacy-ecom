@@ -289,6 +289,40 @@ export const useUsersStore = defineStore("users", {
       }
     },
 
+    async adminResetPassword(
+      id: number | string,
+      payload: { mode: "manual" | "email"; custom_password?: string },
+    ): Promise<{ success: boolean; new_password?: string; message?: string }> {
+      this.isLoading = true;
+      this.error = null;
+      const toast = getToast();
+
+      try {
+        const response = await usersApi.resetPassword(id, payload);
+
+        if (response.data.success) {
+          toast.success(response.data.message || "รีเซ็ตรหัสผ่านสำเร็จ");
+          return {
+            success: true,
+            new_password: response.data.data?.new_password,
+            message: response.data.message,
+          };
+        }
+
+        const msg = response.data.message || "เกิดข้อผิดพลาดในการรีเซ็ตรหัสผ่าน";
+        toast.error(msg);
+        return { success: false, message: msg };
+      } catch (err: unknown) {
+        const msg =
+          (err as any).response?.data?.message || "เกิดข้อผิดพลาดในการรีเซ็ตรหัสผ่าน";
+        this.error = msg;
+        toast.error(msg);
+        return { success: false, message: msg };
+      } finally {
+        this.isLoading = false;
+      }
+    },
+
     clearUsers() {
       this.users = [];
       this.error = null;

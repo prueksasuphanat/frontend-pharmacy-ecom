@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from "vue";
+import { ref, computed, onMounted, watch } from 'vue';
 import {
   Users,
   Edit,
@@ -8,16 +8,24 @@ import {
   CircleCheckBig,
   File,
   ImageOff,
-} from "lucide-vue-next";
-import { useRouter } from "vue-router";
-import { useUsersStore } from "@/stores";
-import { formatDate, formatNum } from "@/utils";
-import dayjs from "@/utils/dayjs";
-import { productsApi } from "@/api";
+  KeyRound,
+  Copy,
+  Check,
+  Mail,
+  RefreshCw,
+  ShieldAlert,
+  Eye,
+  EyeOff
+} from 'lucide-vue-next';
+import { useRouter } from 'vue-router';
+import { useUsersStore } from '@/stores';
+import { formatDate, formatNum } from '@/utils';
+import dayjs from '@/utils/dayjs';
+import { productsApi } from '@/api';
 
-import type { GetUsersParams } from "@/api";
-import type { Column } from "@/components/ui/BaseTable.vue";
-import type { User } from "@/types";
+import type { GetUsersParams } from '@/api';
+import type { Column } from '@/components/ui/BaseTable.vue';
+import type { User } from '@/types';
 
 import {
   BaseTable,
@@ -27,60 +35,61 @@ import {
   BaseModal,
   BaseDatePicker,
   BaseAutocomplete,
-} from "@/components/ui";
+  BaseMultiSelect
+} from '@/components/ui';
 
 const ROLE_OPTIONS = [
-  { value: "ADMIN", label: "ผู้ดูแลระบบ" },
-  { value: "CUSTOMER", label: "ลูกค้า" },
+  { value: 'ADMIN', label: 'ผู้ดูแลระบบ' },
+  { value: 'CUSTOMER', label: 'ลูกค้า' }
 ];
 
 const TITLE_OPTIONS = [
-  { value: "", label: "ไม่ระบุ" },
-  { value: "นาย", label: "นาย" },
-  { value: "นาง", label: "นาง" },
-  { value: "นางสาว", label: "นางสาว" },
+  { value: '', label: 'ไม่ระบุ' },
+  { value: 'นาย', label: 'นาย' },
+  { value: 'นาง', label: 'นาง' },
+  { value: 'นางสาว', label: 'นางสาว' }
 ];
 
 const STATUS_OPTIONS = [
-  { value: "true", label: "ใช้งาน" },
-  { value: "false", label: "ระงับ" },
+  { value: 'true', label: 'ใช้งาน' },
+  { value: 'false', label: 'ระงับ' }
 ];
 
 const router = useRouter();
 const userStore = useUsersStore();
 
-const searchQuery = ref("");
+const searchQuery = ref('');
 const selectedRole = ref<string | number | null>(null);
 const selectedStatus = ref<string | number | null>(null);
 const loading = ref(false);
 
-const ROLE_OPTIONS_FOR_EDIT = ROLE_OPTIONS.filter((r) => r.value !== "");
+const ROLE_OPTIONS_FOR_EDIT = ROLE_OPTIONS.filter((r) => r.value !== '');
 
 let searchTimer: ReturnType<typeof setTimeout> | null = null;
 
 const pagination = computed(() => userStore.pagination);
 
 const columns: Column<User>[] = [
-  { key: "code", label: "รหัส", width: "100px", align: "left" },
-  { key: "username", label: "Username", width: "140px", align: "left" },
-  { key: "full_name", label: "ชื่อ-นามสกุล", width: "18%", align: "left" },
-  { key: "email", label: "อีเมล", width: "18%", align: "left" },
-  { key: "phone", label: "เบอร์โทรศัพท์", width: "130px", align: "left" },
-  { key: "role", label: "Role", minWidth: "160px", align: "left" },
-  { key: "expired_date", label: "วันหมดอายุ", width: "130px", align: "center" },
-  { key: "last_active_at", label: "ใช้งานล่าสุด", width: "150px", align: "left" },
+  { key: 'code', label: 'รหัส', width: '100px', align: 'left' },
+  { key: 'username', label: 'Username', width: '140px', align: 'left' },
+  { key: 'full_name', label: 'ชื่อ-นามสกุล', width: '18%', align: 'left' },
+  { key: 'email', label: 'อีเมล', width: '18%', align: 'left' },
+  { key: 'phone', label: 'เบอร์โทรศัพท์', width: '130px', align: 'left' },
+  { key: 'role', label: 'Role', minWidth: '160px', align: 'left' },
+  { key: 'expired_date', label: 'วันหมดอายุ', width: '130px', align: 'center' },
+  { key: 'last_active_at', label: 'ใช้งานล่าสุด', width: '150px', align: 'left' },
   {
-    key: "is_verified",
-    label: "อีเมลยืนยัน",
-    align: "left",
-    width: "120px",
+    key: 'is_verified',
+    label: 'อีเมลยืนยัน',
+    align: 'left',
+    width: '120px'
   },
-  { key: "is_active", label: "สถานะ", align: "left", width: "90px" },
-  { key: "actions", label: "", align: "right", width: "10px", fixed: "right" },
+  { key: 'is_active', label: 'สถานะ', align: 'left', width: '90px' },
+  { key: 'actions', label: '', align: 'right', width: '10px', fixed: 'right' }
 ];
 
 function isExpiredSoon(date: string): boolean {
-  return dayjs(date).diff(dayjs(), "day") <= 30;
+  return dayjs(date).diff(dayjs(), 'day') <= 30;
 }
 
 const users = computed(() => userStore.users);
@@ -89,7 +98,7 @@ const stats = computed(() => ({
   total: pagination.value.total,
   active: users.value.filter((u) => u.is_active).length,
   inactive: users.value.filter((u) => !u.is_active).length,
-  verified: users.value.filter((u) => u.is_verified).length,
+  verified: users.value.filter((u) => u.is_verified).length
 }));
 
 const fetchUsers = async (page = 1) => {
@@ -97,13 +106,11 @@ const fetchUsers = async (page = 1) => {
     loading.value = true;
     const params: GetUsersParams = {
       page,
-      limit: 10,
+      limit: 10
     };
     if (searchQuery.value) params.search = searchQuery.value;
-    if (selectedRole.value)
-      params.role = selectedRole.value as GetUsersParams["role"];
-    if (selectedStatus.value !== null)
-      params.is_active = selectedStatus.value === "true";
+    if (selectedRole.value) params.role = selectedRole.value as GetUsersParams['role'];
+    if (selectedStatus.value !== null) params.is_active = selectedStatus.value === 'true';
 
     await userStore.getUsers(params);
   } finally {
@@ -129,7 +136,7 @@ function updateUserRole(userId: number, newRole: string) {
   pendingRoleChange.value = {
     userId,
     newRole,
-    oldRole: user.role,
+    oldRole: user.role
   };
   roleChangeModal.value = true;
 }
@@ -137,10 +144,7 @@ function updateUserRole(userId: number, newRole: string) {
 async function confirmRoleChange() {
   if (!pendingRoleChange.value) return;
 
-  await userStore.adminChangeRole(
-    pendingRoleChange.value.userId,
-    pendingRoleChange.value.newRole,
-  );
+  await userStore.adminChangeRole(pendingRoleChange.value.userId, pendingRoleChange.value.newRole);
 
   roleChangeModal.value = false;
   pendingRoleChange.value = null;
@@ -154,6 +158,64 @@ function cancelRoleChange() {
 function toggleUserStatus(userId: number) {
   userStore.toggleActive(userId);
 }
+const resetMode = ref<'manual' | 'email'>('manual');
+const customPassword = ref('');
+const showCustomPassword = ref(false);
+const resetPasswordLoading = ref(false);
+const resetSuccessData = ref<{ new_password?: string; message?: string } | null>(null);
+const isCopied = ref(false);
+
+function generateRandomPassword() {
+  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
+  let pass = '';
+  for (let i = 0; i < 10; i++) {
+    pass += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  customPassword.value = pass;
+  showCustomPassword.value = true;
+}
+
+function resetResetPasswordForm() {
+  resetMode.value = 'manual';
+  customPassword.value = '';
+  showCustomPassword.value = false;
+  resetSuccessData.value = null;
+  isCopied.value = false;
+}
+
+async function handleResetPassword() {
+  if (!selectedUser.value) return;
+
+  if (resetMode.value === 'manual' && !customPassword.value.trim()) {
+    return;
+  }
+
+  try {
+    resetPasswordLoading.value = true;
+    const res = await userStore.adminResetPassword(selectedUser.value.id, {
+      mode: resetMode.value,
+      custom_password: resetMode.value === 'manual' ? customPassword.value.trim() : undefined
+    });
+
+    if (res.success) {
+      resetSuccessData.value = {
+        new_password: res.new_password || customPassword.value.trim(),
+        message: res.message
+      };
+    }
+  } finally {
+    resetPasswordLoading.value = false;
+  }
+}
+
+function copyToClipboard(text: string) {
+  if (!text) return;
+  navigator.clipboard.writeText(text);
+  isCopied.value = true;
+  setTimeout(() => {
+    isCopied.value = false;
+  }, 2000);
+}
 
 const editModalOpen = ref(false);
 const selectedUser = ref<User | null>(null);
@@ -161,18 +223,18 @@ const isEditMode = ref(false);
 const modalLoading = ref(false);
 
 const editForm = ref({
-  username: "",
-  code: "",
-  email: "",
-  title: "",
-  first_name: "",
-  last_name: "",
-  phone: "",
-  expired_date: "",
-  excluded_product_ids: [] as number[],
+  username: '',
+  code: '',
+  email: '',
+  title: '',
+  first_name: '',
+  last_name: '',
+  phone: '',
+  expired_date: '',
+  excluded_product_ids: [] as number[]
 });
 
-const activeTab = ref("info");
+const activeTab = ref('info');
 const selectedProductToAdd = ref<number | null>(null);
 const allProductsList = ref<{ id: number; name: string; code: string }[]>([]);
 
@@ -182,27 +244,29 @@ async function fetchAllProductsForSelect() {
     allProductsList.value = res.data.map((p: any) => ({
       id: p.id,
       name: p.name,
-      code: p.code,
+      code: p.code
     }));
   } catch (e) {
-    console.error("Failed to load products for visibility settings", e);
+    console.error('Failed to load products for visibility settings', e);
   }
 }
 
 const productOptions = computed(() =>
   allProductsList.value.map((p) => ({
     value: p.id,
-    label: `${p.name} (${p.code})`,
-  })),
+    label: `${p.name} (${p.code})`
+  }))
 );
 
 function editUser(user: User) {
-  console.log("Selected user:", user);
+  console.log('Selected user:', user);
   selectedUser.value = user;
   isEditMode.value = false;
+  activeTab.value = 'info';
+  resetResetPasswordForm();
   editModalOpen.value = true;
   modalLoading.value = true;
-  activeTab.value = "info";
+  activeTab.value = 'info';
   selectedProductToAdd.value = null;
 
   userStore
@@ -211,15 +275,15 @@ function editUser(user: User) {
       if (!fresh) return;
       selectedUser.value = fresh;
       editForm.value = {
-        username: fresh.username || "",
-        code: fresh.code || "",
-        email: fresh.email || "",
-        title: fresh.title || "",
-        first_name: fresh.first_name || "",
-        last_name: fresh.last_name || "",
-        phone: fresh.phone || "",
-        expired_date: fresh.expired_date ? fresh.expired_date.slice(0, 10) : "",
-        excluded_product_ids: fresh.excluded_products?.map((ap: any) => ap.id) ?? [],
+        username: fresh.username || '',
+        code: fresh.code || '',
+        email: fresh.email || '',
+        title: fresh.title || '',
+        first_name: fresh.first_name || '',
+        last_name: fresh.last_name || '',
+        phone: fresh.phone || '',
+        expired_date: fresh.expired_date ? fresh.expired_date.slice(0, 10) : '',
+        excluded_product_ids: fresh.excluded_products?.map((ap: any) => ap.id) ?? []
       };
     })
     .finally(() => {
@@ -232,8 +296,8 @@ const excludedProductsDisplayList = computed(() => {
     const foundProduct = allProductsList.value.find((p) => p.id === id);
     return {
       id,
-      code: foundProduct?.code ?? "N/A",
-      name: foundProduct?.name ?? "N/A",
+      code: foundProduct?.code ?? 'N/A',
+      name: foundProduct?.name ?? 'N/A'
     };
   });
 });
@@ -247,9 +311,7 @@ function addProductRestriction() {
 }
 
 function removeProductRestriction(productId: number) {
-  editForm.value.excluded_product_ids = editForm.value.excluded_product_ids.filter(
-    (id) => id !== productId,
-  );
+  editForm.value.excluded_product_ids = editForm.value.excluded_product_ids.filter((id) => id !== productId);
 }
 
 function closeEditModal() {
@@ -276,7 +338,10 @@ async function saveUserChanges() {
     last_name: editForm.value.last_name || undefined,
     phone: editForm.value.phone || undefined,
     expired_date: editForm.value.expired_date || null,
-    excluded_product_ids: selectedUser.value.role === "CUSTOMER" || selectedUser.value.role === "PHARMACIST" ? editForm.value.excluded_product_ids : undefined,
+    excluded_product_ids:
+      selectedUser.value.role === 'CUSTOMER' || selectedUser.value.role === 'PHARMACIST'
+        ? editForm.value.excluded_product_ids
+        : undefined
   });
 
   if (ok) {
@@ -291,7 +356,7 @@ async function saveUserChanges() {
 function rejectUser() {
   if (!selectedUser.value) return;
 
-  console.log("TODO: reject user", selectedUser.value.id);
+  console.log('TODO: reject user', selectedUser.value.id);
 }
 
 function verifyUser() {
@@ -331,9 +396,7 @@ onMounted(() => {
     <div class="page-header mb-6">
       <div>
         <h1 class="page-title">จัดการผู้ใช้งาน</h1>
-        <p class="text-sm text-secondary-500 mt-1">
-          จัดการข้อมูลผู้ใช้งานและสิทธิ์การเข้าถึง
-        </p>
+        <p class="text-sm text-secondary-500 mt-1">จัดการข้อมูลผู้ใช้งานและสิทธิ์การเข้าถึง</p>
       </div>
     </div>
 
@@ -365,9 +428,7 @@ onMounted(() => {
     </div>
 
     <div class="card mb-6">
-      <div
-        class="flex flex-col sm:flex-row items-stretch sm:items-center gap-4"
-      >
+      <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
         <BaseInput
           v-model="searchQuery"
           placeholder="ค้นหาด้วยอีเมล หรือชื่อ..."
@@ -402,7 +463,7 @@ onMounted(() => {
           page: pagination.page,
           total: pagination.total,
           totalPages: pagination.totalPages,
-          limit: pagination.limit,
+          limit: pagination.limit
         }"
         empty-text="ไม่พบข้อมูลผู้ใช้"
         @page-change="handlePageChange"
@@ -419,9 +480,7 @@ onMounted(() => {
 
         <template #cell-email="{ row }">
           <div class="flex items-center gap-2 min-w-0">
-            <div
-              class="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center shrink-0"
-            >
+            <div class="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center shrink-0">
               <Users class="w-4 h-4 text-primary-600" />
             </div>
             <span class="text-sm font-medium truncate">{{ row.email }}</span>
@@ -430,20 +489,13 @@ onMounted(() => {
 
         <template #cell-full_name="{ row }">
           <span class="text-sm text-secondary-600 block truncate">
-            {{
-              [row.title, row.first_name, row.last_name]
-                .filter(Boolean)
-                .join(" ")
-                .trim() ||
-              row.pmc_name ||
-              "-"
-            }}
+            {{ [row.title, row.first_name, row.last_name].filter(Boolean).join(' ').trim() || row.pmc_name || '-' }}
           </span>
         </template>
 
         <template #cell-phone="{ row }">
           <span class="text-sm text-secondary-600 block truncate">
-            {{ row.phone || "-" }}
+            {{ row.phone || '-' }}
           </span>
         </template>
 
@@ -459,11 +511,13 @@ onMounted(() => {
         <template #cell-expired_date="{ row }">
           <template v-if="row.expired_date">
             <span
-              :class="isExpiredSoon(row.expired_date)
-                ? 'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700'
-                : 'text-sm text-secondary-700'"
+              :class="
+                isExpiredSoon(row.expired_date)
+                  ? 'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700'
+                  : 'text-sm text-secondary-700'
+              "
             >
-              {{ formatDate(row.expired_date, "D MMM BBBB") }}
+              {{ formatDate(row.expired_date, 'D MMM BBBB') }}
             </span>
           </template>
           <span v-else class="text-secondary-400 text-sm">—</span>
@@ -471,35 +525,25 @@ onMounted(() => {
 
         <template #cell-last_active_at="{ row }">
           <span v-if="row.last_active_at" class="text-sm text-secondary-600">
-            {{ formatDate(row.last_active_at, "D MMM BBBB HH:mm") }}
+            {{ formatDate(row.last_active_at, 'D MMM BBBB HH:mm') }}
           </span>
           <span v-else class="text-secondary-400 text-sm">ยังไม่เคย</span>
         </template>
 
         <template #cell-is_verified="{ row }">
-          <span
-            v-if="row.is_verified"
-            class="badge badge-green text-xs inline-block"
-          >
-            ✓ ยืนยัน
-          </span>
-          <span v-else class="badge badge-red text-xs inline-block">
-            ยังไม่ยืนยัน
-          </span>
+          <span v-if="row.is_verified" class="badge badge-green text-xs inline-block"> ✓ ยืนยัน </span>
+          <span v-else class="badge badge-red text-xs inline-block"> ยังไม่ยืนยัน </span>
         </template>
 
         <template #cell-is_active="{ row }">
-          <BaseToggle
-            :model-value="row.is_active"
-            active-color="primary"
-            @change="toggleUserStatus(row.id)"
-          />
+          <BaseToggle :model-value="row.is_active" active-color="primary" @change="toggleUserStatus(row.id)" />
         </template>
 
         <template #cell-actions="{ row }">
           <div class="flex items-center justify-center gap-1.5 flex-wrap">
             <button
               @click="editUser(row)"
+              title="ดู/แก้ไขข้อมูล"
               class="btn-ghost text-xs gap-1 px-2 py-1 text-primary-600"
             >
               <Edit class="w-4 h-4" />
@@ -509,12 +553,7 @@ onMounted(() => {
       </BaseTable>
     </div>
 
-    <BaseModal
-      v-if="editModalOpen && selectedUser"
-      title="ข้อมูลผู้ใช้งาน"
-      size="md"
-      @close="closeEditModal"
-    >
+    <BaseModal v-if="editModalOpen && selectedUser" title="ข้อมูลผู้ใช้งาน" size="lg" @close="closeEditModal">
       <div class="relative min-h-[120px]">
         <LoadingOverlay :loading="modalLoading" text="กำลังโหลดข้อมูล..." />
 
@@ -526,25 +565,15 @@ onMounted(() => {
               v-if="selectedUser.profile_image?.url"
               :src="selectedUser.profile_image.url"
               :alt="
-                [selectedUser.first_name, selectedUser.last_name]
-                  .filter(Boolean)
-                  .join(' ') ||
+                [selectedUser.first_name, selectedUser.last_name].filter(Boolean).join(' ') ||
                 selectedUser.pmc_name ||
                 selectedUser.username
               "
               class="w-full h-full object-cover"
             />
-            <span
-              v-else
-              class="text-primary-600 font-bold text-2xl select-none"
-            >
+            <span v-else class="text-primary-600 font-bold text-2xl select-none">
               {{
-                (
-                  selectedUser.first_name ||
-                  selectedUser.pmc_name ||
-                  selectedUser.username ||
-                  ""
-                )
+                (selectedUser.first_name || selectedUser.pmc_name || selectedUser.username || '')
                   .charAt(0)
                   .toUpperCase()
               }}
@@ -552,49 +581,27 @@ onMounted(() => {
           </div>
 
           <div class="flex-1 min-w-0">
-            <p
-              class="font-semibold text-secondary-900 text-base leading-tight truncate"
-            >
+            <p class="font-semibold text-secondary-900 text-base leading-tight truncate">
               {{
-                [
-                  selectedUser.title,
-                  selectedUser.first_name,
-                  selectedUser.last_name,
-                ]
+                [selectedUser.title, selectedUser.first_name, selectedUser.last_name]
                   .filter(Boolean)
-                  .join(" ")
+                  .join(' ')
                   .trim() ||
                 selectedUser.pmc_name ||
                 selectedUser.username ||
-                "-"
+                '-'
               }}
             </p>
             <p class="text-sm text-secondary-400 truncate mb-2">
               @{{ selectedUser.username }} · {{ selectedUser.email }}
             </p>
             <div class="flex flex-wrap gap-1.5">
-              <span class="badge badge-primary text-xs">{{
-                selectedUser.role
-              }}</span>
-              <span
-                :class="
-                  selectedUser.is_active
-                    ? 'badge badge-green'
-                    : 'badge badge-red'
-                "
-                class="text-xs"
-              >
-                {{ selectedUser.is_active ? "ใช้งาน" : "ระงับ" }}
+              <span class="badge badge-primary text-xs">{{ selectedUser.role }}</span>
+              <span :class="selectedUser.is_active ? 'badge badge-green' : 'badge badge-red'" class="text-xs">
+                {{ selectedUser.is_active ? 'ใช้งาน' : 'ระงับ' }}
               </span>
-              <span
-                :class="
-                  selectedUser.is_verified
-                    ? 'badge badge-green'
-                    : 'badge badge-yellow'
-                "
-                class="text-xs"
-              >
-                {{ selectedUser.is_verified ? "✓ ยืนยันแล้ว" : "รอยืนยัน" }}
+              <span :class="selectedUser.is_verified ? 'badge badge-green' : 'badge badge-yellow'" class="text-xs">
+                {{ selectedUser.is_verified ? '✓ ยืนยันแล้ว' : 'รอยืนยัน' }}
               </span>
             </div>
           </div>
@@ -625,195 +632,154 @@ onMounted(() => {
           >
             สินค้าที่ถูกซ่อน
           </button>
-        </div>
-
-        <div v-show="activeTab === 'info'">
-          <div v-if="!isEditMode" class="space-y-4">
-          <div
-            class="bg-secondary-50 rounded-xl p-4 grid grid-cols-2 gap-x-6 gap-y-3 text-sm"
+          <button
+            type="button"
+            class="px-4 py-2 text-sm font-semibold border-b-2 transition-all duration-200 flex items-center gap-1.5"
+            :class="[
+              activeTab === 'reset-password'
+                ? 'border-amber-600 text-amber-600'
+                : 'border-transparent text-secondary-500 hover:text-secondary-700 hover:border-secondary-300'
+            ]"
+            @click="activeTab = 'reset-password'"
           >
-            <div>
-              <p class="text-xs text-secondary-400 mb-0.5">ID</p>
-              <p class="font-medium text-secondary-900">
-                {{ selectedUser.id }}
-              </p>
+            <KeyRound class="w-4 h-4" />
+            <span>รีเซ็ตรหัสผ่าน</span>
+          </button>
+        </div>
+
+        <!-- Tab 1: ข้อมูลทั่วไป -->
+        <div v-if="activeTab === 'info'">
+          <div v-if="!isEditMode" class="space-y-4">
+            <div class="bg-secondary-50 rounded-xl p-4 grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
+              <div>
+                <p class="text-xs text-secondary-400 mb-0.5">ID</p>
+                <p class="font-medium text-secondary-900">
+                  {{ selectedUser.id }}
+                </p>
+              </div>
+              <div>
+                <p class="text-xs text-secondary-400 mb-0.5">รหัสผู้ใช้</p>
+                <p class="font-medium text-secondary-900">
+                  {{ selectedUser.code || '-' }}
+                </p>
+              </div>
+              <div>
+                <p class="text-xs text-secondary-400 mb-0.5">เบอร์โทร</p>
+                <p class="font-medium text-secondary-900">
+                  {{ selectedUser.phone || '-' }}
+                </p>
+              </div>
+              <div>
+                <p class="text-xs text-secondary-400 mb-0.5">วันเกิด</p>
+                <p class="font-medium text-secondary-900">
+                  {{ selectedUser.birthdate || '-' }}
+                </p>
+              </div>
+              <div class="col-span-2">
+                <p class="text-xs text-secondary-400 mb-0.5">ที่อยู่</p>
+                <p class="font-medium text-secondary-900">
+                  {{ selectedUser.address || '-' }}
+                </p>
+              </div>
+              <div>
+                <p class="text-xs text-secondary-400 mb-0.5">วันหมดอายุ</p>
+                <p class="font-medium text-secondary-900">
+                  {{ formatDate(selectedUser.expired_date, 'DD MMM BBBB') || '-' }}
+                </p>
+              </div>
+              <div>
+                <p class="text-xs text-secondary-400 mb-0.5">สร้างเมื่อ</p>
+                <p class="font-medium text-secondary-900">
+                  {{ formatDate(selectedUser.created_at, 'DD MMM BBBB HH:mm') }}
+                </p>
+              </div>
+              <div>
+                <p class="text-xs text-secondary-400 mb-0.5">สร้างโดย</p>
+                <p class="font-medium text-secondary-900">
+                  {{ userStore.getFullName(selectedUser.created_by) || '-' }}
+                </p>
+              </div>
+              <div>
+                <p class="text-xs text-secondary-400 mb-0.5">อัปเดตโดย</p>
+                <p class="font-medium text-secondary-900">
+                  {{ userStore.getFullName(selectedUser.updated_by) || '-' }}
+                </p>
+              </div>
             </div>
+
             <div>
-              <p class="text-xs text-secondary-400 mb-0.5">รหัสผู้ใช้</p>
-              <p class="font-medium text-secondary-900">
-                {{ selectedUser.code || "-" }}
-              </p>
-            </div>
-            <div>
-              <p class="text-xs text-secondary-400 mb-0.5">เบอร์โทร</p>
-              <p class="font-medium text-secondary-900">
-                {{ selectedUser.phone || "-" }}
-              </p>
-            </div>
-            <div>
-              <p class="text-xs text-secondary-400 mb-0.5">วันเกิด</p>
-              <p class="font-medium text-secondary-900">
-                {{ selectedUser.birthdate || "-" }}
-              </p>
-            </div>
-            <div class="col-span-2">
-              <p class="text-xs text-secondary-400 mb-0.5">ที่อยู่</p>
-              <p class="font-medium text-secondary-900">
-                {{ selectedUser.address || "-" }}
-              </p>
-            </div>
-            <div>
-              <p class="text-xs text-secondary-400 mb-0.5">วันหมดอายุ</p>
-              <p class="font-medium text-secondary-900">
-                {{
-                  formatDate(selectedUser.expired_date, "DD MMM BBBB") || "-"
-                }}
-              </p>
-            </div>
-            <div>
-              <p class="text-xs text-secondary-400 mb-0.5">สร้างเมื่อ</p>
-              <p class="font-medium text-secondary-900">
-                {{ formatDate(selectedUser.created_at, "DD MMM BBBB HH:mm") }}
-              </p>
-            </div>
-            <div>
-              <p class="text-xs text-secondary-400 mb-0.5">สร้างโดย</p>
-              <p class="font-medium text-secondary-900">
-                {{ userStore.getFullName(selectedUser.created_by) || "-" }}
-              </p>
-            </div>
-            <div>
-              <p class="text-xs text-secondary-400 mb-0.5">อัปเดตโดย</p>
-              <p class="font-medium text-secondary-900">
-                {{ userStore.getFullName(selectedUser.updated_by) || "-" }}
-              </p>
+              <p class="text-xs font-medium text-secondary-500 uppercase tracking-wide mb-2">เอกสารแนบ</p>
+              <div v-if="selectedUser.attachments?.length" class="flex flex-col gap-2">
+                <a
+                  v-for="file in selectedUser.attachments"
+                  :key="file.id"
+                  :href="file.url"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="flex items-center gap-3 px-3 py-2.5 rounded-xl border border-secondary-200 hover:border-primary-400 hover:bg-primary-50 transition-colors group"
+                >
+                  <img
+                    v-if="file.mime_type?.startsWith('image/')"
+                    :src="file.url"
+                    :alt="file.name"
+                    class="w-9 h-9 rounded-lg object-cover shrink-0"
+                  />
+                  <div v-else class="w-9 h-9 rounded-lg bg-secondary-100 flex items-center justify-center shrink-0">
+                    <File class="w-4 h-4 text-secondary-400" />
+                  </div>
+                  <span class="text-sm text-secondary-700 group-hover:text-primary-600 truncate flex-1">{{
+                    file.name
+                  }}</span>
+                  <span v-if="file.size" class="text-xs text-secondary-400 shrink-0"
+                    >{{ formatNum((file.size / 1024).toFixed(0)) }} KB</span
+                  >
+                </a>
+              </div>
+              <p v-else class="text-sm text-secondary-400 py-2">ไม่มีเอกสารแนบ</p>
             </div>
           </div>
 
-          <div>
-            <p
-              class="text-xs font-medium text-secondary-500 uppercase tracking-wide mb-2"
-            >
-              เอกสารแนบ
-            </p>
-            <div
-              v-if="selectedUser.attachments?.length"
-              class="flex flex-col gap-2"
-            >
-              <a
-                v-for="file in selectedUser.attachments"
-                :key="file.id"
-                :href="file.url"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="flex items-center gap-3 px-3 py-2.5 rounded-xl border border-secondary-200 hover:border-primary-400 hover:bg-primary-50 transition-colors group"
-              >
-                <img
-                  v-if="file.mime_type?.startsWith('image/')"
-                  :src="file.url"
-                  :alt="file.name"
-                  class="w-9 h-9 rounded-lg object-cover shrink-0"
+          <div v-else class="space-y-3">
+            <BaseInput v-model="editForm.username" label="Username *" placeholder="กรอก Username" />
+            <BaseInput v-model="editForm.code" label="รหัสผู้ใช้" placeholder="กรอกรหัสผู้ใช้" />
+            <BaseInput v-model="editForm.email" label="อีเมล" type="email" placeholder="กรอกอีเมล" />
+
+            <div>
+              <p class="label mb-1">ชื่อ-นามสกุล</p>
+              <div class="flex gap-2">
+                <BaseAutocomplete
+                  v-model="editForm.title"
+                  :options="TITLE_OPTIONS"
+                  placeholder="คำนำหน้า"
+                  class="w-32 shrink-0"
                 />
-                <div
-                  v-else
-                  class="w-9 h-9 rounded-lg bg-secondary-100 flex items-center justify-center shrink-0"
-                >
-                  <File class="w-4 h-4 text-secondary-400" />
-                </div>
-                <span
-                  class="text-sm text-secondary-700 group-hover:text-primary-600 truncate flex-1"
-                  >{{ file.name }}</span
-                >
-                <span
-                  v-if="file.size"
-                  class="text-xs text-secondary-400 shrink-0"
-                  >{{ formatNum((file.size / 1024).toFixed(0)) }} KB</span
-                >
-              </a>
+                <BaseInput v-model="editForm.first_name" placeholder="ชื่อ" class="flex-1" />
+                <BaseInput v-model="editForm.last_name" placeholder="นามสกุล" class="flex-1" />
+              </div>
             </div>
-            <p v-else class="text-sm text-secondary-400 py-2">ไม่มีเอกสารแนบ</p>
+
+            <BaseInput v-model="editForm.phone" label="เบอร์โทร" type="tel" placeholder="กรอกเบอร์โทร" />
+            <BaseDatePicker v-model="editForm.expired_date" label="วันหมดอายุผู้ใช้งาน" placeholder="เลือกวันหมดอายุ" />
           </div>
         </div>
-
-        <div v-else class="space-y-3">
-          <BaseInput
-            v-model="editForm.username"
-            label="Username *"
-            placeholder="กรอก Username"
-          />
-          <BaseInput
-            v-model="editForm.code"
-            label="รหัสผู้ใช้"
-            placeholder="กรอกรหัสผู้ใช้"
-          />
-          <BaseInput
-            v-model="editForm.email"
-            label="อีเมล"
-            type="email"
-            placeholder="กรอกอีเมล"
-          />
-
-          <div>
-            <p class="label mb-1">ชื่อ-นามสกุล</p>
-            <div class="flex gap-2">
-              <BaseAutocomplete
-                v-model="editForm.title"
-                :options="TITLE_OPTIONS"
-                placeholder="คำนำหน้า"
-                class="w-32 shrink-0"
-              />
-              <BaseInput
-                v-model="editForm.first_name"
-                placeholder="ชื่อ"
-                class="flex-1"
-              />
-              <BaseInput
-                v-model="editForm.last_name"
-                placeholder="นามสกุล"
-                class="flex-1"
-              />
-            </div>
-          </div>
-
-          <BaseInput
-            v-model="editForm.phone"
-            label="เบอร์โทร"
-            type="tel"
-            placeholder="กรอกเบอร์โทร"
-          />
-          <BaseDatePicker
-            v-model="editForm.expired_date"
-            label="วันหมดอายุผู้ใช้งาน"
-            placeholder="เลือกวันหมดอายุ"
-          />
-        </div>
-      </div>
 
         <!-- Tab 2: สินค้าที่ถูกซ่อน -->
-        <div v-show="activeTab === 'visibility'" class="space-y-4">
-          <div class="flex items-end gap-2.5">
-            <div class="flex-1">
-              <label class="block text-sm font-medium text-secondary-700 mb-1">ค้นหาและเพิ่มสินค้าที่ต้องการซ่อน</label>
-              <BaseAutocomplete
-                v-model="selectedProductToAdd"
-                :options="productOptions"
-                placeholder="ค้นหาชื่อสินค้า หรือ รหัสสินค้า..."
-                clearable
-              />
-            </div>
-            <button
-              type="button"
-              class="btn-primary h-[42px] px-5 text-sm font-semibold shrink-0"
-              @click="addProductRestriction"
-              :disabled="selectedProductToAdd === null"
-            >
-              ซ่อนสินค้านี้
-            </button>
+        <div v-if="activeTab === 'visibility'" class="space-y-4">
+          <div>
+            <BaseMultiSelect
+              v-model="editForm.excluded_product_ids"
+              :options="productOptions"
+              label="ค้นหาและเลือกสินค้าที่ต้องการซ่อน (เลือกได้หลายรายการ)"
+              placeholder="ค้นหาชื่อสินค้า หรือ รหัสสินค้า..."
+              no-result-text="ไม่พบสินค้า"
+            />
           </div>
 
-          <div class="space-y-2">
-            <label class="block text-sm font-medium text-secondary-700">สินค้าที่ถูกซ่อนจากผู้ใช้นี้ ({{ formatNum(editForm.excluded_product_ids.length) }} รายการ)</label>
-            
+          <div class="space-y-2 pt-2">
+            <label class="block text-sm font-medium text-secondary-700"
+              >สินค้าที่ถูกซ่อนจากผู้ใช้นี้ ({{ formatNum(editForm.excluded_product_ids.length) }} รายการ)</label
+            >
+
             <div
               v-if="editForm.excluded_product_ids.length === 0"
               class="flex flex-col items-center justify-center py-10 px-4 border-2 border-dashed border-secondary-200 rounded-2xl bg-secondary-50/50 text-center"
@@ -824,7 +790,7 @@ onMounted(() => {
 
             <div
               v-else
-              class="max-h-[300px] overflow-y-auto border border-secondary-200 rounded-2xl divide-y divide-secondary-100 bg-white"
+              class="max-h-[260px] overflow-y-auto border border-secondary-200 rounded-2xl divide-y divide-secondary-100 bg-white"
             >
               <div
                 v-for="product in excludedProductsDisplayList"
@@ -835,13 +801,11 @@ onMounted(() => {
                   <p class="text-sm font-semibold text-secondary-900 truncate">
                     {{ product.name }}
                   </p>
-                  <p class="text-xs text-secondary-500 mt-0.5 truncate">
-                    รหัสสินค้า: {{ product.code }}
-                  </p>
+                  <p class="text-xs text-secondary-500 mt-0.5 truncate">รหัสสินค้า: {{ product.code }}</p>
                 </div>
                 <button
                   type="button"
-                  class="text-xs text-red-600 hover:text-red-800 font-semibold px-2.5 py-1.5 rounded-lg hover:bg-red-50 transition-colors"
+                  class="text-xs text-red-600 hover:text-red-800 font-semibold px-2.5 py-1.5 rounded-lg hover:bg-red-50 transition-colors shrink-0"
                   @click="removeProductRestriction(product.id)"
                 >
                   ยกเลิกการซ่อน
@@ -851,52 +815,227 @@ onMounted(() => {
           </div>
         </div>
 
-      </div>
+        <!-- Tab 3: Reset Password -->
+        <div v-if="activeTab === 'reset-password'" class="space-y-5">
+          <LoadingOverlay :loading="resetPasswordLoading" text="กำลังดำเนินการ..." />
 
-      <template #footer>
-        <div class="flex justify-between w-full gap-2">
-          <div class="flex gap-2">
-            <template v-if="!selectedUser.is_verified">
-              <button
-                class="btn-primary text-sm"
-                :class="{ 'opacity-40 cursor-not-allowed': !selectedUser.code }"
-                :disabled="!selectedUser.code"
-                @click="verifyUser"
-              >
-                <CircleCheckBig class="w-4 h-4" />
-                อนุมัติ
-              </button>
-
-              <button class="btn-danger text-sm" @click="rejectUser">
-                ไม่อนุมัติ
-              </button>
-            </template>
+          <!-- User Info Summary -->
+          <div class="flex items-center gap-3 bg-secondary-50 p-3.5 rounded-xl border border-secondary-200/80">
             <div
-              v-else
-              class="flex items-center gap-1.5 text-sm text-primary-600 font-medium"
+              class="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 font-bold flex items-center justify-center text-base shrink-0"
             >
-              <CircleCheckBig class="w-4 h-4" />
-              อนุมัติแล้ว
+              <KeyRound class="w-5 h-5" />
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="font-semibold text-secondary-900 text-sm truncate">
+                {{
+                  [selectedUser.title, selectedUser.first_name, selectedUser.last_name]
+                    .filter(Boolean)
+                    .join(' ')
+                    .trim() ||
+                  selectedUser.pmc_name ||
+                  selectedUser.username
+                }}
+              </p>
+              <p class="text-xs text-secondary-500 truncate">
+                @{{ selectedUser.username }} · {{ selectedUser.email || 'ไม่มีอีเมล' }}
+              </p>
             </div>
           </div>
 
-          <div class="flex gap-2">
-            <template v-if="isEditMode">
-              <button class="btn-secondary text-sm" @click="toggleEditMode">
-                ยกเลิก
+          <!-- Success view -->
+          <div v-if="resetSuccessData" class="space-y-4 py-2">
+            <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4 text-emerald-800 space-y-3">
+              <div class="flex items-center gap-2 font-semibold text-sm">
+                <CircleCheckBig class="w-5 h-5 text-emerald-600 shrink-0" />
+                <span>{{ resetSuccessData.message }}</span>
+              </div>
+
+              <!-- If direct manual reset, show new password box -->
+              <div v-if="resetSuccessData.new_password" class="space-y-1.5 pt-1">
+                <label class="text-xs font-medium text-emerald-700">รหัสผ่านใหม่ของผู้ใช้ (แสดงครั้งเดียว):</label>
+                <div class="flex items-center gap-2 bg-white border border-emerald-300 rounded-lg p-2.5 shadow-sm">
+                  <code class="font-mono text-base font-bold text-emerald-900 flex-1 tracking-wider">
+                    {{ resetSuccessData.new_password }}
+                  </code>
+                  <button
+                    type="button"
+                    @click="copyToClipboard(resetSuccessData.new_password!)"
+                    class="px-2.5 py-1 text-xs font-medium text-emerald-700 hover:text-emerald-900 bg-emerald-100 hover:bg-emerald-200 rounded-md transition-colors flex items-center gap-1 shrink-0"
+                  >
+                    <Check v-if="isCopied" class="w-3.5 h-3.5 text-emerald-700" />
+                    <Copy v-else class="w-3.5 h-3.5" />
+                    <span>{{ isCopied ? 'คัดลอกแล้ว!' : 'คัดลอก' }}</span>
+                  </button>
+                </div>
+                <p class="text-xs text-emerald-600">* กรุณาบันทึกหรือคัดลอกรหัสผ่านนี้ส่งให้ผู้ใช้ใช้งานในครั้งถัดไป</p>
+              </div>
+            </div>
+
+            <div class="flex justify-end pt-2">
+              <button type="button" class="btn-secondary text-xs" @click="resetResetPasswordForm">
+                ทำรายการอีกครั้ง
               </button>
-              <button class="btn-primary text-sm" @click="saveUserChanges">
-                บันทึก
+            </div>
+          </div>
+
+          <!-- Form view -->
+          <div v-else class="space-y-5">
+            <!-- Reset Method Selection Tabs -->
+            <div class="grid grid-cols-2 gap-2 bg-secondary-100 p-1 rounded-xl">
+              <button
+                type="button"
+                @click="resetMode = 'manual'"
+                class="py-2 px-3 text-xs font-semibold rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
+                :class="
+                  resetMode === 'manual'
+                    ? 'bg-white text-secondary-900 shadow-sm'
+                    : 'text-secondary-600 hover:text-secondary-900'
+                "
+              >
+                <KeyRound class="w-4 h-4 text-amber-600" />
+                <span>ตั้งรหัสผ่านใหม่</span>
+              </button>
+              <button
+                type="button"
+                @click="resetMode = 'email'"
+                class="py-2 px-3 text-xs font-semibold rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
+                :class="
+                  resetMode === 'email'
+                    ? 'bg-white text-secondary-900 shadow-sm'
+                    : 'text-secondary-600 hover:text-secondary-900'
+                "
+              >
+                <Mail class="w-4 h-4 text-blue-600" />
+                <span>ส่งอีเมลรีเซ็ต</span>
+              </button>
+            </div>
+
+            <!-- Mode 1: Manual Reset with Random Password Generator Button -->
+            <div v-if="resetMode === 'manual'" class="space-y-4 pt-1">
+              <div>
+                <div class="flex items-center justify-between mb-1.5">
+                  <label class="block text-xs font-semibold text-secondary-700">
+                    รหัสผ่านใหม่ <span class="text-red-500">*</span>
+                  </label>
+                  <button
+                    type="button"
+                    class="text-xs font-semibold text-primary-600 hover:text-primary-700 flex items-center gap-1.5 hover:underline transition-all cursor-pointer"
+                    @click="generateRandomPassword"
+                  >
+                    <RefreshCw class="w-3.5 h-3.5" />
+                    <span>สุ่มรหัสผ่าน</span>
+                  </button>
+                </div>
+
+                <BaseInput
+                  v-model="customPassword"
+                  :type="showCustomPassword ? 'text' : 'password'"
+                  placeholder="กรอกรหัสผ่านใหม่ หรือกดสุ่มรหัสผ่าน"
+                  :icon-right="showCustomPassword ? EyeOff : Eye"
+                  @icon-right-click="showCustomPassword = !showCustomPassword"
+                />
+              </div>
+            </div>
+
+            <!-- Mode 2: Email Reset Link Info -->
+            <div v-else-if="resetMode === 'email'" class="space-y-3">
+              <div
+                v-if="!selectedUser.email"
+                class="bg-amber-50 border border-amber-200 text-amber-800 p-3.5 rounded-xl text-xs flex items-start gap-2"
+              >
+                <ShieldAlert class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <span
+                  >ผู้ใช้นี้ไม่ได้ระบุอีเมลในระบบ ไม่สามารถใช้ตัวเลือกส่งอีเมลได้ กรุณาใช้โหมด "ตั้งรหัสผ่านใหม่"
+                  แทน</span
+                >
+              </div>
+              <div v-else class="bg-blue-50 border border-blue-200 text-blue-800 p-3.5 rounded-xl text-xs space-y-1">
+                <p class="font-semibold flex items-center gap-1.5">
+                  <Mail class="w-4 h-4 text-blue-600 shrink-0" />
+                  ส่งลิงก์รีเซ็ตรหัสผ่านไปยังอีเมลผู้ใช้
+                </p>
+                <p class="text-blue-700">
+                  ระบบจะส่งอีเมลพร้อมลิงก์รีเซ็ตรหัสผ่านไปที่
+                  <span class="font-bold underline">{{ selectedUser.email }}</span> ลิงก์จะมีอายุใช้งาน 1 ชั่วโมง
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <template #footer>
+        <div v-if="selectedUser" class="flex justify-between w-full gap-2">
+          <!-- Left side actions: Show approval buttons only on Info tab -->
+          <div class="flex gap-2">
+            <template v-if="activeTab === 'info'">
+              <template v-if="!selectedUser.is_verified">
+                <button
+                  class="btn-primary text-sm"
+                  :class="{ 'opacity-40 cursor-not-allowed': !selectedUser.code }"
+                  :disabled="!selectedUser.code"
+                  @click="verifyUser"
+                >
+                  <CircleCheckBig class="w-4 h-4" />
+                  อนุมัติ
+                </button>
+
+                <button class="btn-danger text-sm" @click="rejectUser">ไม่อนุมัติ</button>
+              </template>
+              <div v-else class="flex items-center gap-1.5 text-sm text-primary-600 font-medium">
+                <CircleCheckBig class="w-4 h-4" />
+                อนุมัติแล้ว
+              </div>
+            </template>
+          </div>
+
+          <!-- Right side actions: Specific to activeTab -->
+          <div class="flex gap-2">
+            <!-- Tab 1: Info Tab -->
+            <template v-if="activeTab === 'info'">
+              <template v-if="isEditMode">
+                <button class="btn-secondary text-sm" @click="toggleEditMode">ยกเลิก</button>
+                <button class="btn-primary text-sm" @click="saveUserChanges">บันทึก</button>
+              </template>
+              <template v-else>
+                <button class="btn-secondary text-sm" @click="closeEditModal">ปิด</button>
+                <button class="btn-primary text-sm" @click="toggleEditMode">
+                  <Edit class="w-4 h-4" />
+                  แก้ไข
+                </button>
+              </template>
+            </template>
+
+            <!-- Tab 2: Visibility Tab -->
+            <template v-else-if="activeTab === 'visibility'">
+              <button class="btn-secondary text-sm" @click="closeEditModal">ปิด</button>
+              <button class="btn-primary text-sm gap-2" @click="saveUserChanges">
+                <Check class="w-4 h-4" />
+                <span>ยืนยันสินค้าที่เลือก</span>
               </button>
             </template>
-            <template v-else>
-              <button class="btn-secondary text-sm" @click="closeEditModal">
-                ปิด
-              </button>
-              <button class="btn-primary text-sm" @click="toggleEditMode">
-                <Edit class="w-4 h-4" />
-                แก้ไข
-              </button>
+
+            <!-- Tab 3: Reset Password Tab -->
+            <template v-else-if="activeTab === 'reset-password'">
+              <button class="btn-secondary text-sm" @click="closeEditModal">ปิด</button>
+              <template v-if="resetSuccessData">
+                <button class="btn-primary text-sm" @click="closeEditModal">ตกลง</button>
+              </template>
+              <template v-else>
+                <button
+                  class="btn-primary text-sm gap-2"
+                  :disabled="
+                    resetPasswordLoading ||
+                    (resetMode === 'email' && !selectedUser.email) ||
+                    (resetMode === 'manual' && !customPassword.trim())
+                  "
+                  @click="handleResetPassword"
+                >
+                  <KeyRound class="w-4 h-4" />
+                  <span>ยืนยันการรีเซ็ตรหัสผ่าน</span>
+                </button>
+              </template>
             </template>
           </div>
         </div>
@@ -924,12 +1063,8 @@ onMounted(() => {
       </div>
 
       <template #footer>
-        <button class="btn-secondary text-sm" @click="cancelRoleChange">
-          ยกเลิก
-        </button>
-        <button class="btn-primary text-sm" @click="confirmRoleChange">
-          ยืนยัน
-        </button>
+        <button class="btn-secondary text-sm" @click="cancelRoleChange">ยกเลิก</button>
+        <button class="btn-primary text-sm" @click="confirmRoleChange">ยืนยัน</button>
       </template>
     </BaseModal>
   </div>

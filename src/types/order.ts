@@ -1,3 +1,5 @@
+import type { Product } from "./product";
+
 export type OrderStatus =
   | "PENDING"
   | "CONFIRMED"
@@ -25,6 +27,8 @@ export interface OrderItem {
   unit_price: number;
   is_special_price: boolean;
   subtotal: number;
+  product_id?: number;
+  product?: Product;
 }
 
 export interface OrderStatusLog {

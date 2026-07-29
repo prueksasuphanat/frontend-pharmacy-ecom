@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from "vue";
-import { RouterLink, useRouter } from "vue-router";
+import { ref, computed, watch, onMounted, onUnmounted } from "vue";
+import { RouterLink, useRouter, useRoute } from "vue-router";
 import {
   ShoppingCart,
   Bell,
@@ -14,6 +14,7 @@ import {
   Lock,
   Heart,
   Settings,
+  Search,
 } from "lucide-vue-next";
 import { useAuthStore } from "@/stores/auth.store";
 import { useCartStore } from "@/stores/customer/cart.store";
@@ -22,8 +23,10 @@ import { useNotificationStore } from "@/stores/customer/notification.store";
 import { useWishlistStore } from "@/stores/customer/wishlist.store";
 import MiniCart from "@/components/cart/MiniCart.vue";
 import NotificationBell from "@/components/notification/NotificationBell.vue";
+import { BaseSearchInput } from "@/components/ui";
 
 const router = useRouter();
+const route = useRoute();
 const auth = useAuthStore();
 const cart = useCartStore();
 const orderStore = useOrderStore();
@@ -32,6 +35,46 @@ const wishlistStore = useWishlistStore();
 
 const mobileOpen = ref(false);
 const userMenuOpen = ref(false);
+const navSearchQuery = ref("");
+
+watch(
+  () => route.query.search,
+  (newSearch) => {
+    navSearchQuery.value = typeof newSearch === "string" ? newSearch : "";
+  },
+  { immediate: true }
+);
+
+let navSearchTimer: ReturnType<typeof setTimeout> | null = null;
+
+function handleNavSearch() {
+  const query = navSearchQuery.value.trim();
+  const targetQuery = query ? { search: query } : undefined;
+
+  if (route.path === "/products") {
+    router.replace({
+      path: "/products",
+      query: targetQuery,
+    });
+  } else {
+    router.push({
+      path: "/products",
+      query: targetQuery,
+    });
+  }
+}
+
+function onNavSearchInput() {
+  if (navSearchTimer) clearTimeout(navSearchTimer);
+  navSearchTimer = setTimeout(() => {
+    handleNavSearch();
+  }, 300);
+}
+
+function handleNavSearchSubmit() {
+  mobileOpen.value = false;
+  handleNavSearch();
+}
 
 function handleClickOutside(e: MouseEvent) {
   const target = e.target as HTMLElement;
@@ -48,6 +91,7 @@ onMounted(() => {
 });
 onUnmounted(() => {
   document.removeEventListener("click", handleClickOutside);
+  if (navSearchTimer) clearTimeout(navSearchTimer);
 });
 
 async function logout() {
@@ -75,6 +119,16 @@ async function logout() {
             >Phanadrug</span
           >
         </RouterLink>
+
+        <!-- Navbar Search (Desktop) -->
+        <div class="flex-1 max-w-md mx-4 hidden sm:block">
+          <BaseSearchInput
+            v-model="navSearchQuery"
+            placeholder="ค้นหาชื่อยา, ชื่อสามัญ, ผู้จำหน่าย..."
+            @input="onNavSearchInput"
+            @submit="handleNavSearchSubmit"
+          />
+        </div>
 
         <div class="flex items-center gap-1">
           <RouterLink
@@ -199,8 +253,16 @@ async function logout() {
     <Transition name="slide-up">
       <div
         v-if="mobileOpen"
-        class="md:hidden border-t border-secondary-100 bg-white px-4 py-3 space-y-1"
+        class="md:hidden border-t border-secondary-100 bg-white px-4 py-3 space-y-2"
       >
+        <div class="pb-1">
+          <BaseSearchInput
+            v-model="navSearchQuery"
+            placeholder="ค้นหาชื่อยา, ชื่อสามัญ, ผู้จำหน่าย..."
+            @input="onNavSearchInput"
+            @submit="handleNavSearchSubmit"
+          />
+        </div>
         <RouterLink
           to="/products"
           @click="mobileOpen = false"
