@@ -58,6 +58,7 @@ export const API_ENDPOINTS = {
         TOGGLEACTVIVE: (id: string) => `/admin/users/toggle-active/${id}`,
         CHANGEROLE: (id: string) => `/admin/users/change-role/${id}`,
         VERIFIRED: (id: string) => `/admin/users/verifired/${id}`,
+        RESET_PASSWORD: (id: string) => `/admin/users/reset-password/${id}`,
       },
     },
     PRODUCT_PRICES: {

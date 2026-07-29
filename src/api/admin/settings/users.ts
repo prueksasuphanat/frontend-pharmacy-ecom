@@ -29,6 +29,11 @@ export interface AdminUpdateUserPayload {
   excluded_product_ids?: number[];
 }
 
+export interface AdminResetPasswordPayload {
+  mode: "manual" | "email";
+  custom_password?: string;
+}
+
 export const usersApi = {
   getAll: (params?: GetUsersParams) =>
     apiClient.get<PaginatedApiResponse<User[]>>(
@@ -71,5 +76,11 @@ export const usersApi = {
   verified: (id: number | string) =>
     apiClient.put<ApiResponse<User>>(
       API_ENDPOINTS.ADMIN.SETTINGS.USERS.VERIFIRED(String(id)),
+    ),
+
+  resetPassword: (id: number | string, payload: AdminResetPasswordPayload) =>
+    apiClient.post<ApiResponse<{ new_password?: string }>>(
+      API_ENDPOINTS.ADMIN.SETTINGS.USERS.RESET_PASSWORD(String(id)),
+      payload,
     ),
 };
