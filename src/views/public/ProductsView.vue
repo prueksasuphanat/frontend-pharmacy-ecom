@@ -5,6 +5,8 @@ import { usePublicProductStore } from '@/stores/public/product.store';
 import { usePublicCategoryStore } from '@/stores/public/category.store';
 import { ProductDetailModal, ProductImage } from '@/components/product';
 import { useAuthStore } from '@/stores/auth.store';
+import { ordersApi } from '@/api/customer/orders';
+import type { Product } from '@/types/product';
 import {
   Search,
   ChevronRight,
@@ -173,6 +175,55 @@ function scrollToProducts() {
 function toggleFaq(index: number) {
   openFaq.value = openFaq.value === index ? null : index;
 }
+
+// ── สินค้าที่เคยสั่งจริง ──
+const orderedProducts = ref<Product[]>([]);
+const isOrdersLoading = ref(false);
+
+async function fetchRecentlyOrderedProducts() {
+  if (!auth.isLoggedIn) {
+    orderedProducts.value = [];
+    return;
+  }
+  isOrdersLoading.value = true;
+  try {
+    const res = await ordersApi.getAll({ limit: 50 });
+    const orders = res.data?.data || [];
+    const productMap = new Map<number, Product>();
+
+    for (const order of orders) {
+      if (!order.items) continue;
+      for (const item of order.items) {
+        let p = item.product;
+        if (!p && item.product_id) {
+          p = productStore.products.find((prod) => prod.id === item.product_id);
+        }
+        if (p && p.id && !p.is_delete && p.is_active) {
+          if (!productMap.has(p.id)) {
+            productMap.set(p.id, p as Product);
+          }
+        }
+      }
+    }
+    orderedProducts.value = Array.from(productMap.values());
+  } catch {
+    orderedProducts.value = [];
+  } finally {
+    isOrdersLoading.value = false;
+  }
+}
+
+watch(
+  () => auth.isLoggedIn,
+  (isLoggedIn) => {
+    if (isLoggedIn) {
+      fetchRecentlyOrderedProducts();
+    } else {
+      orderedProducts.value = [];
+    }
+  },
+  { immediate: true }
+);
 
 onMounted(() => {
   fetchProducts();
@@ -385,7 +436,7 @@ onMounted(() => {
     </section>
 
     <!-- ─── 5. สินค้าที่เคยสั่ง ─── -->
-    <section class="bg-white py-10 border-b border-secondary-100">
+    <section v-if="auth.isLoggedIn && (isOrdersLoading || orderedProducts.length > 0)" class="bg-white py-10 border-b border-secondary-100">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between mb-5">
           <div>
@@ -400,8 +451,16 @@ onMounted(() => {
           </button>
         </div>
 
-        <!-- ถ้า login — snap carousel -->
-        <div v-if="auth.isLoggedIn && productStore.products.length" class="relative">
+        <!-- loading -->
+        <div v-if="isOrdersLoading" class="flex gap-4 overflow-x-auto pb-1">
+          <div v-for="n in 6" :key="n" class="flex-shrink-0 w-52 animate-pulse">
+            <div class="w-full h-44 bg-secondary-100 rounded-2xl mb-2.5" />
+            <div class="h-8 bg-secondary-100 rounded-xl" />
+          </div>
+        </div>
+
+        <!-- snap carousel -->
+        <div v-else class="relative">
           <button
             @click="recentCarouselRef?.scrollBy({ left: -224, behavior: 'smooth' })"
             class="absolute -left-4 top-1/2 -translate-y-1/2 z-10 w-9 h-9 bg-white rounded-full shadow-md flex items-center justify-center hover:bg-secondary-50 transition-colors border border-secondary-100"
@@ -415,7 +474,7 @@ onMounted(() => {
             style="scroll-snap-type: x mandatory"
           >
             <div
-              v-for="product in productStore.products.slice(0, 6)"
+              v-for="product in orderedProducts"
               :key="product.id"
               @click="goToProduct(product.id)"
               class="flex-shrink-0 w-52 cursor-pointer group"
@@ -438,6 +497,7 @@ onMounted(() => {
                 </p>
               </div>
               <button
+                @click.stop="goToProduct(product.id)"
                 class="w-full text-xs bg-primary-600 text-white font-semibold py-2.5 rounded-xl hover:bg-primary-700 active:scale-95 transition-all duration-150 flex items-center justify-center gap-1.5"
               >
                 สั่งซื้ออีกครั้ง
@@ -451,34 +511,6 @@ onMounted(() => {
           >
             <ChevronRight class="w-4 h-4 text-secondary-600" />
           </button>
-        </div>
-
-        <!-- ถ้าไม่ login -->
-        <div
-          v-else-if="!auth.isLoggedIn"
-          class="flex items-center gap-4 bg-secondary-50 rounded-2xl p-6 border border-secondary-100"
-        >
-          <div class="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center shrink-0">
-            <UserCheck class="w-5 h-5 text-primary-600" />
-          </div>
-          <div class="flex-1">
-            <p class="font-semibold text-secondary-800 text-sm">เข้าสู่ระบบเพื่อดูประวัติการสั่งซื้อ</p>
-            <p class="text-xs text-secondary-500 mt-0.5">ดูสินค้าที่เคยสั่งและสั่งซื้ออีกครั้งได้ทันที</p>
-          </div>
-          <button
-            @click="router.push('/login')"
-            class="shrink-0 text-sm bg-primary-600 text-white font-semibold px-4 py-2 rounded-full hover:bg-primary-700 transition-colors"
-          >
-            เข้าสู่ระบบ
-          </button>
-        </div>
-
-        <!-- loading -->
-        <div v-else class="flex gap-4 overflow-x-auto pb-1">
-          <div v-for="n in 6" :key="n" class="flex-shrink-0 w-52 animate-pulse">
-            <div class="w-full h-44 bg-secondary-100 rounded-2xl mb-2.5" />
-            <div class="h-8 bg-secondary-100 rounded-xl" />
-          </div>
         </div>
       </div>
     </section>
