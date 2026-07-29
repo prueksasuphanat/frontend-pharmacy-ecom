@@ -10,6 +10,7 @@ export async function getProducts(
     search = "",
     is_active,
     category_id,
+    vendor_id,
     is_special_pricing_enabled,
   } = params;
 
@@ -20,6 +21,7 @@ export async function getProducts(
       search,
       ...(is_active !== undefined && { is_active }),
       ...(category_id !== undefined && { category_id }),
+      ...(vendor_id !== undefined && { vendor_id }),
       ...(is_special_pricing_enabled !== undefined && {
         is_special_pricing_enabled,
       }),

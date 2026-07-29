@@ -77,6 +77,7 @@ export interface ProductListParams {
   search?: string;
   is_active?: boolean;
   category_id?: number;
+  vendor_id?: number;
   is_special_pricing_enabled?: boolean;
 }
 

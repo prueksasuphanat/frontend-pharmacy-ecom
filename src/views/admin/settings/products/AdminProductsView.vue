@@ -36,6 +36,7 @@ const allUnits = ref<Unit[]>([]);
 const searchQuery = ref("");
 const statusFilter = ref<string | number | null>(null);
 const categoryFilter = ref<string | number | null>(null);
+const vendorFilter = ref<string | number | null>(null);
 const specialPricingFilter = ref<string | number | null>(null);
 
 const editModalOpen = ref(false);
@@ -191,6 +192,8 @@ async function fetchProducts() {
       statusFilter.value === null ? undefined : statusFilter.value === "active",
     category_id:
       categoryFilter.value !== null ? Number(categoryFilter.value) : undefined,
+    vendor_id:
+      vendorFilter.value !== null ? Number(vendorFilter.value) : undefined,
     is_special_pricing_enabled:
       specialPricingFilter.value === null
         ? undefined
@@ -413,7 +416,7 @@ onMounted(async () => {
           <BaseInput
             label="ค้นหา"
             v-model="searchQuery"
-            placeholder="ค้นหาชื่อสินค้า หรือรหัสสินค้า..."
+            placeholder="ค้นหาชื่อสินค้า, รหัสสินค้า หรือผู้จำหน่าย..."
             @input="handleSearch"
           >
             <template #prefix>
@@ -429,6 +432,16 @@ onMounted(async () => {
               v-model="categoryFilter"
               :options="categoryOptions"
               placeholder="ทุกประเภท"
+              clearable
+              @update:model-value="handleFilterChange"
+            />
+          </div>
+          <div class="w-full sm:w-48">
+            <BaseAutocomplete
+              label="ผู้จำหน่าย"
+              v-model="vendorFilter"
+              :options="vendorOptions"
+              placeholder="ผู้จำหน่ายทั้งหมด"
               clearable
               @update:model-value="handleFilterChange"
             />
