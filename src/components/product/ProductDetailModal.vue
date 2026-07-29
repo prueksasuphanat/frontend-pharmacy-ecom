@@ -183,6 +183,9 @@ onUnmounted(() => {
                     <p class="text-secondary-500 text-sm mt-1">
                       {{ product.generic_name || "-" }}
                     </p>
+                    <p v-if="product.vendor?.name" class="text-xs text-primary-700 font-medium mt-0.5">
+                      ผู้จำหน่าย: {{ product.vendor.name }}
+                    </p>
                     <p class="text-xs text-secondary-400 mt-0.5">
                       รหัส: {{ product.code }}
                     </p>
@@ -412,6 +415,13 @@ onUnmounted(() => {
 
 <style scoped>
 .no-spinner::-webkit-inner-spin-button,
-.no-spinner::-webkit-outer-spin-button { appearance: none; }
-.no-spinner { -moz-appearance: textfield; }
+.no-spinner::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+}
+.no-spinner {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
 </style>

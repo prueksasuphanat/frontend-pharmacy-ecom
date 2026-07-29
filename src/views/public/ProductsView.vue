@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import { usePublicProductStore } from '@/stores/public/product.store';
 import { usePublicCategoryStore } from '@/stores/public/category.store';
 import { ProductDetailModal, ProductImage } from '@/components/product';
@@ -27,11 +27,12 @@ import {
   Star
 } from 'lucide-vue-next';
 import { Navbar, Footer } from '@/components/layout';
-import { BaseSelect } from '@/components/ui';
+import { BaseSelect, BaseSearchInput } from '@/components/ui';
 import { formatNum } from '@/utils/format';
 
 const auth = useAuthStore();
 const router = useRouter();
+const route = useRoute();
 const productStore = usePublicProductStore();
 const categoryStore = usePublicCategoryStore();
 
@@ -99,9 +100,29 @@ function onSearchInput() {
   if (searchTimer) clearTimeout(searchTimer);
   searchTimer = setTimeout(() => {
     page.value = 1;
+    router.replace({
+      path: '/products',
+      query: { ...route.query, search: search.value || undefined }
+    });
     fetchProducts();
   }, 300);
 }
+
+watch(
+  () => route.query.search,
+  (newSearch) => {
+    const q = typeof newSearch === 'string' ? newSearch : '';
+    if (search.value !== q) {
+      search.value = q;
+      page.value = 1;
+      fetchProducts();
+      if (q && productsSectionRef.value) {
+        productsSectionRef.value.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+  },
+  { immediate: true }
+);
 
 const pagination = computed(() => productStore.pagination);
 const totalPages = computed(() => pagination.value?.totalPages ?? 1);
@@ -229,6 +250,10 @@ onMounted(() => {
   fetchProducts();
   categoryStore.fetchCategories();
 });
+
+onUnmounted(() => {
+  if (searchTimer) clearTimeout(searchTimer);
+});
 </script>
 
 <template>
@@ -344,23 +369,13 @@ onMounted(() => {
             <!-- Search -->
             <div class="stagger-item" style="animation-delay: 0.52s">
               <div class="hero-search relative mx-auto mb-6" style="max-width: 520px">
-                <Search
-                  class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-secondary-400 z-10 pointer-events-none"
-                />
-                <input
+                <BaseSearchInput
                   v-model="search"
-                  type="text"
-                  placeholder="ค้นหาชื่อยา, รหัสสินค้า..."
-                  class="hero-search-input w-full"
+                  placeholder="ค้นหาชื่อยา, ชื่อสามัญ, ผู้จำหน่าย, รหัสสินค้า..."
+                  size="lg"
                   @input="onSearchInput"
-                  @keyup.enter="scrollToProducts"
+                  @submit="scrollToProducts"
                 />
-                <button
-                  @click="scrollToProducts"
-                  class="absolute right-2 top-1/2 -translate-y-1/2 bg-primary-600 hover:bg-primary-700 text-white px-4 py-1.5 rounded-full text-xs font-semibold transition-colors"
-                >
-                  ค้นหา
-                </button>
               </div>
             </div>
 
@@ -695,6 +710,7 @@ onMounted(() => {
 
             <div class="p-3.5">
               <p class="text-[11px] text-secondary-400 mb-1 truncate">
+                <span v-if="product.vendor?.name" class="font-medium text-primary-700 mr-1">{{ product.vendor.name }} •</span>
                 {{ product.generic_name || '—' }}
               </p>
               <h3 class="font-semibold text-sm text-secondary-900 line-clamp-2 leading-snug mb-2.5">
