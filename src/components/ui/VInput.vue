@@ -15,6 +15,8 @@ interface Props {
   modelValue?: string | number | null;
   /** อนุญาตให้กรอกค่าติดลบได้ (ใช้เฉพาะ type="number") */
   allowNegative?: boolean;
+  /** อนุญาตเฉพาะตัวอักษรภาษาอังกฤษและตัวเลขเท่านั้น (บล็อกภาษาไทย, ช่องว่าง, อักขระพิเศษ) */
+  alphanumericOnly?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -22,6 +24,7 @@ const props = withDefaults(defineProps<Props>(), {
   disabled: false,
   readonly: false,
   allowNegative: false,
+  alphanumericOnly: false,
 });
 
 const emit = defineEmits<{
@@ -66,6 +69,7 @@ function onIconRightClick() {
     :readonly="readonly"
     :error="displayError"
     :allow-negative="allowNegative"
+    :alphanumeric-only="alphanumericOnly"
     @update:model-value="onInput"
     @blur="handleBlur"
     @icon-right-click="onIconRightClick"

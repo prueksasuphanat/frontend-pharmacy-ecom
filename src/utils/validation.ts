@@ -17,6 +17,17 @@ defineRule("password", (value: string) => {
   return true;
 });
 
+defineRule("username", (value: string) => {
+  if (!value || !value.length) {
+    return true;
+  }
+  const regex = /^[a-zA-Z0-9]+$/;
+  if (!regex.test(value)) {
+    return "username ต้องใช้ภาษาอังกฤษเท่านั้น (ไม่มีเว้นวรรคและเครื่องหมายพิเศษ)";
+  }
+  return true;
+});
+
 configure({
   generateMessage: (context) => {
     const messages: Record<string, string> = {
@@ -35,6 +46,7 @@ configure({
 });
 
 export const fieldNames: Record<string, string> = {
+  username: "username",
   email: "อีเมล",
   password: "รหัสผ่าน",
   password_confirmation: "ยืนยันรหัสผ่าน",
