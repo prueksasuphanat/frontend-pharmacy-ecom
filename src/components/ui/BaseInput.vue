@@ -13,6 +13,7 @@ interface Props {
   iconRight?: any;
   readonly?: boolean;
   allowNegative?: boolean;
+  alphanumericOnly?: boolean;
   size?: "sm" | "md";
   prefix?: string | any;
   suffix?: string | any;
@@ -26,6 +27,7 @@ const props = withDefaults(defineProps<Props>(), {
   required: false,
   readonly: false,
   allowNegative: false,
+  alphanumericOnly: false,
   size: "md",
   prefixClickable: false,
   suffixClickable: false,
@@ -64,7 +66,15 @@ const isFocused = ref(false);
 
 function handleInput(event: Event) {
   const target = event.target as HTMLInputElement;
-  const raw = target.value;
+  let raw = target.value;
+
+  if (props.alphanumericOnly && typeof raw === "string") {
+    const cleaned = raw.replace(/[^a-zA-Z0-9]/g, "");
+    if (cleaned !== raw) {
+      raw = cleaned;
+      target.value = cleaned;
+    }
+  }
 
   if (props.type === "number") {
     // อัปเดต displayValue ทุกครั้งที่ user พิม เพื่อให้ boundValue สะท้อนค่าล่าสุด
@@ -110,6 +120,26 @@ function handleBlur(event: FocusEvent) {
 }
 
 function handleKeydown(event: KeyboardEvent) {
+  if (props.alphanumericOnly) {
+    const isCtrlCmd = event.ctrlKey || event.metaKey;
+    const allowedKeys = [
+      "Backspace",
+      "Delete",
+      "ArrowLeft",
+      "ArrowRight",
+      "Tab",
+      "Home",
+      "End",
+    ];
+
+    const isEnglishAlphaNum = /^[a-zA-Z0-9]$/.test(event.key);
+
+    if (!isEnglishAlphaNum && !allowedKeys.includes(event.key) && !isCtrlCmd) {
+      event.preventDefault();
+      return;
+    }
+  }
+
   if (props.type !== "number") return;
 
   const input = event.target as HTMLInputElement;
@@ -169,7 +199,7 @@ const boundValue = computed(() => {
 </script>
 
 <template>
-  <div class="w-full">
+  <div class="w-full min-w-0">
     <label v-if="label" class="label">
       {{ label }}
       <span v-if="required" class="text-red-500 ml-0.5">*</span>
@@ -264,7 +294,7 @@ const boundValue = computed(() => {
     </div>
 
     <!-- Standard Input (No Prefix/Suffix) -->
-    <div v-else class="w-full relative">
+    <div v-else class="w-full min-w-0 relative">
       <component
         v-if="icon"
         :is="icon"

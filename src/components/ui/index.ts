@@ -10,6 +10,8 @@ export interface MultiSelectOption {
   disabled?: boolean;
 }
 
+export type { SelectOption } from "./BaseSelect.vue";
+
 export interface Column<T = any> {
   key: keyof T | string;
   label: string;

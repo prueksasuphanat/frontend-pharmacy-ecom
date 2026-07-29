@@ -7,6 +7,7 @@ import {
   ShoppingBag,
   Package,
   BarChart2,
+  FileText,
   Settings,
 } from "lucide-vue-next";
 import { useRoute } from "vue-router";
@@ -26,6 +27,7 @@ const mobileLinks = [
   { to: "/admin/dashboard", label: "แดชบอร์ด", icon: LayoutDashboard },
   { to: "/admin/orders", label: "คำสั่งซื้อ", icon: ShoppingBag },
   { to: "/admin/settings/products", label: "สินค้า", icon: Package },
+  { to: "/admin/reports", label: "รายงาน", icon: FileText },
   { to: "/admin/logs", label: "บันทึก", icon: BarChart2 },
   { to: "/admin/settings", label: "ตั้งค่า", icon: Settings },
 ];
@@ -100,9 +102,7 @@ onMounted(() => {
         :to="link.to"
         class="flex-1 flex flex-col items-center gap-0.5 py-2 text-secondary-400 hover:text-primary-600"
         :class="{
-          'text-primary-600': link.to.includes('/settings')
-            ? route.path.startsWith('/admin/settings')
-            : route.path.startsWith(link.to),
+          'text-primary-600 font-medium': route.path.startsWith(link.to),
         }"
       >
         <component :is="link.icon" class="w-5 h-5" />

@@ -746,15 +746,20 @@ onMounted(() => {
 
             <div>
               <p class="label mb-1">ชื่อ-นามสกุล</p>
-              <div class="flex gap-2">
-                <BaseAutocomplete
-                  v-model="editForm.title"
-                  :options="TITLE_OPTIONS"
-                  placeholder="คำนำหน้า"
-                  class="w-32 shrink-0"
-                />
-                <BaseInput v-model="editForm.first_name" placeholder="ชื่อ" class="flex-1" />
-                <BaseInput v-model="editForm.last_name" placeholder="นามสกุล" class="flex-1" />
+              <div class="grid grid-cols-1 sm:grid-cols-[110px_1fr_1fr] gap-2">
+                <div class="min-w-0">
+                  <BaseAutocomplete
+                    v-model="editForm.title"
+                    :options="TITLE_OPTIONS"
+                    placeholder="คำนำหน้า"
+                  />
+                </div>
+                <div class="min-w-0">
+                  <BaseInput v-model="editForm.first_name" placeholder="ชื่อ" />
+                </div>
+                <div class="min-w-0">
+                  <BaseInput v-model="editForm.last_name" placeholder="นามสกุล" />
+                </div>
               </div>
             </div>
 

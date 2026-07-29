@@ -159,7 +159,7 @@ function onKeydown(e: KeyboardEvent) {
 </script>
 
 <template>
-  <div ref="containerRef" class="w-full">
+  <div ref="containerRef" class="w-full relative">
     <label v-if="label" class="label">
       {{ label }}
       <span v-if="required" class="text-red-500 ml-0.5">*</span>
@@ -171,7 +171,7 @@ function onKeydown(e: KeyboardEvent) {
       :aria-expanded="isOpen"
       :aria-disabled="disabled"
       tabindex="0"
-      class="input flex items-center gap-2 cursor-pointer select-none pr-9"
+      class="input relative flex items-center gap-2 cursor-pointer select-none pr-9"
       :class="{
         'pl-9': icon,
         'border-red-300 focus:border-red-500 focus:ring-red-500': error,
