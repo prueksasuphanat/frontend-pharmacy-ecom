@@ -259,14 +259,14 @@ function onKeydown(e: KeyboardEvent) {
 
 <template>
   <div ref="containerRef" class="w-full relative">
-    <label v-if="label" class="label">
+    <label v-if="label" class="label truncate block">
       {{ label }}
       <span v-if="required" class="text-red-500 ml-0.5">*</span>
     </label>
 
     <div
       ref="triggerRef"
-      class="input min-h-[42px] h-auto flex items-stretch gap-1.5 cursor-pointer py-1.5 pr-2"
+      class="input relative min-h-[42px] h-[42px] flex items-center justify-between gap-1.5 cursor-pointer py-1.5 px-3 min-w-0 w-full overflow-hidden"
       :class="{
         'pl-9': icon,
         'border-red-300 focus-within:border-red-500 focus-within:ring-red-500':
@@ -281,18 +281,18 @@ function onKeydown(e: KeyboardEvent) {
         class="absolute left-3 top-3.5 w-4 h-4 text-secondary-400 pointer-events-none"
       />
 
-      <div class="flex flex-wrap items-center gap-1.5 flex-1 min-w-0">
+      <div class="flex items-center gap-1.5 flex-1 min-w-0 overflow-hidden">
         <!-- Render tags ONLY if not externalTags and not hideTags -->
         <template v-if="!externalTags && !hideTags">
           <span
             v-for="opt in visibleSelectedOptions"
             :key="opt.value"
-            class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-primary-100 text-primary-700 text-xs font-medium"
+            class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-primary-100 text-primary-700 text-xs font-medium truncate max-w-[150px]"
           >
-            {{ opt.label }}
+            <span class="truncate">{{ opt.label }}</span>
             <button
               type="button"
-              class="hover:text-primary-900 transition-colors"
+              class="hover:text-primary-900 transition-colors shrink-0"
               @click="removeTag(opt.value, $event)"
             >
               <X class="w-3 h-3" />
@@ -301,8 +301,8 @@ function onKeydown(e: KeyboardEvent) {
 
           <span
             v-if="hiddenTagsCount > 0"
-            class="inline-flex items-center px-2 py-0.5 rounded-lg bg-secondary-100 text-secondary-700 text-xs font-medium cursor-help"
-            :title="selectedOptions.slice(props.maxVisibleTags).map((o) => o.label).join(', ')"
+            class="inline-flex items-center px-2 py-0.5 rounded-lg bg-secondary-100 text-secondary-700 text-xs font-medium cursor-help shrink-0"
+            :title="selectedOptions.slice(props.maxVisibleTags ?? 0).map((o) => o.label).join(', ')"
           >
             +{{ hiddenTagsCount }} รายการ
           </span>
@@ -311,7 +311,7 @@ function onKeydown(e: KeyboardEvent) {
         <!-- Summary text when externalTags or hideTags is true and items are selected, and not focused/typing -->
         <span
           v-if="(externalTags || hideTags) && selectedOptions.length > 0 && !isOpen && !query"
-          class="text-sm text-secondary-900 truncate pl-1"
+          class="text-sm text-secondary-900 truncate pl-1 flex-1 min-w-0"
         >
           เลือกแล้ว {{ selectedOptions.length }} รายการ
         </span>

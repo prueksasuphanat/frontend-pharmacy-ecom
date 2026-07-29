@@ -19,6 +19,8 @@ const labelMap: Record<string, string> = {
   users: 'ผู้ใช้งาน',
   'product-price': 'ราคาสินค้า',
   vendor: 'ผู้จำหน่าย',
+  reports: 'รายงาน',
+  'user-pricing': 'รายงานการตั้งราคา',
 }
 
 const crumbs = computed(() => {

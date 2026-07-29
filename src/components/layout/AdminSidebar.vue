@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref } from "vue";
-import { RouterLink, useRoute } from "vue-router";
+import { ref } from 'vue';
+import { RouterLink, useRoute } from 'vue-router';
 import {
   LayoutDashboard,
   ShoppingBag,
@@ -12,83 +12,106 @@ import {
   DollarSign,
   CirclePile,
   Ruler,
-} from "lucide-vue-next";
+  FileText,
+  Tag
+} from 'lucide-vue-next';
 
 const route = useRoute();
 
+const reportsExpanded = ref(false);
 const settingsExpanded = ref(false);
 const logsExpanded = ref(false);
 
 const links = [
-  { to: "/admin/dashboard", label: "แดชบอร์ด", icon: LayoutDashboard },
-  { to: "/admin/orders", label: "คำสั่งซื้อ", icon: ShoppingBag },
+  { to: '/admin/dashboard', label: 'แดชบอร์ด', icon: LayoutDashboard },
+  { to: '/admin/orders', label: 'คำสั่งซื้อ', icon: ShoppingBag }
 ];
 
+const reportsMenu = {
+  label: 'รายงาน',
+  icon: FileText,
+  children: [
+    {
+      to: '/admin/reports/user-pricing',
+      label: 'การตั้งราคา',
+      icon: Tag
+    }
+  ]
+};
+
 const logsMenu = {
-  label: "บันทึกกิจกรรม",
+  label: 'บันทึกกิจกรรม',
   icon: BarChart2,
   children: [
     {
-      to: "/admin/logs/set-up-pricing",
-      label: "การตั้งราคา",
-      icon: BarChart2,
+      to: '/admin/logs/set-up-pricing',
+      label: 'การตั้งราคา',
+      icon: BarChart2
     },
     {
-      to: "/admin/logs/user-sessions",
-      label: "ประวัติการเข้าใช้งาน",
-      icon: Users,
+      to: '/admin/logs/user-sessions',
+      label: 'ประวัติการเข้าใช้งาน',
+      icon: Users
     },
     {
-      to: "/admin/logs/product-views",
-      label: "ประวัติการชมสินค้า",
-      icon: ShoppingBag,
-    },
-  ],
+      to: '/admin/logs/product-views',
+      label: 'ประวัติการชมสินค้า',
+      icon: ShoppingBag
+    }
+  ]
 };
 
 const settingsMenu = {
-  label: "ตั้งค่าระบบ",
+  label: 'ตั้งค่าระบบ',
   icon: Settings,
   children: [
     {
-      to: "/admin/settings/products",
-      label: "สินค้า",
-      icon: Package,
+      to: '/admin/settings/products',
+      label: 'สินค้า',
+      icon: Package
     },
     {
-      to: "/admin/settings/category",
-      label: "ประเภทสินค้า",
-      icon: CirclePile,
+      to: '/admin/settings/category',
+      label: 'ประเภทสินค้า',
+      icon: CirclePile
     },
     {
-      to: "/admin/settings/units",
-      label: "หน่วยสินค้า",
-      icon: Ruler,
+      to: '/admin/settings/units',
+      label: 'หน่วยสินค้า',
+      icon: Ruler
     },
     {
-      to: "/admin/settings/vendor",
-      label: "ผู้จำหน่าย",
-      icon: Users,
+      to: '/admin/settings/vendor',
+      label: 'ผู้จำหน่าย',
+      icon: Users
     },
     {
-      to: "/admin/settings/product-price",
-      label: "ราคาสินค้า",
-      icon: DollarSign,
+      to: '/admin/settings/product-price',
+      label: 'ราคาสินค้า',
+      icon: DollarSign
     },
-    { to: "/admin/settings/users", label: "ผู้ใช้งาน", icon: Users },
-  ],
+    { to: '/admin/settings/users', label: 'ผู้ใช้งาน', icon: Users }
+  ]
 };
 
 function isActive(path: string) {
-  return route.path === path || route.path.startsWith(path + "/");
+  return route.path === path || route.path.startsWith(path + '/');
+}
+
+function isReportsActive() {
+  return route.path.startsWith('/admin/reports');
 }
 
 function isSettingsActive() {
-  return route.path.startsWith("/admin/settings");
+  return route.path.startsWith('/admin/settings');
 }
 
 function isLogsActive() {
-  return route.path.startsWith("/admin/logs");
+  return route.path.startsWith('/admin/logs');
+}
+
+if (isReportsActive()) {
+  reportsExpanded.value = true;
 }
 
 if (isSettingsActive()) {
@@ -104,12 +127,8 @@ if (isLogsActive()) {
   <aside
     class="w-[16.5rem] shrink-0 hidden lg:flex flex-col h-screen sticky top-0 bg-white border-r border-secondary-100"
   >
-    <div
-      class="flex items-center gap-2.5 px-5 h-16 border-b border-secondary-100"
-    >
-      <div
-        class="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center"
-      >
+    <div class="flex items-center gap-2.5 px-5 h-16 border-b border-secondary-100">
+      <div class="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
         <span class="text-white font-bold text-sm">Rx</span>
       </div>
       <div>
@@ -129,28 +148,41 @@ if (isLogsActive()) {
         {{ link.label }}
       </RouterLink>
 
+      <!-- Reports Menu -->
+      <div>
+        <button
+          @click="reportsExpanded = !reportsExpanded"
+          :class="['sidebar-link w-full', { active: isReportsActive() && !reportsExpanded }]"
+        >
+          <component :is="reportsMenu.icon" class="w-4.5 h-4.5 shrink-0" />
+          <span class="flex-1 text-left">{{ reportsMenu.label }}</span>
+          <ChevronDown :class="['w-4 h-4 transition-transform shrink-0', reportsExpanded ? 'rotate-180' : '']" />
+        </button>
+
+        <div v-show="reportsExpanded" class="ml-4 mt-1 space-y-1 border-l-2 border-secondary-100 pl-2">
+          <RouterLink
+            v-for="child in reportsMenu.children"
+            :key="child.to"
+            :to="child.to"
+            :class="['sidebar-link text-sm', { active: isActive(child.to) }]"
+          >
+            <component :is="child.icon" class="w-4 h-4 shrink-0" />
+            {{ child.label }}
+          </RouterLink>
+        </div>
+      </div>
+
       <div>
         <button
           @click="logsExpanded = !logsExpanded"
-          :class="[
-            'sidebar-link w-full',
-            { active: isLogsActive() && !logsExpanded },
-          ]"
+          :class="['sidebar-link w-full', { active: isLogsActive() && !logsExpanded }]"
         >
           <component :is="logsMenu.icon" class="w-4.5 h-4.5 shrink-0" />
           <span class="flex-1 text-left">{{ logsMenu.label }}</span>
-          <ChevronDown
-            :class="[
-              'w-4 h-4 transition-transform shrink-0',
-              logsExpanded ? 'rotate-180' : '',
-            ]"
-          />
+          <ChevronDown :class="['w-4 h-4 transition-transform shrink-0', logsExpanded ? 'rotate-180' : '']" />
         </button>
 
-        <div
-          v-show="logsExpanded"
-          class="ml-4 mt-1 space-y-1 border-l-2 border-secondary-100 pl-2"
-        >
+        <div v-show="logsExpanded" class="ml-4 mt-1 space-y-1 border-l-2 border-secondary-100 pl-2">
           <RouterLink
             v-for="child in logsMenu.children"
             :key="child.to"
@@ -166,25 +198,14 @@ if (isLogsActive()) {
       <div>
         <button
           @click="settingsExpanded = !settingsExpanded"
-          :class="[
-            'sidebar-link w-full',
-            { active: isSettingsActive() && !settingsExpanded },
-          ]"
+          :class="['sidebar-link w-full', { active: isSettingsActive() && !settingsExpanded }]"
         >
           <component :is="settingsMenu.icon" class="w-4.5 h-4.5 shrink-0" />
           <span class="flex-1 text-left">{{ settingsMenu.label }}</span>
-          <ChevronDown
-            :class="[
-              'w-4 h-4 transition-transform shrink-0',
-              settingsExpanded ? 'rotate-180' : '',
-            ]"
-          />
+          <ChevronDown :class="['w-4 h-4 transition-transform shrink-0', settingsExpanded ? 'rotate-180' : '']" />
         </button>
 
-        <div
-          v-show="settingsExpanded"
-          class="ml-4 mt-1 space-y-1 border-l-2 border-secondary-100 pl-2"
-        >
+        <div v-show="settingsExpanded" class="ml-4 mt-1 space-y-1 border-l-2 border-secondary-100 pl-2">
           <RouterLink
             v-for="child in settingsMenu.children"
             :key="child.to"
@@ -199,12 +220,7 @@ if (isLogsActive()) {
     </nav>
 
     <div class="px-3 py-4 border-t border-secondary-100">
-      <RouterLink
-        to="/products"
-        class="sidebar-link text-xs text-secondary-400"
-      >
-        ← กลับหน้าร้าน
-      </RouterLink>
+      <RouterLink to="/products" class="sidebar-link text-xs text-secondary-400"> ← กลับหน้าร้าน </RouterLink>
     </div>
   </aside>
 </template>
