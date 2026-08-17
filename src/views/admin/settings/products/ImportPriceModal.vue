@@ -134,10 +134,10 @@ function parseFlexibleNumber(val: any): number {
 const summaryStats = computed(() => {
   const total = parsedItems.value.length;
   const matched = parsedItems.value.filter((i) => i.isMatched).length;
-  const belowCost = parsedItems.value.filter((i) => i.isBelowCost).length;
+  const belowCost = parsedItems.value.filter((i) => i.isMatched && i.isBelowCost).length;
   const errors = parsedItems.value.filter((i) => !i.isMatched).length;
-  const included = parsedItems.value.filter((i) => i.isIncluded && i.isMatched && !i.isBelowCost).length;
-  const hasExistingPrice = parsedItems.value.filter((i) => i.isMatched && !i.isBelowCost && i.hasExistingPrice).length;
+  const included = parsedItems.value.filter((i) => i.isIncluded && i.isMatched).length;
+  const hasExistingPrice = parsedItems.value.filter((i) => i.isMatched && i.hasExistingPrice).length;
 
   return {
     total,
@@ -153,11 +153,11 @@ const filteredItems = computed(() => {
   let result = parsedItems.value;
 
   if (activeTab.value === "importable") {
-    result = result.filter((i) => i.isMatched && !i.isBelowCost);
+    result = result.filter((i) => i.isMatched);
   } else if (activeTab.value === "has_existing_price") {
-    result = result.filter((i) => i.isMatched && !i.isBelowCost && i.hasExistingPrice);
+    result = result.filter((i) => i.isMatched && i.hasExistingPrice);
   } else if (activeTab.value === "below_cost") {
-    result = result.filter((i) => i.isBelowCost);
+    result = result.filter((i) => i.isMatched && i.isBelowCost);
   } else if (activeTab.value === "errors") {
     result = result.filter((i) => !i.isMatched);
   }
@@ -178,7 +178,7 @@ const filteredItems = computed(() => {
 
 const isAllFilteredSelected = computed(() => {
   if (filteredItems.value.length === 0) return false;
-  return filteredItems.value.every((i) => !i.isMatched || i.isBelowCost || i.isIncluded);
+  return filteredItems.value.every((i) => !i.isMatched || i.isIncluded);
 });
 
 watch(
@@ -398,9 +398,8 @@ async function processFile(file: File) {
         if (!product) errors.push(`ไม่พบรหัสสินค้า "${productCode || productName}"`);
         if (!user) errors.push(`ไม่พบรหัสลูกค้า/ผู้ใช้ "${userCode || userName}"`);
         if (isNaN(priceVal) || priceVal <= 0) errors.push("ระบุราคาไม่ถูกต้อง");
-        if (product && !hasCostPrice) errors.push("สินค้านี้ยังไม่มีราคาทุนในระบบ");
 
-        const isMatched = errors.length === 0 && !!product && !!user && hasCostPrice;
+        const isMatched = errors.length === 0 && !!product && !!user && !isNaN(priceVal) && priceVal > 0;
         const isBelowCost = hasCostPrice && priceVal < costPrice!;
 
         // Calculate Markup Percent
@@ -446,8 +445,8 @@ async function processFile(file: File) {
           });
         }
 
-        // Rule: If isBelowCost or !isMatched -> isIncluded MUST BE FALSE (cannot import)
-        const isIncluded = isMatched && !isBelowCost;
+        // Rule: Matched items can be included for import
+        const isIncluded = isMatched;
 
         items.push({
           id: `row-${i}-${Date.now()}`,
@@ -482,10 +481,8 @@ async function processFile(file: File) {
 
     parsedItems.value = items;
 
-    if (items.some((i) => i.isMatched && !i.isBelowCost)) {
+    if (items.some((i) => i.isMatched)) {
       activeTab.value = "importable";
-    } else if (items.some((i) => i.isBelowCost)) {
-      activeTab.value = "below_cost";
     } else {
       activeTab.value = "errors";
     }
@@ -501,22 +498,22 @@ function excludeItemFromImport(item: ParsedItem) {
 }
 
 function includeItemInImport(item: ParsedItem) {
-  if (item.isMatched && !item.isBelowCost) {
+  if (item.isMatched) {
     item.isIncluded = true;
   }
 }
 
 function toggleIncludeAllCurrentFiltered(include: boolean) {
   filteredItems.value.forEach((item) => {
-    if (item.isMatched && !item.isBelowCost) {
+    if (item.isMatched) {
       item.isIncluded = include;
     }
   });
 }
 
 async function handleConfirmImport() {
-  // ONLY import items that are matched AND NOT below cost AND marked as included
-  const itemsToImport = parsedItems.value.filter((i) => i.isMatched && !i.isBelowCost && i.isIncluded);
+  // ONLY import items that are matched AND marked as included
+  const itemsToImport = parsedItems.value.filter((i) => i.isMatched && i.isIncluded);
   if (itemsToImport.length === 0) {
     toast.error("ไม่มีรายการที่สามารถนำเข้าได้");
     return;
@@ -859,7 +856,7 @@ async function handleConfirmImport() {
             >
               <AlertTriangle class="w-4 h-4 text-amber-600 shrink-0" />
               <span>
-                <strong>คำเตือน:</strong> รายการในหมวดนี้เป็นราคาที่ต่ำกว่าราคาทุน ไม่สามารถนำเข้าข้อมูลได้ (แสดงผลลัพธ์เพื่อการตรวจสอบเท่านั้น)
+                <strong>ข้อควรระวัง:</strong> รายการในหมวดนี้เป็นราคาที่ต่ำกว่าราคาทุน สามารถเลือกนำเข้าข้อมูลได้ตามต้องการ
               </span>
             </div>
             <div
@@ -868,7 +865,7 @@ async function handleConfirmImport() {
             >
               <XCircle class="w-4 h-4 text-red-600 shrink-0" />
               <span>
-                <strong>คำเตือน:</strong> รายการในหมวดนี้มีข้อผิดพลาด หรือยังไม่ได้ระบุราคาทุนในระบบ ไม่สามารถนำเข้าข้อมูลได้
+                <strong>คำเตือน:</strong> รายการในหมวดนี้มีข้อผิดพลาด (เช่น ไม่พบรหัสสินค้า/ผู้ใช้ หรือระบุราคาไม่ถูกต้อง) ไม่สามารถนำเข้าข้อมูลได้
               </span>
             </div>
 
@@ -933,10 +930,10 @@ async function handleConfirmImport() {
                           !item.isMatched ? 'bg-red-50/30' : item.isBelowCost ? 'bg-amber-50/40' : item.hasExistingPrice ? 'bg-blue-50/20' : '',
                         ]"
                       >
-                        <!-- Checkbox (ONLY shown for valid importable items) -->
+                        <!-- Checkbox (shown for all matched items) -->
                         <td class="py-2.5 px-3 text-center">
                           <input
-                            v-if="item.isMatched && !item.isBelowCost"
+                            v-if="item.isMatched"
                             type="checkbox"
                             v-model="item.isIncluded"
                             class="rounded text-teal-600 focus:ring-teal-500"
@@ -1011,17 +1008,25 @@ async function handleConfirmImport() {
                             :title="item.matchErrorReason"
                           >
                             <XCircle class="w-3 h-3" />
-                            {{ item.costPrice == null ? 'ไม่มีราคาทุน' : 'ไม่พบข้อมูล' }}
-                          </span>
-                          <span
-                            v-else-if="item.isBelowCost"
-                            class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-100 text-amber-800"
-                          >
-                            <AlertTriangle class="w-3 h-3" />
-                            ต่ำกว่าทุน
+                            ไม่พบข้อมูล
                           </span>
                           <div v-else class="flex flex-col items-center gap-0.5">
                             <span
+                              v-if="item.isBelowCost"
+                              class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-100 text-amber-800"
+                            >
+                              <AlertTriangle class="w-3 h-3" />
+                              ต่ำกว่าทุน
+                            </span>
+                            <span
+                              v-else-if="item.costPrice == null"
+                              class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-secondary-100 text-secondary-700"
+                            >
+                              <AlertTriangle class="w-3 h-3 text-secondary-400" />
+                              ไม่มีราคาทุน
+                            </span>
+                            <span
+                              v-else
                               class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-green-100 text-green-700"
                             >
                               <CheckCircle2 class="w-3 h-3" />
